@@ -306,6 +306,18 @@
   .qopt:disabled{cursor:default;opacity:.85}
   .qres{margin-top:10px;font-size:12.5px;font-weight:800}.qres.win{color:var(--acc)}.qres.loss{color:var(--live)}
   .quizc.locked{opacity:.6;border-style:dashed}
+  /* over/under */
+  .wstrip.ou .outog{display:flex;gap:8px}
+  .oubtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .oubtn:hover{border-color:var(--acc2);color:var(--acc2)}
+  .oubtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
+  .bou{border-top:1px solid var(--line);padding:9px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .boulabel{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.3px;margin-right:4px}
+  .oubadges{display:flex;flex-wrap:wrap;gap:6px}
+  .oubadge{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:2px 9px 2px 3px;font-size:11.5px;font-weight:700}
+  .oubadge .av{width:18px;height:18px;font-size:8px}
+  .oubadge.win{border-color:rgba(31,230,171,.5);color:var(--acc)}
+  .oubadge.loss{opacity:.6}
   .tab.notify{position:relative}
   .tab.notify::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--bg);animation:lpulse 1.3s ease-in-out infinite}
 </style>
@@ -633,7 +645,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{}};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -643,6 +655,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
+const BUILD='2026-06-20-c';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -667,15 +680,17 @@ function computeStandings(){
       if(m.s1>m.s2){a.w++;b.l++;a.pts+=3;}else if(m.s1<m.s2){b.w++;a.l++;b.pts+=3;}else{a.d++;b.d++;a.pts++;b.pts++;}});
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
-  try{const [pl,pr,rs,qz]=await Promise.all([
+  try{const [pl,pr,rs,qz,sp]=await Promise.all([
       sb.from('players').select('name,champion'),
       sb.from('predictions').select('name,match_id,home,away,stake'),
       sb.from('results').select('match_id,s1,s2,status'),
-      sb.from('quiz').select('name,qid,choice')]);
+      sb.from('quiz').select('name,qid,choice'),
+      sb.from('sidepicks').select('name,match_id,ou')]);
     if(pl.error||pr.error||rs.error)throw(pl.error||pr.error||rs.error);
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
+    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]=r.ou;});
     applyResults(rs.data);computeStandings();
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
@@ -695,11 +710,13 @@ function sbSubscribe(){if(!sb)return;
     .on('postgres_changes',{event:'*',schema:'public',table:'predictions'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'results'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'quiz'},queueLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'sidepicks'},queueLoad)
     .subscribe();
   setInterval(sbLoadAll,30000);}
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
 async function sbSetChampion(name,team){if(!sb)return;try{await sb.from('players').upsert({name,champion:team},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz').upsert({name,qid,choice,updated_at:new Date().toISOString()},{onConflict:'name,qid'});}catch(e){flash('Could not save answer');}}
+async function sbSetOU(name,id,ou){if(!sb)return;try{await sb.from('sidepicks').upsert({name,match_id:id,ou,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0];
@@ -769,7 +786,9 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
-const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500;
+const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40;
+const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';   // Over/Under 2.5 goals from the final score
+function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{if(isFT(m)&&sp[m.id]&&sp[m.id]===ouResult(m))t+=OU_BONUS;});return t;}
 const multFor=v=>v===5?4:v===3?2.5:v===2?1.5:0;            // payout multiple by points
 const fmtMoney=n=>'$'+Math.round(n).toLocaleString('en-AU');
 // fun side quizzes — correct answers pay out cash (also the way to claw back when you're low)
@@ -782,8 +801,20 @@ const QUIZ=[
 ];
 function finalWinner(){const f=knockout.find(k=>k.round==='FINAL');if(!f||!isFT(f))return null;return f.s1>f.s2?f.t1:f.s2>f.s1?f.t2:null;}
 function quizWon(p){const qa=state.quiz[p]||{};let t=0;QUIZ.forEach(q=>{if(qa[q.id]===q.a)t+=q.reward;});return t;}
-function lossesOf(p){const preds=state.preds[p]||{};let n=0;ALL.forEach(m=>{if(isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0){const s=preds[m.id][2];if(s*multFor(points(preds[m.id],m))-s<0)n++;}});return n;}
-function quizUnlocked(p){return Math.min(QUIZ.length,lossesOf(p));}  // one comeback quiz per losing wager
+function roundsDone(){              // completed tournament rounds = quiz milestones
+  const gT=matches.length,gFT=matches.filter(isFT).length,per=gT/3||1;
+  let r=Math.min(3,Math.floor(gFT/per));
+  [...new Set(knockout.map(k=>k.round))].forEach(rd=>{const ms=knockout.filter(k=>k.round===rd);if(ms.length&&ms.every(isFT))r++;});
+  return r;
+}
+function answeredCount(p){const qa=state.quiz[p]||{};return QUIZ.filter(q=>qa[q.id]!=null).length;}
+function quizUnlocked(p){
+  let n=roundsDone();                                  // a quiz unlocks each time a round wraps up
+  if(bankOf(p).bal<200)n=Math.max(n,answeredCount(p)+1); // ...or a lifeline whenever you drop below $200
+  n=Math.min(QUIZ.length,n);
+  if(p===me)n=Math.max(n,quizSeen);                    // sticky on this device — never re-locks once shown
+  return n;
+}
 let quizSeen=0;try{quizSeen=+localStorage.getItem('wc2026-quizseen')||0;}catch(e){}
 function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?CHAMP_BONUS:0;}
 function bankOf(p){
@@ -793,7 +824,7 @@ function bankOf(p){
   let bal=START_BAL, won=0, lost=0;
   settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));
     const net=pay-stake; if(net>=0)won+=net; else lost+=-net; bal=Math.max(FLOOR,bal+net);});
-  const qw=quizWon(p),cw=champWon(p);bal+=qw+cw;won+=qw+cw;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p);bal+=qw+cw+ow;won+=qw+cw+ow;
   let inPlay=0; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2];});
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw};
 }
@@ -905,7 +936,7 @@ function renderPredict(){
   const canEdit=(!SB_ENABLED)||p===me;
   wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0];const stake=pr[2]||0;const picked=hasPick(pr);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
-    let center,strip='';
+    let center,strip='',oustrip='';const oupick=(state.sidepicks[p]||{})[m.id];
     if(isFT(m)){const pts=points(pr,m);
       center=`<div class="result"><div class="rscore">${m.s1}–${m.s2}</div><div class="rft">FULL TIME</div>${picked?`<span class="pillpts ${pts===0?'zero':''}">+${pts} pt${pts===1?'':'s'}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;
       if(picked&&stake>0){const net=stake*multFor(pts)-stake;
@@ -915,8 +946,11 @@ function renderPredict(){
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
       strip=picked?wagerCtrl(m.id,stake):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;}
+    if(isFT(m)){if(oupick){const ok=oupick===ouResult(m);oustrip=`<div class="wstrip ${ok?'win':'loss'}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span><span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span></div>`;}}
+    else if(locked){if(oupick)oustrip=`<div class="wstrip"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5 · locked</span></div>`;}
+    else if(canEdit){oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)} if right</span></div>`;}
     return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
-      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}</div>`;}).join('');
+      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}</div>`;}).join('');
   if(canEdit){
     wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
       const cur=state.preds[p][id]||[null,null,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
@@ -924,7 +958,10 @@ function renderPredict(){
       saveState();renderPredict();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
       let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));cur[2]=v;
-      saveState();renderPredict();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});}
+      saveState();renderPredict();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
+    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;state.sidepicks[p]=state.sidepicks[p]||{};
+      const nv=state.sidepicks[p][id]===v?null:v;if(nv)state.sidepicks[p][id]=nv;else delete state.sidepicks[p][id];
+      if(SB_ENABLED)sbSetOU(p,id,nv);renderPredict();renderLeaderboard();updateLeagueBar();});}
 }
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
 document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();});
@@ -985,7 +1022,10 @@ function renderBoard(){
           res=`<span class="pillpts ${pts===0?'zero':''}">+${pts}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'+'+fmtMoney(net):net<0?'−'+fmtMoney(stake):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
-    return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div></div>`;}).join('');
+    const oup=state.players.map(pl=>{const o=(state.sidepicks[pl]||{})[m.id];if(!o)return '';const ok=ft&&o===ouResult(m);
+      return `<span class="oubadge ${ft?(ok?'win':'loss'):''}">${avatar(pl)} ${o==='O'?'O 2.5':'U 2.5'}</span>`;}).filter(Boolean).join('');
+    const ouSec=oup?`<div class="bou"><span class="boulabel">Total goals${ft?' · '+(m.s1+m.s2)+' goals → '+(ouResult(m)==='O'?'Over':'Under'):' (shown to all)'}</span><div class="oubadges">${oup}</div></div>`:'';
+    return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
 }
 // ================= SIDE BETS (champion pick + quizzes) =================
 function renderSidebets(){
@@ -1006,16 +1046,18 @@ function renderSidebets(){
   if(me&&unlocked>quizSeen){if(quizSeen>0||answered<unlocked)flash('Tough break — a comeback quiz unlocked!');quizSeen=unlocked;try{localStorage.setItem('wc2026-quizseen',unlocked);}catch(e){}}
   const tab=document.querySelector('#tabs .tab[data-tab="sidebets"]');if(tab)tab.classList.toggle('notify',available>0);
   let q='<h3 style="margin-bottom:6px">Comeback quizzes</h3><p class="sub" style="margin-bottom:12px">';
-  q+=available>0?`You've got <b>${available}</b> comeback question${available===1?'':'s'} to play — win cash back.`:(unlocked>=QUIZ.length?'All comeback quizzes used.':'A comeback quiz unlocks each time a wager goes against you. Lose one and a question appears here.');
+  q+=available>0?`You've got <b>${available}</b> question${available===1?'':'s'} to play — win cash straight into your bank.`:(unlocked>=QUIZ.length?'All quizzes played.':'Quizzes unlock when a tournament round wraps up — or the moment your bank drops below $200.');
   q+='</p>';
   q+=QUIZ.map((qz,i)=>{const ans=qa[qz.id];const done=ans!=null;const correct=ans===qz.a;const open=i<unlocked;
-    if(!done&&!open)return `<div class="quizc locked"><div class="qq">🔒 Locked comeback question <span class="qr">${fmtMoney(qz.reward)}</span></div><div class="qres" style="color:var(--mut);font-weight:600">Unlocks when a wager doesn't go your way.</div></div>`;
+    if(!done&&!open)return `<div class="quizc locked"><div class="qq">🔒 Locked question <span class="qr">${fmtMoney(qz.reward)}</span></div><div class="qres" style="color:var(--mut);font-weight:600">Unlocks after the next round — or if your bank dips below $200.</div></div>`;
     return `<div class="quizc ${done?(correct?'correct':'wrong'):''}"><div class="qq">${qz.q} <span class="qr">${fmtMoney(qz.reward)}</span></div>
       <div class="qopts">${qz.opts.map(o=>`<button class="qopt ${ans===o?'sel':''}" data-q="${qz.id}" data-o="${o}" ${done?'disabled':''}>${o}</button>`).join('')}</div>
       ${done?`<div class="qres ${correct?'win':'loss'}">${correct?'Correct — won '+fmtMoney(qz.reward):'Not quite — answer was '+qz.a}</div>`:''}</div>`;}).join('');
   qw.innerHTML=q;
   if(me)qw.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>{const qid=b.dataset.q,o=b.dataset.o;state.quiz[me]=state.quiz[me]||{};state.quiz[me][qid]=o;
-    if(SB_ENABLED)sbSetQuiz(me,qid,o);const qz=QUIZ.find(x=>x.id===qid);flash(o===qz.a?'Correct! +'+fmtMoney(qz.reward):'Wrong — that one\'s gone');renderSidebets();renderLeaderboard();updateLeagueBar();});
+    if(SB_ENABLED)sbSetQuiz(me,qid,o);const qz=QUIZ.find(x=>x.id===qid);
+    flash(o===qz.a?('Correct! +'+fmtMoney(qz.reward)+' — bank now '+fmtMoney(bankOf(me).bal)):'Wrong — that one\'s gone');
+    renderSidebets();renderLeaderboard();updateLeagueBar();});
 }
 // ================= SAVE / LOAD (file backup) =================
 document.getElementById('saveBtn').onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wc2026-predictions.json';a.click();flash('Backup downloaded');};
@@ -1048,6 +1090,8 @@ if(SB_ENABLED){
   sbLoadAll().then(()=>{if(!me)showJoin();});
 }else if(state.players&&state.players.length){setSaveTag('Saved picks restored ('+state.players.length+' player'+(state.players.length===1?'':'s')+')');}
 setInterval(renderNext,60000);
+async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
+setInterval(checkUpdate,180000);
 </script>
 </body>
 </html>
