@@ -231,6 +231,42 @@
   .adminrow .asave{background:var(--acc);color:#04121f;border:none;border-radius:9px;padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer}
   .adminrow.done{opacity:.7}
   .adminrow.done .gt{color:var(--acc)}
+  /* wager strip */
+  .wstrip{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:11px 14px;font-size:12.5px;flex-wrap:wrap}
+  .wstrip .wlabel{color:var(--mut);font-weight:700}
+  .wstrip.hint .wlabel{font-style:italic;color:var(--mut)}
+  .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
+  .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
+  .wctrl{display:flex;align-items:center;gap:9px}
+  .wbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-size:19px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .wbtn:hover{border-color:var(--acc);color:var(--acc)}.wbtn:active{transform:scale(.92)}
+  .wval{min-width:72px;text-align:center;font-weight:800;font-size:16px;color:var(--gold)}
+  .wreturn{color:var(--acc);font-weight:700}
+  .wout{font-weight:800}.wstrip.win .wout{color:var(--acc)}.wstrip.loss .wout{color:var(--live)}
+  .pedestal .pts.money{font-size:16px;letter-spacing:-.3px}
+  .bankchip{display:inline-block;background:rgba(255,210,77,.16);color:var(--gold);font-weight:800;padding:1px 9px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,210,77,.3)}
+  .inplay{color:var(--mut);font-weight:600;margin-left:6px}
+  /* everyone's picks board */
+  .bcard{margin-bottom:11px;padding:0;overflow:hidden}
+  .bcard .mtop{display:flex;justify-content:space-between;align-items:center;background:var(--bg2);padding:8px 14px;border-bottom:1px solid var(--line)}
+  .bcard .mtop .gt{font-size:10.5px;font-weight:800;color:var(--acc);letter-spacing:.5px}
+  .bcard .mtop .tm{font-size:11px;color:var(--mut)}
+  .bteams{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 14px;font-weight:700;font-size:14px}
+  .bteams .bt{display:flex;align-items:center;gap:8px;flex:1}
+  .bteams .bt.r{justify-content:flex-end;text-align:right}
+  .bteams .bvs{color:var(--mut);font-size:12px;font-weight:800}
+  .bpicks{border-top:1px solid var(--line)}
+  .bpick{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(38,50,79,.4);font-size:13px}
+  .bpick:last-child{border-bottom:none}
+  .bpick .bpl{display:flex;align-items:center;gap:8px;flex:1;font-weight:600;min-width:0}
+  .bpick .bpl .av{width:24px;height:24px;font-size:10px}
+  .bpick .bnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bpick .bsc{font-weight:800;font-size:15px;min-width:42px;text-align:center}
+  .bpick .bwg{color:var(--gold);font-weight:700;min-width:54px;text-align:right}
+  .bpick .bnet{font-weight:800;min-width:64px;text-align:right}
+  .bpick .bnet.win{color:var(--acc)}.bpick .bnet.loss{color:var(--live)}
+  .bhidden{padding:13px 14px;color:var(--mut);font-size:12.5px}
+  .bhidden b{color:var(--txt)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -265,7 +301,8 @@
   <button class="tab" data-tab="scorers">Scorers</button>
   <span class="tabdiv"></span>
   <span class="tablabel">Prediction League — play with mates</span>
-  <button class="tab league" data-tab="predict">Predict scores</button>
+  <button class="tab league" data-tab="predict">Predict &amp; wager</button>
+  <button class="tab league" data-tab="board">Everyone's picks</button>
   <button class="tab league" data-tab="leaderboard">Leaderboard</button>
 </div>
 
@@ -318,12 +355,23 @@
   <div class="card" id="chartWrap" style="margin-bottom:16px"></div>
   <div class="card" id="tableWrap" style="margin-bottom:16px"></div>
   <div class="card rules">
-    <h3 style="margin-bottom:8px">Scoring</h3>
+    <h3 style="margin-bottom:8px">How it works</h3>
     <ul>
-      <li><span class="pp">5 pts</span> exact scoreline · <span class="pp">3 pts</span> right result + goal difference · <span class="pp">2 pts</span> right result · <span class="pp">0 pts</span> wrong / no pick</li>
+      <li>Everyone starts with <span class="pp">$1,000</span>. Every pick carries a wager. Payouts: <span class="pp">4×</span> exact score · <span class="pp">2.5×</span> right result + goal difference · <span class="pp">1.5×</span> right result · <span class="pp">lose stake</span> if wrong.</li>
+      <li>Points are also tracked (<span class="pp">5 / 3 / 2 / 0</span>) for the side standings. Your bank never drops below $10, so you're never out — go all-in to chase the leader.</li>
     </ul>
-    <p class="sub" style="margin-top:8px">Picks lock at kickoff. Create or join a league (Predict tab) to sync everyone's picks live — no website needed.</p>
+    <p class="sub" style="margin-top:8px">Picks and wagers lock and reveal to everyone at kickoff. Share the link to add mates — it all syncs live.</p>
   </div>
+</section>
+
+<section id="board">
+  <h2>Everyone's picks <span class="sub" style="font-weight:400">— scores reveal at kickoff</span></h2>
+  <div class="chips" id="boardChips">
+    <button class="fchip on" data-bfilter="revealed">Revealed &amp; results</button>
+    <button class="fchip" data-bfilter="upcoming">Upcoming</button>
+    <button class="fchip" data-bfilter="all">All</button>
+  </div>
+  <div id="boardList"></div>
 </section>
 
 <section id="admin">
@@ -570,7 +618,7 @@ function computeStandings(){
 async function sbLoadAll(){if(!sb)return;
   try{const [pl,pr,rs]=await Promise.all([
       sb.from('players').select('name'),
-      sb.from('predictions').select('name,match_id,home,away'),
+      sb.from('predictions').select('name,match_id,home,away,stake'),
       sb.from('results').select('match_id,s1,s2,status')]);
     if(pl.error||pr.error||rs.error)throw(pl.error||pr.error||rs.error);
     state.players=(pl.data||[]).map(r=>r.name);
@@ -578,7 +626,7 @@ async function sbLoadAll(){if(!sb)return;
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
       if(!mine&&open)return; // hide opponents' picks until kickoff
-      (preds[r.name]=preds[r.name]||{})[r.match_id]=[r.home,r.away];});
+      (preds[r.name]=preds[r.name]||{})[r.match_id]=[r.home,r.away,r.stake||0];});
     state.preds=preds;
     if(me&&!state.players.includes(me))state.players.push(me);
     if(!state.active||!state.players.includes(state.active))state.active=me||state.players[0]||null;
@@ -596,8 +644,8 @@ function sbSubscribe(){if(!sb)return;
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
-  predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null];
-    try{await sb.from('predictions').upsert({name,match_id:id,home:v[0],away:v[1],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}
+  predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0];
+    try{await sb.from('predictions').upsert({name,match_id:id,home:v[0],away:v[1],stake:v[2]||0,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}
     catch(e){setSaveTag('Could not save pick — will retry',true);}},450);}
 async function sbSetResult(id,s1,s2,status){if(!sb){flash('Local mode — not saved live');return;}
   try{await sb.from('results').upsert({match_id:id,s1,s2,status:status||'FT',updated_at:new Date().toISOString()},{onConflict:'match_id'});flash('Result saved & shared live');}
@@ -620,8 +668,10 @@ function updateLeagueBar(){const el=document.getElementById('leagueCard');if(!el
       <div class="sub">Picks save on this device only. The live link version syncs everyone.</div></div></div>`;return;}
   el.classList.add('live');
   const view=state.active&&state.active!==me?`<span class="viewing">viewing ${state.active}</span>`:'';
+  const b=me?bankOf(me):null;
+  const bank=b?`<span class="bankchip">${fmtMoney(b.bal)}</span>${b.inPlay>0?`<span class="inplay">${fmtMoney(b.inPlay)} in play</span>`:''}`:'';
   el.innerHTML=`<div class="lgrow mebar"><div><div class="lglabel"><span class="livedot"></span>LIVE · playing as ${me||'—'} ${view}</div>
-      <div class="sub">${state.players.length} player${state.players.length===1?'':'s'} in the league. Share the link to add mates.</div></div>
+      <div class="sub">${bank?bank+' · ':''}${state.players.length} player${state.players.length===1?'':'s'} · share the link to add mates.</div></div>
       <div class="lgbtns"><button class="iconbtn" id="copyInvite">Copy invite link</button><button class="iconbtn" id="switchMe">Switch player</button></div></div>`;
   const ci=el.querySelector('#copyInvite');if(ci)ci.onclick=()=>{const msg='Join my World Cup 2026 prediction league: '+inviteLink();navigator.clipboard.writeText(msg).then(()=>flash('Invite link copied — send it to your mates'),()=>flash(inviteLink()));};
   const sw=el.querySelector('#switchMe');if(sw)sw.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;showJoin();};}
@@ -659,6 +709,22 @@ const kickedOff=m=>new Date(m.dt).getTime()<=Date.now()||m.status==='FT'||m.stat
 function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==null||pa==null)return null;
   const ah=m.s1,aa=m.s2;if(ph===ah&&pa===aa)return 5;const pr=Math.sign(ph-pa),ar=Math.sign(ah-aa);
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
+const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
+// ================= MONEY (fantasy wagering) =================
+const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10;
+const multFor=v=>v===5?4:v===3?2.5:v===2?1.5:0;            // payout multiple by points
+const fmtMoney=n=>'$'+Math.round(n).toLocaleString('en-AU');
+function bankOf(p){
+  const preds=state.preds[p]||{};
+  const settled=ALL.filter(m=>isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)
+    .sort((a,b)=>new Date(a.dt)-new Date(b.dt));
+  let bal=START_BAL, won=0, lost=0;
+  settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));
+    const net=pay-stake; if(net>=0)won+=net; else lost+=-net; bal=Math.max(FLOOR,bal+net);});
+  let inPlay=0; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2];});
+  return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost};
+}
+function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
 const AVCOL=['#19e3a6','#4d8bff','#ffd24d','#ff5d77','#b78bff','#ff9d3d','#46d3ff','#9be15d'];
 const avcol=n=>AVCOL[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%AVCOL.length];
 const initials=n=>n.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -754,6 +820,9 @@ function renderBanner(){const w=document.getElementById('bannerWrap');if(!state.
   const pct=open.length?Math.round(done/open.length*100):0;
   w.innerHTML=`<div class="banner">${avatar(p)}<div class="info"><div class="who">Predicting as ${p}</div><div class="sub">${done} of ${open.length} open matches picked</div><div class="progress"><i style="width:${pct}%"></i></div></div></div>`;}
 function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><div class="sv ${set?'set':''}">${set?val:'–'}</div><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
+function wagerCtrl(id,stake){return `<div class="wstrip edit"><span class="wlabel">Wager</span>
+  <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">−</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
+  <span class="wreturn">win up to ${fmtMoney(stake*4)}</span></div>`;}
 function renderPredict(){
   const wrap=document.getElementById('predList');renderBanner();updateLeagueBar();
   if(!state.active){wrap.innerHTML='<div class="empty">Add a player above to start predicting.</div>';return;}
@@ -761,42 +830,77 @@ function renderPredict(){
   const list=filtered().sort((a,b)=>new Date(a.dt)-new Date(b.dt));
   if(!list.length){wrap.innerHTML='<div class="empty">No matches in this view.</div>';return;}
   const canEdit=(!SB_ENABLED)||p===me;
-  wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null];
+  wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0];const stake=pr[2]||0;const picked=hasPick(pr);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
-    let center;
+    let center,strip='';
     if(isFT(m)){const pts=points(pr,m);
-      center=`<div class="result"><div class="rscore">${m.s1}–${m.s2}</div><div class="rft">FULL TIME</div>${pr[0]!=null?`<span class="pillpts ${pts===0?'zero':''}">+${pts} pt${pts===1?'':'s'}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;}
-    else if(locked){center=`<div class="result"><span class="lockbadge">LOCKED</span>${pr[0]!=null?`<span class="yourpick">${canEdit?'your pick':'pick'}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick made</span>'}</div>`;}
+      center=`<div class="result"><div class="rscore">${m.s1}–${m.s2}</div><div class="rft">FULL TIME</div>${picked?`<span class="pillpts ${pts===0?'zero':''}">+${pts} pt${pts===1?'':'s'}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;
+      if(picked&&stake>0){const net=stake*multFor(pts)-stake;
+        strip=`<div class="wstrip ${net>0?'win':net<0?'loss':''}"><span class="wlabel">Wagered ${fmtMoney(stake)}</span><span class="wout">${net>0?'won '+fmtMoney(net):net<0?'lost '+fmtMoney(stake):'stake back'}</span></div>`;}}
+    else if(locked){center=`<div class="result"><span class="lockbadge">LOCKED</span>${picked?`<span class="yourpick">${canEdit?'your pick':'pick'}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick made</span>'}</div>`;
+      if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line</span></div>`;}
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
-    else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;}
+    else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
+      strip=picked?wagerCtrl(m.id,stake):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;}
     return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
-      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div></div>`;}).join('');
-  if(canEdit)wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
-    state.preds[p][id]=state.preds[p][id]||[null,null];let v=state.preds[p][id][s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));
-    state.preds[p][id][s]=v;saveState();renderPredict();
-    if(SB_ENABLED)sbUpsertPred(p,id);});
+      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}</div>`;}).join('');
+  if(canEdit){
+    wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
+      const cur=state.preds[p][id]||[null,null,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
+      if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
+      saveState();renderPredict();if(SB_ENABLED)sbUpsertPred(p,id);});
+    wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
+      let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));cur[2]=v;
+      saveState();renderPredict();if(SB_ENABLED)sbUpsertPred(p,id);});}
 }
-document.querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
+document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
+document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();});
 document.getElementById('addPlayer').onclick=addPlayer;
 document.getElementById('newPlayer').addEventListener('keydown',e=>{if(e.key==='Enter')addPlayer();});
 
 // ================= LEADERBOARD =================
 function totals(){return state.players.map(p=>{let pts=0,exact=0,correct=0,played=0;
   ALL.forEach(m=>{const v=points((state.preds[p]||{})[m.id],m);if(v!=null){played++;pts+=v;if(v===5)exact++;if(v>=2)correct++;}});
-  return{p,pts,exact,correct,played};}).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);}
+  const b=bankOf(p);return{p,pts,exact,correct,played,bal:b.bal,inPlay:b.inPlay,won:b.won,lost:b.lost};})
+  .sort((a,b)=>b.bal-a.bal||b.pts-a.pts);}
 function renderLeaderboard(){
   const pw=document.getElementById('podiumWrap'),cw=document.getElementById('chartWrap'),tw=document.getElementById('tableWrap');
   if(!state.players.length){pw.innerHTML='';cw.innerHTML='<div class="empty">Add players and make predictions to see standings.</div>';tw.innerHTML='';return;}
   const t=totals();const ord=[t[1],t[0],t[2]].filter(Boolean);const rcls={1:'first',2:'second',3:'third'};const mcol={1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   pw.innerHTML='<div class="podium">'+ord.map(x=>{const rk=x===t[0]?1:x===t[1]?2:3;
-    return `<div class="pod ${rcls[rk]}"><span class="medal" style="background:${mcol[rk]}">${rk}</span>${avatar(x.p)}<span class="nm">${x.p}</span><div class="pedestal"><span class="pts">${x.pts}</span><span class="plc">${rk===1?'1st':rk===2?'2nd':'3rd'}</span></div></div>`;}).join('')+'</div>';
-  const max=Math.max(10,...t.map(x=>x.pts));
-  cw.innerHTML='<h3 style="margin-bottom:14px">Points</h3>'+t.map((x,i)=>`<div class="bar ${i===0&&x.pts>0?'lead':''}">${avatar(x.p)}<span class="nm">${x.p}</span><span class="track"><span class="fill" style="width:${Math.max(7,x.pts/max*100)}%">${x.pts}</span></span></div>`).join('');
-  tw.innerHTML='<h3 style="margin-bottom:8px">Breakdown</h3><table><thead><tr><th class="l">Player</th><th>Pts</th><th>Exact</th><th>Right result</th><th>Scored</th></tr></thead><tbody>'+
-    t.map(x=>`<tr><td class="l"><span class="nmcell">${avatar(x.p)}${x.p}</span></td><td><b>${x.pts}</b></td><td>${x.exact}</td><td>${x.correct}</td><td>${x.played}</td></tr>`).join('')+'</tbody></table>'+
-    (t.every(x=>x.played===0)?'<div class="sub" style="margin-top:10px">Points appear once predicted matches are played.</div>':'');
+    return `<div class="pod ${rcls[rk]}"><span class="medal" style="background:${mcol[rk]}">${rk}</span>${avatar(x.p)}<span class="nm">${x.p}</span><div class="pedestal"><span class="pts money">${fmtMoney(x.bal)}</span><span class="plc">${rk===1?'1st':rk===2?'2nd':'3rd'}</span></div></div>`;}).join('')+'</div>';
+  const max=Math.max(START_BAL,...t.map(x=>x.bal));
+  cw.innerHTML='<h3 style="margin-bottom:14px">The Bank</h3>'+t.map((x,i)=>`<div class="bar ${i===0?'lead':''}">${avatar(x.p)}<span class="nm">${x.p}</span><span class="track"><span class="fill" style="width:${Math.max(10,x.bal/max*100)}%">${fmtMoney(x.bal)}</span></span></div>`).join('');
+  tw.innerHTML='<h3 style="margin-bottom:8px">Breakdown</h3><table><thead><tr><th class="l">Player</th><th>Bank</th><th>In play</th><th>Pts</th><th>Exact</th><th>Won</th></tr></thead><tbody>'+
+    t.map(x=>`<tr><td class="l"><span class="nmcell">${avatar(x.p)}${x.p}</span></td><td><b>${fmtMoney(x.bal)}</b></td><td>${x.inPlay>0?fmtMoney(x.inPlay):'—'}</td><td>${x.pts}</td><td>${x.exact}</td><td>${x.won>0?fmtMoney(x.won):'—'}</td></tr>`).join('')+'</tbody></table>'+
+    (t.every(x=>x.played===0)?'<div class="sub" style="margin-top:10px">Everyone starts at '+fmtMoney(START_BAL)+'. Bank moves once your wagered matches are played.</div>':'');
 }
 
+// ================= EVERYONE'S PICKS BOARD =================
+let boardFilter='revealed';
+function boardMatches(){
+  if(boardFilter==='upcoming')return ALL.filter(m=>!kickedOff(m)).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(0,30);
+  if(boardFilter==='all')return ALL.slice().sort((a,b)=>new Date(b.dt)-new Date(a.dt));
+  return ALL.filter(m=>kickedOff(m)).sort((a,b)=>new Date(b.dt)-new Date(a.dt)).slice(0,40);
+}
+function renderBoard(){
+  const el=document.getElementById('boardList');if(!el)return;
+  const list=boardMatches();
+  if(!list.length){el.innerHTML='<div class="empty">Nothing to show here yet.</div>';return;}
+  el.innerHTML=list.map(m=>{const revealed=kickedOff(m),ft=isFT(m);
+    const head=`<div class="mtop"><span class="gt">${m.ko?m.mno:'GRP '+m.group}</span><span class="tm">${ft?'FT · '+m.s1+'–'+m.s2:tcard(m.dt)}</span></div>`;
+    const teams=`<div class="bteams"><span class="bt r">${m.t1} ${badge(m.t1)}</span><span class="bvs">v</span><span class="bt">${badge(m.t2)} ${m.t2}</span></div>`;
+    let body;
+    if(!revealed){const mine=(state.preds[me]||{})[m.id];
+      body=`<div class="bhidden"><span class="lockbadge">HIDDEN</span> picks reveal at kickoff${hasPick(mine)?` · your pick <b>${mine[0]}–${mine[1]}</b> (${fmtMoney(mine[2]||0)})`:''}</div>`;
+    }else{
+      const rows=state.players.map(pl=>{const pr=(state.preds[pl]||{})[m.id];if(!hasPick(pr))return '';const stake=pr[2]||0;let res='';
+        if(ft){const pts=points(pr,m),net=stake*multFor(pts)-stake;
+          res=`<span class="pillpts ${pts===0?'zero':''}">+${pts}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'+'+fmtMoney(net):net<0?'−'+fmtMoney(stake):'—'}</span>`;}
+        return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
+      body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
+    return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div></div>`;}).join('');
+}
 // ================= SAVE / LOAD (file backup) =================
 document.getElementById('saveBtn').onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wc2026-predictions.json';a.click();flash('Backup downloaded');};
 document.getElementById('loadBtn').onclick=()=>document.getElementById('fileInput').click();
@@ -815,7 +919,7 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
 document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
-function renderAll(){computeStandings();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderLeaderboard();statusLine();updateLeagueBar();}
+function renderAll(){computeStandings();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderLeaderboard();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
