@@ -308,9 +308,10 @@
   .quizc.locked{opacity:.6;border-style:dashed}
   /* over/under */
   .wstrip.ou .outog{display:flex;gap:8px}
-  .oubtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
-  .oubtn:hover{border-color:var(--acc2);color:var(--acc2)}
-  .oubtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
+  .oubtn,.bbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .oubtn:hover,.bbtn:hover{border-color:var(--acc2);color:var(--acc2)}
+  .oubtn.on,.bbtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
+  .gbname{font-weight:700;font-size:13px}
   .bou{border-top:1px solid var(--line);padding:9px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
   .boulabel{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.3px;margin-right:4px}
   .oubadges{display:flex;flex-wrap:wrap;gap:6px}
@@ -645,7 +646,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{}};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -655,7 +656,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-20-c';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-20-d';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -681,16 +682,16 @@ function computeStandings(){
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
   try{const [pl,pr,rs,qz,sp]=await Promise.all([
-      sb.from('players').select('name,champion'),
+      sb.from('players').select('name,champion,topscorer'),
       sb.from('predictions').select('name,match_id,home,away,stake'),
       sb.from('results').select('match_id,s1,s2,status'),
       sb.from('quiz').select('name,qid,choice'),
-      sb.from('sidepicks').select('name,match_id,ou')]);
+      sb.from('sidepicks').select('name,match_id,ou,btts')]);
     if(pl.error||pr.error||rs.error)throw(pl.error||pr.error||rs.error);
     state.players=(pl.data||[]).map(r=>r.name);
-    state.champion={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;});
+    state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]=r.ou;});
+    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts};});
     applyResults(rs.data);computeStandings();
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
@@ -716,7 +717,8 @@ function sbSubscribe(){if(!sb)return;
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
 async function sbSetChampion(name,team){if(!sb)return;try{await sb.from('players').upsert({name,champion:team},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz').upsert({name,qid,choice,updated_at:new Date().toISOString()},{onConflict:'name,qid'});}catch(e){flash('Could not save answer');}}
-async function sbSetOU(name,id,ou){if(!sb)return;try{await sb.from('sidepicks').upsert({name,match_id:id,ou,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
+async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
+async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0];
@@ -786,9 +788,12 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
-const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40;
-const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';   // Over/Under 2.5 goals from the final score
-function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{if(isFT(m)&&sp[m.id]&&sp[m.id]===ouResult(m))t+=OU_BONUS;});return t;}
+const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400;
+const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
+const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
+function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
+function goldenBoot(){const f=knockout.find(k=>k.round==='FINAL');if(!f||!isFT(f))return null;const s=scorers.slice().sort((a,b)=>b[2]-a[2]);return s.length?s[0][0]:null;}
+function topscorerWon(p){const w=goldenBoot();return (w&&state.topscorer[p]===w)?GB_BONUS:0;}
 const multFor=v=>v===5?4:v===3?2.5:v===2?1.5:0;            // payout multiple by points
 const fmtMoney=n=>'$'+Math.round(n).toLocaleString('en-AU');
 // fun side quizzes — correct answers pay out cash (also the way to claw back when you're low)
@@ -824,7 +829,7 @@ function bankOf(p){
   let bal=START_BAL, won=0, lost=0;
   settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));
     const net=pay-stake; if(net>=0)won+=net; else lost+=-net; bal=Math.max(FLOOR,bal+net);});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p);bal+=qw+cw+ow;won+=qw+cw+ow;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p);bal+=qw+cw+ow+tw;won+=qw+cw+ow+tw;
   let inPlay=0; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2];});
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw};
 }
@@ -936,7 +941,7 @@ function renderPredict(){
   const canEdit=(!SB_ENABLED)||p===me;
   wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0];const stake=pr[2]||0;const picked=hasPick(pr);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
-    let center,strip='',oustrip='';const oupick=(state.sidepicks[p]||{})[m.id];
+    let center,strip='',oustrip='';const sidep=(state.sidepicks[p]||{})[m.id]||{},oupick=sidep.ou,bpick=sidep.btts;
     if(isFT(m)){const pts=points(pr,m);
       center=`<div class="result"><div class="rscore">${m.s1}–${m.s2}</div><div class="rft">FULL TIME</div>${picked?`<span class="pillpts ${pts===0?'zero':''}">+${pts} pt${pts===1?'':'s'}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;
       if(picked&&stake>0){const net=stake*multFor(pts)-stake;
@@ -946,9 +951,13 @@ function renderPredict(){
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
       strip=picked?wagerCtrl(m.id,stake):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;}
-    if(isFT(m)){if(oupick){const ok=oupick===ouResult(m);oustrip=`<div class="wstrip ${ok?'win':'loss'}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span><span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span></div>`;}}
-    else if(locked){if(oupick)oustrip=`<div class="wstrip"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5 · locked</span></div>`;}
-    else if(canEdit){oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)} if right</span></div>`;}
+    if(canEdit&&!locked){
+      oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)}</span></div>`
+        +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes</button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No</button></div><span class="wreturn">+${fmtMoney(BTTS_BONUS)}</span></div>`;
+    }else{
+      if(oupick){const r=isFT(m)?ouResult(m):null,ok=r&&oupick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
+      if(bpick){const r=isFT(m)?bttsResult(m):null,ok=r&&bpick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
+    }
     return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
       <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}</div>`;}).join('');
   if(canEdit){
@@ -959,9 +968,10 @@ function renderPredict(){
     wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
       let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));cur[2]=v;
       saveState();renderPredict();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
-    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;state.sidepicks[p]=state.sidepicks[p]||{};
-      const nv=state.sidepicks[p][id]===v?null:v;if(nv)state.sidepicks[p][id]=nv;else delete state.sidepicks[p][id];
-      if(SB_ENABLED)sbSetOU(p,id,nv);renderPredict();renderLeaderboard();updateLeagueBar();});}
+    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.ou=o.ou===v?null:v;
+      if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
+    wrap.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.btts=o.btts===v?null:v;
+      if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});}
 }
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
 document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();});
@@ -1022,9 +1032,11 @@ function renderBoard(){
           res=`<span class="pillpts ${pts===0?'zero':''}">+${pts}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'+'+fmtMoney(net):net<0?'−'+fmtMoney(stake):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
-    const oup=state.players.map(pl=>{const o=(state.sidepicks[pl]||{})[m.id];if(!o)return '';const ok=ft&&o===ouResult(m);
-      return `<span class="oubadge ${ft?(ok?'win':'loss'):''}">${avatar(pl)} ${o==='O'?'O 2.5':'U 2.5'}</span>`;}).filter(Boolean).join('');
-    const ouSec=oup?`<div class="bou"><span class="boulabel">Total goals${ft?' · '+(m.s1+m.s2)+' goals → '+(ouResult(m)==='O'?'Over':'Under'):' (shown to all)'}</span><div class="oubadges">${oup}</div></div>`:'';
+    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];if(!s||(!s.ou&&!s.btts))return '';
+      const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${s.ou==='O'?'Over 2.5':'Under 2.5'}</span>`:'';
+      const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">BTTS ${s.btts}</span>`:'';
+      return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}</div>`;}).filter(Boolean).join('');
+    const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
     return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
 }
 // ================= SIDE BETS (champion pick + quizzes) =================
@@ -1036,8 +1048,16 @@ function renderSidebets(){
   const picks=state.players.map(pl=>{const c=state.champion[pl];if(!c)return '';const ok=fw&&c===fw;
     return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badge(c)}${fw?(ok?'<span class="bnet win">+'+fmtMoney(CHAMP_BONUS)+'</span>':'<span class="bnet loss">missed</span>'):''}</div>`;}).filter(Boolean).join('');
   if(picks)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${picks}`;
+  // Golden Boot pick (top scorer of the tournament)
+  const gbW=goldenBoot();const sc=scorers.slice().sort((a,b)=>b[2]-a[2]);const myGB=me?state.topscorer[me]:null;
+  html+=`<div style="border-top:1px solid var(--line);margin:18px 0"></div><h3 style="margin-bottom:6px">⚽ Golden Boot pick</h3><p class="sub" style="margin-bottom:12px">Call the tournament's top scorer — ${fmtMoney(GB_BONUS)} bonus. ${gbW?'Winner: <b>'+gbW+'</b>':'Resolves at the final. Pick from the current scorers.'}</p>`;
+  if(me)html+=`<div class="champrow"><span class="wlabel">Your pick</span><select id="gbSel" ${gbW?'disabled':''}><option value="">— choose a scorer —</option>${sc.map(s=>`<option value="${s[0]}" ${s[0]===myGB?'selected':''}>${s[0]} · ${s[1]} · ${s[2]}g</option>`).join('')}</select></div>`;
+  const gbp=state.players.map(pl=>{const c=state.topscorer[pl];if(!c)return '';const ok=gbW&&c===gbW;
+    return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="gbname">${c}</span>${gbW?(ok?'<span class="bnet win">+'+fmtMoney(GB_BONUS)+'</span>':'<span class="bnet loss">missed</span>'):''}</div>`;}).filter(Boolean).join('');
+  if(gbp)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${gbp}`;
   cw.innerHTML=html;
   const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{state.champion[me]=sel.value;if(SB_ENABLED)sbSetChampion(me,sel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
+  const gsel=document.getElementById('gbSel');if(gsel)gsel.onchange=()=>{state.topscorer[me]=gsel.value;if(SB_ENABLED)sbSetTopScorer(me,gsel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
   const qa=me?(state.quiz[me]||{}):{};
   const unlocked=me?quizUnlocked(me):0;
   const answered=QUIZ.filter(q=>qa[q.id]!=null).length;
