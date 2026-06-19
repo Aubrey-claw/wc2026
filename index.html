@@ -312,6 +312,12 @@
   .oubtn:hover,.bbtn:hover{border-color:var(--acc2);color:var(--acc2)}
   .oubtn.on,.bbtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
   .gbname{font-weight:700;font-size:13px}
+  .scsel{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-size:12.5px;font-weight:600;max-width:220px}
+  .scsel:focus{outline:none;border-color:var(--acc2)}
+  .adminrow{flex-direction:column;align-items:stretch;gap:8px}
+  .adminrow .artop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ascorers{width:100%;text-align:left;font-weight:600;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-size:12.5px}
+  .ascorers:focus{outline:none;border-color:var(--acc)}
   .bou{border-top:1px solid var(--line);padding:9px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
   .boulabel{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.3px;margin-right:4px}
   .oubadges{display:flex;flex-wrap:wrap;gap:6px}
@@ -612,6 +618,7 @@ const FLAG={'Mexico':'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰�
   'Iran':'🇮🇷','New Zealand':'🇳🇿','France':'🇫🇷','Senegal':'🇸🇳','Norway':'🇳🇴','Iraq':'🇮🇶','Argentina':'🇦🇷','Algeria':'🇩🇿',
   'Austria':'🇦🇹','Jordan':'🇯🇴','Portugal':'🇵🇹','DR Congo':'🇨🇩','Colombia':'🇨🇴','Uzbekistan':'🇺🇿','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Croatia':'🇭🇷',
   'Ghana':'🇬🇭','Panama':'🇵🇦'};
+const SQUAD={"Mexico":["Santiago Gimenez","Raul Jimenez","Hirving Lozano","Alexis Vega","Cesar Huerta"],"South Africa":["Percy Tau","Lyle Foster","Themba Zwane","Evidence Makgopa","Mihlali Mayambela"],"South Korea":["Son Heung-min","Lee Kang-in","Hwang Hee-chan","Cho Gue-sung","Oh Hyeon-gyu"],"Czech Republic":["Patrik Schick","Adam Hlozek","Tomas Soucek","Mojmir Chytil","Vaclav Cerny"],"Canada":["Jonathan David","Alphonso Davies","Cyle Larin","Tajon Buchanan","Jacob Shaffelburg"],"Bosnia & Herzegovina":["Edin Dzeko","Ermedin Demirovic","Smail Prevljak","Said Hamulic","Dzenis Burnic"],"Qatar":["Almoez Ali","Akram Afif","Hassan Al-Haydos","Yusuf Abdurisag","Ahmed Alaaeldin"],"Switzerland":["Breel Embolo","Dan Ndoye","Ruben Vargas","Xherdan Shaqiri","Zeki Amdouni"],"United States":["Christian Pulisic","Folarin Balogun","Ricardo Pepi","Timothy Weah","Gio Reyna"],"Paraguay":["Miguel Almiron","Antonio Sanabria","Julio Enciso","Adam Bareiro","Diego Gomez"],"Brazil":["Vinicius Junior","Rodrygo","Raphinha","Endrick","Gabriel Jesus"],"Morocco":["Achraf Hakimi","Hakim Ziyech","Youssef En-Nesyri","Brahim Diaz","Ayoub El Kaabi"],"Haiti":["Frantzdy Pierrot","Duckens Nazon","Danley Jean Jacques","Jean-Kevin Augustin","Derrick Etienne"],"Scotland":["Che Adams","Lyndon Dykes","John McGinn","Scott McTominay","Ryan Christie"],"Australia":["Mathew Leckie","Mitchell Duke","Jackson Irvine","Craig Goodwin","Kusini Yengi"],"Turkey":["Arda Guler","Kenan Yildiz","Hakan Calhanoglu","Baris Alper Yilmaz","Kerem Akturkoglu"],"Germany":["Florian Wirtz","Jamal Musiala","Kai Havertz","Niclas Fullkrug","Serge Gnabry"],"Curaçao":["Leandro Bacuna","Tahith Chong","Juninho Bacuna","Cuco Martina","Sontje Hansen"],"Ivory Coast":["Sebastien Haller","Nicolas Pepe","Wilfried Zaha","Simon Adingra","Franck Kessie"],"Ecuador":["Enner Valencia","Kendry Paez","Gonzalo Plata","Jeremy Sarmiento","Kevin Rodriguez"],"Netherlands":["Memphis Depay","Cody Gakpo","Donyell Malen","Xavi Simons","Wout Weghorst"],"Japan":["Takefusa Kubo","Kaoru Mitoma","Daizen Maeda","Ayase Ueda","Takumi Minamino"],"Sweden":["Alexander Isak","Viktor Gyokeres","Dejan Kulusevski","Anthony Elanga","Emil Forsberg"],"Tunisia":["Youssef Msakni","Wahbi Khazri","Hannibal Mejbri","Naim Sliti","Elias Achouri"],"Spain":["Lamine Yamal","Nico Williams","Alvaro Morata","Mikel Oyarzabal","Dani Olmo"],"Cape Verde":["Ryan Mendes","Garry Rodrigues","Bryan Teixeira","Gilson Tavares","Jamiro Monteiro"],"Belgium":["Romelu Lukaku","Kevin De Bruyne","Jeremy Doku","Leandro Trossard","Loic Openda"],"Egypt":["Mohamed Salah","Omar Marmoush","Trezeguet","Mostafa Mohamed","Mahmoud Hassan"],"Saudi Arabia":["Salem Al-Dawsari","Firas Al-Buraikan","Saleh Al-Shehri","Abdullah Al-Hamdan","Feras Al-Brikan"],"Uruguay":["Darwin Nunez","Federico Valverde","Facundo Pellistri","Maxi Araujo","Brian Rodriguez"],"Iran":["Mehdi Taremi","Sardar Azmoun","Alireza Jahanbakhsh","Karim Ansarifard","Mehdi Ghayedi"],"New Zealand":["Chris Wood","Ben Waine","Kosta Barbarouses","Elijah Just","Marko Stamenic"],"France":["Kylian Mbappe","Ousmane Dembele","Marcus Thuram","Bradley Barcola","Michael Olise"],"Senegal":["Sadio Mane","Nicolas Jackson","Ismaila Sarr","Boulaye Dia","Iliman Ndiaye"],"Norway":["Erling Haaland","Martin Odegaard","Alexander Sorloth","Antonio Nusa","Oscar Bobb"],"Iraq":["Aymen Hussein","Mohanad Ali","Ali Al-Hamadi","Zidane Iqbal","Amjad Attwan"],"Argentina":["Lionel Messi","Julian Alvarez","Lautaro Martinez","Angel Di Maria","Giuliano Simeone"],"Algeria":["Riyad Mahrez","Islam Slimani","Baghdad Bounedjah","Amine Gouiri","Mohamed Amoura"],"Austria":["Marcel Sabitzer","Michael Gregoritsch","Marko Arnautovic","Christoph Baumgartner","Patrick Wimmer"],"Jordan":["Mousa Al-Tamari","Yazan Al-Naimat","Ali Olwan","Mahmoud Al-Mardi","Mohammad Abu Hashish"],"Portugal":["Cristiano Ronaldo","Bruno Fernandes","Rafael Leao","Goncalo Ramos","Bernardo Silva"],"DR Congo":["Cedric Bakambu","Yoane Wissa","Silas Katompa","Meschack Elia","Fiston Mayele"],"Colombia":["Luis Diaz","James Rodriguez","Jhon Duran","Rafael Santos Borre","Jhon Cordoba"],"Uzbekistan":["Eldor Shomurodov","Igor Sergeev","Abbosbek Fayzullaev","Jaloliddin Masharipov","Oston Urunov"],"England":["Harry Kane","Bukayo Saka","Phil Foden","Cole Palmer","Jude Bellingham"],"Croatia":["Andrej Kramaric","Bruno Petkovic","Ante Budimir","Mario Pasalic","Lovro Majer"],"Ghana":["Mohammed Kudus","Inaki Williams","Jordan Ayew","Antoine Semenyo","Kamaldeen Sulemana"],"Panama":["Jose Fajardo","Cecilio Waterman","Ismael Diaz","Eric Davis","Cesar Yanis"]};
 function lum(hex){const n=parseInt(hex.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;return .299*r+.587*g+.114*b;}
 function badge(team,big){
   const m=TEAM[team];
@@ -656,7 +663,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-20-d';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-20-e';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -672,6 +679,7 @@ function markPending(id){const v=(state.preds[me]||{})[id];if(!v)return;pendingM
 
 function findMatch(id){return ALL.find(m=>m.id===id);}
 function applyResults(rows){(rows||[]).forEach(r=>{const m=findMatch(r.match_id);if(!m)return;
+  m.scorers=(r.scorers||'').split(',').map(s=>s.trim()).filter(Boolean);
   if(r.s1==null||r.s2==null)return;m.s1=r.s1;m.s2=r.s2;m.status=r.status||'FT';});}
 function computeStandings(){
   for(const g in standings){const teams={};
@@ -684,14 +692,14 @@ async function sbLoadAll(){if(!sb)return;
   try{const [pl,pr,rs,qz,sp]=await Promise.all([
       sb.from('players').select('name,champion,topscorer'),
       sb.from('predictions').select('name,match_id,home,away,stake'),
-      sb.from('results').select('match_id,s1,s2,status'),
+      sb.from('results').select('match_id,s1,s2,status,scorers'),
       sb.from('quiz').select('name,qid,choice'),
-      sb.from('sidepicks').select('name,match_id,ou,btts')]);
+      sb.from('sidepicks').select('name,match_id,ou,btts,scorer')]);
     if(pl.error||pr.error||rs.error)throw(pl.error||pr.error||rs.error);
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts};});
+    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts||r.scorer)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer};});
     applyResults(rs.data);computeStandings();
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
@@ -717,15 +725,15 @@ function sbSubscribe(){if(!sb)return;
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
 async function sbSetChampion(name,team){if(!sb)return;try{await sb.from('players').upsert({name,champion:team},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz').upsert({name,qid,choice,updated_at:new Date().toISOString()},{onConflict:'name,qid'});}catch(e){flash('Could not save answer');}}
-async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
+async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0];
     try{await sb.from('predictions').upsert({name,match_id:id,home:v[0],away:v[1],stake:v[2]||0,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}
     catch(e){setSaveTag('Could not save pick — will retry',true);}},450);}
-async function sbSetResult(id,s1,s2,status){if(!sb){flash('Local mode — not saved live');return;}
-  try{await sb.from('results').upsert({match_id:id,s1,s2,status:status||'FT',updated_at:new Date().toISOString()},{onConflict:'match_id'});flash('Result saved & shared live');}
+async function sbSetResult(id,s1,s2,status,scorers){if(!sb){flash('Local mode — not saved live');return;}
+  try{await sb.from('results').upsert({match_id:id,s1,s2,status:status||'FT',scorers:scorers||null,updated_at:new Date().toISOString()},{onConflict:'match_id'});flash('Result saved & shared live');}
   catch(e){flash('Could not save result');}}
 
 const inviteLink=()=>location.href.split('?')[0];
@@ -768,17 +776,19 @@ function renderAdmin(){const el=document.getElementById('adminList');if(!el)retu
   const list=adminMatches().sort((a,b)=>new Date(a.dt)-new Date(b.dt));
   if(!list.length){el.innerHTML='<div class="empty">No matches in this view.</div>';return;}
   el.innerHTML=list.map(m=>{const done=isFT(m);const tag=m.ko?m.mno:'GRP '+m.group;
-    return `<div class="adminrow ${done?'done':''}" data-id="${m.id}"><span class="gt">${tag}</span>
+    return `<div class="adminrow ${done?'done':''}" data-id="${m.id}"><div class="artop"><span class="gt">${tag}</span>
       <span class="am1">${m.t1} ${badge(m.t1)}</span>
       <input type="number" min="0" max="30" class="as1" value="${m.s1!=null?m.s1:''}" placeholder="–">
       <input type="number" min="0" max="30" class="as2" value="${m.s2!=null?m.s2:''}" placeholder="–">
       <span class="am2">${badge(m.t2)} ${m.t2}</span>
-      <button class="asave">${done?'Update':'Save FT'}</button></div>`;}).join('');
+      <button class="asave">${done?'Update':'Save FT'}</button></div>
+      <input type="text" class="ascorers" placeholder="goalscorers, comma-separated (for scorer bets)" value="${(m.scorers||[]).join(', ')}"></div>`;}).join('');
   el.querySelectorAll('.adminrow').forEach(row=>{row.querySelector('.asave').onclick=()=>{
     const id=row.dataset.id,s1=parseInt(row.querySelector('.as1').value,10),s2=parseInt(row.querySelector('.as2').value,10);
     if(isNaN(s1)||isNaN(s2)){flash('Enter both scores');return;}
-    const m=findMatch(id);if(m){m.s1=s1;m.s2=s2;m.status='FT';}computeStandings();
-    sbSetResult(id,s1,s2,'FT');renderAll();renderAdmin();};});}
+    const scorers=row.querySelector('.ascorers').value.trim();
+    const m=findMatch(id);if(m){m.s1=s1;m.s2=s2;m.status='FT';m.scorers=scorers?scorers.split(',').map(s=>s.trim()).filter(Boolean):[];}computeStandings();
+    sbSetResult(id,s1,s2,'FT',scorers);renderAll();renderAdmin();};});}
 
 // ================= HELPERS =================
 const isFT=m=>m.status==='FT'&&m.s1!=null&&m.s2!=null;
@@ -788,7 +798,8 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
-const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400;
+const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80;
+function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&(m.scorers||[]).includes(s.scorer))t+=SCORER_BONUS;});return t;}
 const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
 const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
 function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
@@ -829,7 +840,7 @@ function bankOf(p){
   let bal=START_BAL, won=0, lost=0;
   settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));
     const net=pay-stake; if(net>=0)won+=net; else lost+=-net; bal=Math.max(FLOOR,bal+net);});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p);bal+=qw+cw+ow+tw;won+=qw+cw+ow+tw;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p);bal+=qw+cw+ow+tw+sw;won+=qw+cw+ow+tw+sw;
   let inPlay=0; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2];});
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw};
 }
@@ -951,12 +962,15 @@ function renderPredict(){
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
       strip=picked?wagerCtrl(m.id,stake):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;}
+    const spick=sidep.scorer,cands=[...(SQUAD[m.t1]||[]),...(SQUAD[m.t2]||[])];
     if(canEdit&&!locked){
       oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)}</span></div>`
-        +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes</button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No</button></div><span class="wreturn">+${fmtMoney(BTTS_BONUS)}</span></div>`;
+        +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes</button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No</button></div><span class="wreturn">+${fmtMoney(BTTS_BONUS)}</span></div>`
+        +(cands.length?`<div class="wstrip ou"><span class="wlabel">Anytime scorer</span><select class="scsel" data-sc="${m.id}"><option value="">— pick a scorer —</option>${cands.map(pn=>`<option value="${pn}" ${spick===pn?'selected':''}>${pn}</option>`).join('')}</select><span class="wreturn">+${fmtMoney(SCORER_BONUS)}</span></div>`:'');
     }else{
       if(oupick){const r=isFT(m)?ouResult(m):null,ok=r&&oupick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
       if(bpick){const r=isFT(m)?bttsResult(m):null,ok=r&&bpick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
+      if(spick){const r=isFT(m),ok=r&&(m.scorers||[]).includes(spick);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
     return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
       <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}</div>`;}).join('');
@@ -971,6 +985,8 @@ function renderPredict(){
     wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.ou=o.ou===v?null:v;
       if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
     wrap.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.btts=o.btts===v?null:v;
+      if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
+    wrap.querySelectorAll('.scsel').forEach(s=>s.onchange=()=>{const id=s.dataset.sc;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scorer=s.value||null;
       if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});}
 }
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
@@ -1032,10 +1048,11 @@ function renderBoard(){
           res=`<span class="pillpts ${pts===0?'zero':''}">+${pts}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'+'+fmtMoney(net):net<0?'−'+fmtMoney(stake):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
-    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];if(!s||(!s.ou&&!s.btts))return '';
+    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];if(!s||(!s.ou&&!s.btts&&!s.scorer))return '';
       const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${s.ou==='O'?'Over 2.5':'Under 2.5'}</span>`:'';
       const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">BTTS ${s.btts}</span>`:'';
-      return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}</div>`;}).filter(Boolean).join('');
+      const sc=s.scorer?`<span class="oubadge ${ft?((m.scorers||[]).includes(s.scorer)?'win':'loss'):''}">⚽ ${s.scorer}</span>`:'';
+      return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
     const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
     return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
 }
