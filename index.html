@@ -305,6 +305,9 @@
   .qopt.sel{background:var(--acc);color:#04121f;border-color:var(--acc)}
   .qopt:disabled{cursor:default;opacity:.85}
   .qres{margin-top:10px;font-size:12.5px;font-weight:800}.qres.win{color:var(--acc)}.qres.loss{color:var(--live)}
+  .quizc.locked{opacity:.6;border-style:dashed}
+  .tab.notify{position:relative}
+  .tab.notify::after{content:'';position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--bg);animation:lpulse 1.3s ease-in-out infinite}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -779,6 +782,9 @@ const QUIZ=[
 ];
 function finalWinner(){const f=knockout.find(k=>k.round==='FINAL');if(!f||!isFT(f))return null;return f.s1>f.s2?f.t1:f.s2>f.s1?f.t2:null;}
 function quizWon(p){const qa=state.quiz[p]||{};let t=0;QUIZ.forEach(q=>{if(qa[q.id]===q.a)t+=q.reward;});return t;}
+function lossesOf(p){const preds=state.preds[p]||{};let n=0;ALL.forEach(m=>{if(isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0){const s=preds[m.id][2];if(s*multFor(points(preds[m.id],m))-s<0)n++;}});return n;}
+function quizUnlocked(p){return Math.min(QUIZ.length,lossesOf(p));}  // one comeback quiz per losing wager
+let quizSeen=0;try{quizSeen=+localStorage.getItem('wc2026-quizseen')||0;}catch(e){}
 function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?CHAMP_BONUS:0;}
 function bankOf(p){
   const preds=state.preds[p]||{};
@@ -993,13 +999,23 @@ function renderSidebets(){
   cw.innerHTML=html;
   const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{state.champion[me]=sel.value;if(SB_ENABLED)sbSetChampion(me,sel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
   const qa=me?(state.quiz[me]||{}):{};
-  qw.innerHTML='<h3 style="margin-bottom:6px">Quiz cash</h3><p class="sub" style="margin-bottom:12px">Answer for instant cash, one shot each. Low on funds? This is your way back in.</p>'+
-    QUIZ.map(q=>{const ans=qa[q.id];const done=ans!=null;const correct=ans===q.a;
-      return `<div class="quizc ${done?(correct?'correct':'wrong'):''}"><div class="qq">${q.q} <span class="qr">${fmtMoney(q.reward)}</span></div>
-        <div class="qopts">${q.opts.map(o=>`<button class="qopt ${ans===o?'sel':''}" data-q="${q.id}" data-o="${o}" ${done?'disabled':''}>${o}</button>`).join('')}</div>
-        ${done?`<div class="qres ${correct?'win':'loss'}">${correct?'Correct — won '+fmtMoney(q.reward):'Not quite — answer was '+q.a}</div>`:''}</div>`;}).join('');
+  const unlocked=me?quizUnlocked(me):0;
+  const answered=QUIZ.filter(q=>qa[q.id]!=null).length;
+  const available=Math.max(0,unlocked-answered);
+  // notify once when a fresh comeback quiz unlocks (a wager just went against you)
+  if(me&&unlocked>quizSeen){if(quizSeen>0||answered<unlocked)flash('Tough break — a comeback quiz unlocked!');quizSeen=unlocked;try{localStorage.setItem('wc2026-quizseen',unlocked);}catch(e){}}
+  const tab=document.querySelector('#tabs .tab[data-tab="sidebets"]');if(tab)tab.classList.toggle('notify',available>0);
+  let q='<h3 style="margin-bottom:6px">Comeback quizzes</h3><p class="sub" style="margin-bottom:12px">';
+  q+=available>0?`You've got <b>${available}</b> comeback question${available===1?'':'s'} to play — win cash back.`:(unlocked>=QUIZ.length?'All comeback quizzes used.':'A comeback quiz unlocks each time a wager goes against you. Lose one and a question appears here.');
+  q+='</p>';
+  q+=QUIZ.map((qz,i)=>{const ans=qa[qz.id];const done=ans!=null;const correct=ans===qz.a;const open=i<unlocked;
+    if(!done&&!open)return `<div class="quizc locked"><div class="qq">🔒 Locked comeback question <span class="qr">${fmtMoney(qz.reward)}</span></div><div class="qres" style="color:var(--mut);font-weight:600">Unlocks when a wager doesn't go your way.</div></div>`;
+    return `<div class="quizc ${done?(correct?'correct':'wrong'):''}"><div class="qq">${qz.q} <span class="qr">${fmtMoney(qz.reward)}</span></div>
+      <div class="qopts">${qz.opts.map(o=>`<button class="qopt ${ans===o?'sel':''}" data-q="${qz.id}" data-o="${o}" ${done?'disabled':''}>${o}</button>`).join('')}</div>
+      ${done?`<div class="qres ${correct?'win':'loss'}">${correct?'Correct — won '+fmtMoney(qz.reward):'Not quite — answer was '+qz.a}</div>`:''}</div>`;}).join('');
+  qw.innerHTML=q;
   if(me)qw.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>{const qid=b.dataset.q,o=b.dataset.o;state.quiz[me]=state.quiz[me]||{};state.quiz[me][qid]=o;
-    if(SB_ENABLED)sbSetQuiz(me,qid,o);const q=QUIZ.find(x=>x.id===qid);flash(o===q.a?'Correct! +'+fmtMoney(q.reward):'Wrong — better luck next quiz');renderSidebets();renderLeaderboard();updateLeagueBar();});
+    if(SB_ENABLED)sbSetQuiz(me,qid,o);const qz=QUIZ.find(x=>x.id===qid);flash(o===qz.a?'Correct! +'+fmtMoney(qz.reward):'Wrong — that one\'s gone');renderSidebets();renderLeaderboard();updateLeagueBar();});
 }
 // ================= SAVE / LOAD (file backup) =================
 document.getElementById('saveBtn').onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wc2026-predictions.json';a.click();flash('Backup downloaded');};
