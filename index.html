@@ -166,6 +166,7 @@
   .tablescroll table{min-width:480px}
   .tablescroll th,.tablescroll td{white-space:nowrap}
   td.pos{color:var(--acc)}td.neg{color:var(--live)}
+  .wstrip.locktbd{opacity:.6}.wstrip.locktbd .wreturn{color:var(--mut)}
   .av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#06121f;border:2.5px solid transparent;transition:.15s;box-shadow:0 4px 12px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.3)}
   .rail .lab{font-size:11px;color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
   .prail{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
@@ -760,7 +761,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-l';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-m';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1185,13 +1186,19 @@ function renderPredict(){
       strip=picked?wagerCtrl(m.id,stake,roundMult(m)):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;
       if(picked&&stake>0){const aj=activeJokerId(p,roundOf(m)),here=aj===m.id;
         strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
-    const spick=sidep.scorer,cands=[...(SQUAD[m.t1]||[]),...(SQUAD[m.t2]||[])];
+    const spick=sidep.scorer,haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
     const scTeamOpts=(team)=>{const arr=(SQUAD[team]||[]).slice().sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0));
       return arr.map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}" ${spick===pn?'selected':''}>${pn}${g?'  ·  '+g+' ⚽':''}</option>`;}).join('');};
     if(canEdit&&!locked){
+      // anytime-scorer: show whichever team(s) are known; on knockout ties the picker unlocks as the bracket resolves
+      let scRow='';
+      if(haveT1||haveT2){const groups=(haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:'')+(haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:'');
+        const partial=m.ko&&(haveT1!==haveT2);
+        scRow=`<div class="wstrip ou"><span class="wlabel">Anytime scorer</span><select class="scsel" data-sc="${m.id}"><option value="">— pick a scorer —</option>${groups}</select><span class="wreturn">${partial?'other side unlocks when decided · ':spick?'⚽ marks goals so far · ':''}+${fmtMoney(SCORER_BONUS)}</span></div>`;}
+      else if(m.ko)scRow=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided · +${fmtMoney(SCORER_BONUS)}</span></div>`;
       oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)}</span></div>`
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes</button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No</button></div><span class="wreturn">+${fmtMoney(BTTS_BONUS)}</span></div>`
-        +(cands.length?`<div class="wstrip ou"><span class="wlabel">Anytime scorer</span><select class="scsel" data-sc="${m.id}"><option value="">— pick a scorer —</option><optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup><optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup></select><span class="wreturn">${spick?'⚽ marks goals so far · ':''}+${fmtMoney(SCORER_BONUS)}</span></div>`:'');
+        +scRow;
     }else{
       if(oupick){const r=isFT(m)?ouResult(m):null,ok=r&&oupick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
       if(bpick){const r=isFT(m)?bttsResult(m):null,ok=r&&bpick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
