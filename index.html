@@ -328,6 +328,7 @@
   .tkball{font-size:14px}
   .tktxt{font-weight:600;color:var(--txt)}
   .tkago{font-size:10px;color:var(--mut);font-weight:700}
+  .recap{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,rgba(255,210,77,.14),transparent),var(--glass);border:1px solid rgba(255,210,77,.4);border-radius:var(--r-sm);padding:11px 14px;margin-bottom:14px;font-size:13px}
   .cfetti{position:fixed;top:-12px;width:8px;height:13px;border-radius:2px;z-index:300;pointer-events:none;animation:cfall 1.9s ease-in forwards}
   @keyframes cfall{to{transform:translateY(104vh) rotate(680deg);opacity:0}}
   .bankchip{transition:color .3s}
@@ -356,6 +357,19 @@
   .qbtn.on.miss{background:rgba(255,93,119,.14);border-color:var(--live)}
   .qbtn[disabled]{cursor:default;opacity:.85}
   .qgres{margin-top:8px;font-size:11.5px;font-weight:800}.qgres.win{color:var(--acc)}.qgres.loss{color:var(--mut)}
+  /* acca */
+  .accacard{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px}
+  .accacard.live{border-color:rgba(91,149,255,.45)}.accacard.win{border-color:var(--acc)}.accacard.loss{opacity:.7}
+  .acatop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+  .acatop b{font-size:13px}.acastat{font-size:11.5px;font-weight:800;color:var(--gold);margin-left:auto}
+  .acatop .bnet{margin-left:auto}
+  .acadel{margin-left:6px;width:20px;height:20px;border-radius:50%;background:var(--live);color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer}
+  .acalegs{display:flex;flex-wrap:wrap;gap:6px}
+  .acaleg{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600}
+  .acaleg.win{border-color:var(--acc);color:var(--acc)}.acaleg.loss{border-color:var(--live);color:var(--live);opacity:.8}
+  .acaopts{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+  .acaopt{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+  .acaopt:hover{border-color:var(--acc2)}.acaopt.on{background:rgba(91,149,255,.16);border-color:var(--acc2)}
   .bou{border-top:1px solid var(--line);padding:9px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
   .boulabel{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.3px;margin-right:4px}
   .oubadges{display:flex;flex-wrap:wrap;gap:6px}
@@ -404,6 +418,7 @@
   <button class="tab league" data-tab="sidebets">Side bets</button>
   <button class="tab league" data-tab="leaderboard">Leaderboard</button>
 </div>
+<div id="recapWrap"></div>
 <div id="tickerWrap"></div>
 
 <section id="next" class="on">
@@ -481,6 +496,7 @@
   <h2>Side bets <span class="sub" style="font-weight:400">— go big or claw your way back</span></h2>
   <div class="card" id="champWrap" style="margin-bottom:16px"></div>
   <div class="card" id="qualWrap" style="margin-bottom:16px"></div>
+  <div class="card" id="accaWrap" style="margin-bottom:16px"></div>
   <div class="card" id="quizWrap"></div>
 </section>
 
@@ -696,7 +712,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[]};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[],accas:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -706,7 +722,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-h';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-i';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -736,14 +752,15 @@ function computeStandings(){
       if(m.s1>m.s2){a.w++;b.l++;a.pts+=3;}else if(m.s1<m.s2){b.w++;a.l++;b.pts+=3;}else{a.d++;b.d++;a.pts++;b.pts++;}});
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
-  try{const [pl,pr,rs,qz,sp,gq,ev]=await Promise.all([
+  try{const [pl,pr,rs,qz,sp,gq,ev,ac]=await Promise.all([
       sb.from('players').select('name,champion,topscorer'),
       sb.from('predictions').select('name,match_id,home,away,stake,joker'),
       sb.from('results').select('match_id,s1,s2,status,scorers'),
       sb.from('quiz').select('name,qid,choice'),
       sb.from('sidepicks').select('name,match_id,ou,btts,scorer'),
       sb.from('groupquals').select('name,grp,team1,team2'),
-      sb.from('events').select('actor,kind,txt,ts').order('ts',{ascending:false}).limit(25)]);
+      sb.from('events').select('actor,kind,txt,ts').order('ts',{ascending:false}).limit(25),
+      sb.from('accas').select('id,name,legs,stake')]);
     if(pl.error||pr.error)throw(pl.error||pr.error);
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
@@ -752,6 +769,7 @@ async function sbLoadAll(){if(!sb)return;
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     state.groupquals={};if(!gq.error)(gq.data||[]).forEach(r=>{(state.groupquals[r.name]=state.groupquals[r.name]||{})[r.grp]=[r.team1,r.team2].filter(Boolean);});
     state.events=(!ev.error&&ev.data)?ev.data:[];
+    state.accas={};if(!ac.error)(ac.data||[]).forEach(r=>{(state.accas[r.name]=state.accas[r.name]||[]).push({id:r.id,legs:(r.legs||'').split(',').filter(Boolean),stake:r.stake||0});});
     if(me){state.groupquals[me]=state.groupquals[me]||{};for(const g in pendingQual)state.groupquals[me][g]=pendingQual[g].slice();}
     applyResults(rs.error?[]:rs.data);computeStandings();resolveBracket();
     const preds={};
@@ -775,6 +793,7 @@ function sbSubscribe(){if(!sb)return;
     .on('postgres_changes',{event:'*',schema:'public',table:'sidepicks'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'groupquals'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'events'},queueLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'accas'},queueLoad)
     .subscribe();
   setInterval(sbLoadAll,30000);}
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
@@ -784,6 +803,8 @@ async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQual(name,g){if(!sb)return;const v=(state.groupquals[name]||{})[g]||[];try{await sb.from('groupquals').upsert({name,grp:g,team1:v[0]||null,team2:v[1]||null,updated_at:new Date().toISOString()},{onConflict:'name,grp'});}catch(e){flash('Could not save pick');}}
 async function sbEmit(actor,kind,txt){if(!sb)return;try{await sb.from('events').insert({actor,kind,txt});}catch(e){}}
+async function sbSaveAcca(a){if(!sb)return;try{await sb.from('accas').upsert({id:a.id,name:me,legs:a.legs.join(','),stake:a.stake});}catch(e){flash('Could not place acca');}}
+async function sbDelAcca(id){if(!sb)return;try{await sb.from('accas').delete().eq('id',id);}catch(e){}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0,0];
@@ -806,6 +827,14 @@ function claim(name){name=(name||'').trim();if(!name)return;
   if(SB_ENABLED){const fresh=!(state.events||[]).some(e=>e.kind==='join'&&e.actor===name);sbAddPlayer(name);if(fresh)sbEmit(name,'join',name+' joined the league');}
   saveState();renderAll();flash('You are in — playing as '+name);}
 let prevBank=null;
+let accaDraft={legs:[],stake:100};
+let recapShown=false;
+function showRecap(){if(recapShown||!me)return;recapShown=true;let snap=null;try{snap=JSON.parse(localStorage.getItem('wc2026-seen')||'null');}catch(e){}
+  const ftNow=ALL.filter(isFT).length,bankNow=Math.round(bankOf(me).bal);
+  if(snap&&ftNow>snap.ft){const dG=ftNow-snap.ft,dB=bankNow-(snap.bank||START_BAL),el=document.getElementById('recapWrap');
+    if(el){el.innerHTML=`<div class="recap"><div>☕ <b>While you were away</b> · ${dG} match${dG===1?'':'es'} finished · your bank ${dB>=0?'rose '+fmtMoney(dB):'dropped '+fmtMoney(-dB)} to <b>${fmtMoney(bankNow)}</b></div><button class="iconbtn" id="recapX">Got it</button></div>`;
+      const x=document.getElementById('recapX');if(x)x.onclick=()=>el.innerHTML='';}}
+  try{localStorage.setItem('wc2026-seen',JSON.stringify({ft:ftNow,bank:bankNow}));}catch(e){}}
 function confetti(){const c=['#1fe6ab','#5b95ff','#ffd24d','#ff5d77','#b78bff','#ff9d3d'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='cfetti';d.style.left=(Math.random()*100)+'vw';d.style.background=c[i%c.length];d.style.animationDelay=(Math.random()*0.35)+'s';d.style.transform='rotate('+(Math.random()*360)+'deg)';document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}}
 function updateLeagueBar(){const el=document.getElementById('leagueCard');if(!el)return;
   if(!SB_ENABLED){el.classList.remove('live');
@@ -936,9 +965,15 @@ function bankOf(p){
   settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));const jk=isJoker(p,m)?2:1;const raw=(pay-stake)*jk;
     const net=raw>0?raw*roundMult(m):raw;const before=bal;bal=Math.max(FLOOR,bal+net);const realized=bal-before;
     if(realized>=0)won+=realized; else lost+=-realized;});
+  // accumulators (parlays): all legs must land (right result); payout = stake * product of leg multipliers
+  let accaPlay=0;(state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return;
+    if(!legs.every(isFT)){accaPlay+=a.stake;return;}
+    const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});
+    const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;
+    const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
   const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p);
   const bonus=qw+cw+ow+tw+sw+gqw;bal+=bonus;won+=bonus;
-  let inPlay=0; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2]*(isJoker(p,m)?2:1);});
+  let inPlay=accaPlay; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2]*(isJoker(p,m)?2:1);});
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -1201,6 +1236,28 @@ function renderSidebets(){
     qgw.querySelectorAll('.qbtn').forEach(b=>b.onclick=()=>{const g=b.dataset.qg,t=b.dataset.qt;const gq=state.groupquals[me]=state.groupquals[me]||{};let arr=gq[g]=gq[g]||[];
       if(arr.includes(t)){gq[g]=arr.filter(x=>x!==t);}else if(arr.length>=2){flash('Pick exactly 2 per group');return;}else arr.push(t);
       markPendingQual(g);if(SB_ENABLED)sbSetQual(me,g);renderSidebets();renderLeaderboard();updateLeagueBar();});}
+  // ACCA / parlay builder
+  const aw=document.getElementById('accaWrap');
+  if(aw){const free=me?bankOf(me).free:0;const mine=me?(state.accas[me]||[]):[];
+    const lm=(m)=>{const pr=(state.preds[me]||{})[m.id];return isFT(m)?(points(pr,m)===5?2.5:points(pr,m)>=2?1.8:0):1.8;};
+    let ah=`<h3 style="margin-bottom:6px">🎟️ Acca / parlay</h3><p class="sub" style="margin-bottom:12px">Chain 2–5 of your match picks into one bet. Every leg must get the result right — pays the legs multiplied (exact 2.5×, result 1.8×), busts if any leg misses. Free to stake: <b>${fmtMoney(free)}</b>.</p>`;
+    mine.forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);const ftL=legs.filter(isFT);const right=legs.filter(m=>{const pr=(state.preds[me]||{})[m.id];return isFT(m)&&hasPick(pr)&&points(pr,m)>=2;}).length;
+      const allFT=legs.length&&legs.every(isFT),allRight=allFT&&right===legs.length,dead=ftL.some(m=>{const pr=(state.preds[me]||{})[m.id];return !(hasPick(pr)&&points(pr,m)>=2);});
+      const wonAmt=a.stake*legs.reduce((x,m)=>x*(points((state.preds[me]||{})[m.id],m)===5?2.5:1.8),1)-a.stake;
+      ah+=`<div class="accacard ${allFT?(allRight?'win':'loss'):(dead?'loss':'live')}"><div class="acatop"><b>${fmtMoney(a.stake)} · ${legs.length} legs</b>${allFT?(allRight?'<span class="bnet win">✓ won '+fmtMoney(wonAmt)+'</span>':'<span class="bnet loss">✗ busted</span>'):'<span class="acastat">'+right+'/'+legs.length+' landed'+(dead?' · dead':'')+'</span>'}${!ftL.length?`<button class="acadel" data-acadel="${a.id}">✕</button>`:''}</div><div class="acalegs">`+legs.map(m=>{const pr=(state.preds[me]||{})[m.id];const st=isFT(m)?(hasPick(pr)&&points(pr,m)>=2?'win':'loss'):'';return `<span class="acaleg ${st}">${badge(m.t1)}${pr?' '+pr[0]+'-'+pr[1]+' ':' v '}${badge(m.t2)}</span>`;}).join('')+`</div></div>`;});
+    const openPicks=me?ALL.filter(m=>!kickedOff(m)&&hasPick((state.preds[me]||{})[m.id])).sort((a,b)=>new Date(a.dt)-new Date(b.dt)):[];
+    if(me&&openPicks.length){const dl=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id)).length;const dmult=dl>=2?Math.pow(1.8,dl):0;
+      ah+=`<div class="wlabel" style="margin:14px 0 7px">New acca — tap your picks to add legs</div><div class="acaopts">`+openPicks.map(m=>`<button class="acaopt ${accaDraft.legs.includes(m.id)?'on':''}" data-acaopt="${m.id}">${badge(m.t1)} v ${badge(m.t2)}</button>`).join('')+`</div>`;
+      ah+=`<div class="wstrip ou"><span class="wlabel">Stake</span><div class="wctrl"><button class="wbtn" id="acaSdn">−</button><span class="wval">${fmtMoney(accaDraft.stake)}</span><button class="wbtn" id="acaSup">+</button></div><span class="wreturn">${dl>=2?'win ~'+fmtMoney(accaDraft.stake*dmult)+' if all '+dl+' land':'pick 2+ legs'}</span></div>`;
+      ah+=`<button class="btn" id="acaPlace" ${dl<2||accaDraft.stake>free?'disabled':''} style="width:100%">Place ${dl}-leg acca</button>`;
+    }else if(me){ah+=`<p class="sub">Make some match picks first, then chain them into an acca here.</p>`;}
+    aw.innerHTML=ah;
+    aw.querySelectorAll('.acaopt').forEach(b=>b.onclick=()=>{const id=b.dataset.acaopt;if(accaDraft.legs.includes(id))accaDraft.legs=accaDraft.legs.filter(x=>x!==id);else if(accaDraft.legs.length>=5){flash('Max 5 legs');return;}else accaDraft.legs.push(id);renderSidebets();});
+    const sup=document.getElementById('acaSup');if(sup)sup.onclick=()=>{accaDraft.stake=Math.min(bankOf(me).free||MIN_WAGER,accaDraft.stake+STAKE_STEP*5);renderSidebets();};
+    const sdn=document.getElementById('acaSdn');if(sdn)sdn.onclick=()=>{accaDraft.stake=Math.max(MIN_WAGER,accaDraft.stake-STAKE_STEP*5);renderSidebets();};
+    const pl=document.getElementById('acaPlace');if(pl)pl.onclick=()=>{const legs=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id));if(legs.length<2){flash('Pick 2+ legs');return;}if(accaDraft.stake>bankOf(me).free){flash('Not enough free cash');return;}
+      const a={id:me+'-'+Date.now(),legs:legs.slice(),stake:accaDraft.stake};(state.accas[me]=state.accas[me]||[]).push(a);if(SB_ENABLED){sbSaveAcca(a);sbEmit(me,'acca',me+' placed a '+legs.length+'-leg acca ('+fmtMoney(a.stake)+')');}accaDraft={legs:[],stake:100};flash('Acca placed — good luck!');renderSidebets();renderLeaderboard();updateLeagueBar();};
+    aw.querySelectorAll('.acadel').forEach(b=>b.onclick=()=>{const id=b.dataset.acadel;state.accas[me]=(state.accas[me]||[]).filter(a=>a.id!==id);if(SB_ENABLED)sbDelAcca(id);renderSidebets();renderLeaderboard();updateLeagueBar();});}
   const qa=me?(state.quiz[me]||{}):{};
   const unlocked=me?quizUnlocked(me):0;
   const answered=QUIZ.filter(q=>qa[q.id]!=null).length;
@@ -1254,7 +1311,7 @@ if(SB_ENABLED){
   const jn=document.getElementById('joinName');if(jn)jn.addEventListener('keydown',e=>{if(e.key==='Enter')claim(e.target.value);});
   const jp=document.getElementById('joinPick');if(jp)jp.onclick=e=>{const b=e.target.closest('.pk');if(b)claim(b.dataset.p);};
   setSaveTag('Connecting…');sbSubscribe();
-  sbLoadAll().then(()=>{if(!me)showJoin();});
+  sbLoadAll().then(()=>{if(!me)showJoin();else showRecap();});
 }else if(state.players&&state.players.length){setSaveTag('Saved picks restored ('+state.players.length+' player'+(state.players.length===1?'':'s')+')');}
 setInterval(renderNext,60000);
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
