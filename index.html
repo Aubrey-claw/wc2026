@@ -176,6 +176,11 @@
   .vstep button{width:34px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
   .vstep button:hover{border-color:var(--acc);color:var(--acc)}.vstep button:active{transform:scale(.92)}
   .vstep .sv{width:42px;height:42px;border-radius:11px;background:var(--bg);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800}
+  .vstep input.svin{text-align:center;color:var(--txt);padding:0;-moz-appearance:textfield;cursor:text}
+  .vstep input.svin::-webkit-outer-spin-button,.vstep input.svin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .vstep input.svin:focus{outline:none;border-color:var(--acc2)}
+  .vstep input.svin.set{border-color:var(--acc);color:var(--acc)}
+  .vstep input.svin::placeholder{color:var(--mut)}
   .vstep .sv.set{border-color:var(--acc);color:var(--acc)}
   .result{display:flex;flex-direction:column;align-items:center;gap:5px}
   .rscore{font-size:25px;font-weight:800}.rft{font-size:10px;font-weight:800;color:var(--acc);letter-spacing:.5px}
@@ -314,6 +319,18 @@
   .gbname{font-weight:700;font-size:13px}
   .lockcd{font-size:9.5px;font-weight:800;color:var(--mut);background:var(--bg2);padding:1px 7px;border-radius:20px;letter-spacing:.3px}
   .lockcd.soon{color:var(--live);background:rgba(255,93,119,.14);animation:lpulse 1.3s ease-in-out infinite}
+  /* live activity ticker */
+  .ticker{display:flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--glassline);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:16px;overflow:hidden;backdrop-filter:blur(10px)}
+  .tklabel{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:var(--live);letter-spacing:.6px;flex:0 0 auto}
+  .tkitems{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}.tkitems::-webkit-scrollbar{display:none}
+  .tkitem{display:inline-flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;flex:0 0 auto}
+  .tkitem .av{width:20px;height:20px;font-size:9px}
+  .tkball{font-size:14px}
+  .tktxt{font-weight:600;color:var(--txt)}
+  .tkago{font-size:10px;color:var(--mut);font-weight:700}
+  .cfetti{position:fixed;top:-12px;width:8px;height:13px;border-radius:2px;z-index:300;pointer-events:none;animation:cfall 1.9s ease-in forwards}
+  @keyframes cfall{to{transform:translateY(104vh) rotate(680deg);opacity:0}}
+  .bankchip{transition:color .3s}
   .scsel{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-size:12.5px;font-weight:600;max-width:220px}
   .scsel:focus{outline:none;border-color:var(--acc2)}
   .adminrow{flex-direction:column;align-items:stretch;gap:8px}
@@ -387,6 +404,7 @@
   <button class="tab league" data-tab="sidebets">Side bets</button>
   <button class="tab league" data-tab="leaderboard">Leaderboard</button>
 </div>
+<div id="tickerWrap"></div>
 
 <section id="next" class="on">
   <h2>Next up <span class="sub" style="font-weight:400">— kickoffs in your selected time</span></h2>
@@ -678,7 +696,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{}};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[]};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -688,7 +706,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-20-g';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-h';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -718,13 +736,14 @@ function computeStandings(){
       if(m.s1>m.s2){a.w++;b.l++;a.pts+=3;}else if(m.s1<m.s2){b.w++;a.l++;b.pts+=3;}else{a.d++;b.d++;a.pts++;b.pts++;}});
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
-  try{const [pl,pr,rs,qz,sp,gq]=await Promise.all([
+  try{const [pl,pr,rs,qz,sp,gq,ev]=await Promise.all([
       sb.from('players').select('name,champion,topscorer'),
       sb.from('predictions').select('name,match_id,home,away,stake,joker'),
       sb.from('results').select('match_id,s1,s2,status,scorers'),
       sb.from('quiz').select('name,qid,choice'),
       sb.from('sidepicks').select('name,match_id,ou,btts,scorer'),
-      sb.from('groupquals').select('name,grp,team1,team2')]);
+      sb.from('groupquals').select('name,grp,team1,team2'),
+      sb.from('events').select('actor,kind,txt,ts').order('ts',{ascending:false}).limit(25)]);
     if(pl.error||pr.error)throw(pl.error||pr.error);
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
@@ -732,6 +751,7 @@ async function sbLoadAll(){if(!sb)return;
     state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts||r.scorer)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer};});
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     state.groupquals={};if(!gq.error)(gq.data||[]).forEach(r=>{(state.groupquals[r.name]=state.groupquals[r.name]||{})[r.grp]=[r.team1,r.team2].filter(Boolean);});
+    state.events=(!ev.error&&ev.data)?ev.data:[];
     if(me){state.groupquals[me]=state.groupquals[me]||{};for(const g in pendingQual)state.groupquals[me][g]=pendingQual[g].slice();}
     applyResults(rs.error?[]:rs.data);computeStandings();resolveBracket();
     const preds={};
@@ -754,6 +774,7 @@ function sbSubscribe(){if(!sb)return;
     .on('postgres_changes',{event:'*',schema:'public',table:'quiz'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'sidepicks'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'groupquals'},queueLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'events'},queueLoad)
     .subscribe();
   setInterval(sbLoadAll,30000);}
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
@@ -762,6 +783,7 @@ async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz'
 async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQual(name,g){if(!sb)return;const v=(state.groupquals[name]||{})[g]||[];try{await sb.from('groupquals').upsert({name,grp:g,team1:v[0]||null,team2:v[1]||null,updated_at:new Date().toISOString()},{onConflict:'name,grp'});}catch(e){flash('Could not save pick');}}
+async function sbEmit(actor,kind,txt){if(!sb)return;try{await sb.from('events').insert({actor,kind,txt});}catch(e){}}
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0,0];
@@ -777,11 +799,14 @@ function showJoin(){const mask=document.getElementById('joinMask');if(!mask)retu
   document.getElementById('joinHint').textContent=state.players.length?'Already joined? Tap your name above.':'';
   mask.style.display='flex';const n=document.getElementById('joinName');if(n)n.focus();}
 function claim(name){name=(name||'').trim();if(!name)return;
+  if(SB_ENABLED&&name!==me&&state.players.includes(name)&&!confirm('Someone is already playing as "'+name+'". If that is you, continue. If not, pick a different name (add a surname). Continue as '+name+'?'))return;
   me=name;try{localStorage.setItem(ME_KEY,name);}catch(e){}
   state.active=name;if(!state.players.includes(name))state.players.push(name);
   const mask=document.getElementById('joinMask');if(mask)mask.style.display='none';
-  if(SB_ENABLED)sbAddPlayer(name);
+  if(SB_ENABLED){const fresh=!(state.events||[]).some(e=>e.kind==='join'&&e.actor===name);sbAddPlayer(name);if(fresh)sbEmit(name,'join',name+' joined the league');}
   saveState();renderAll();flash('You are in — playing as '+name);}
+let prevBank=null;
+function confetti(){const c=['#1fe6ab','#5b95ff','#ffd24d','#ff5d77','#b78bff','#ff9d3d'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='cfetti';d.style.left=(Math.random()*100)+'vw';d.style.background=c[i%c.length];d.style.animationDelay=(Math.random()*0.35)+'s';d.style.transform='rotate('+(Math.random()*360)+'deg)';document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}}
 function updateLeagueBar(){const el=document.getElementById('leagueCard');if(!el)return;
   if(!SB_ENABLED){el.classList.remove('live');
     el.innerHTML=`<div class="lgrow"><div><div class="lglabel">LOCAL MODE — backend not configured</div>
@@ -789,6 +814,7 @@ function updateLeagueBar(){const el=document.getElementById('leagueCard');if(!el
   el.classList.add('live');
   const view=state.active&&state.active!==me?`<span class="viewing">viewing ${state.active}</span>`:'';
   const b=me?bankOf(me):null;
+  if(b){if(prevBank!=null&&b.bal>prevBank+0.5){confetti();flash('+'+fmtMoney(b.bal-prevBank)+'! Bank now '+fmtMoney(b.bal));}prevBank=b.bal;}
   const bank=b?`<span class="bankchip">${fmtMoney(b.bal)}</span>${b.inPlay>0?`<span class="inplay">${fmtMoney(b.inPlay)} in play</span>`:''}`:'';
   el.innerHTML=`<div class="lgrow mebar"><div><div class="lglabel"><span class="livedot"></span>LIVE · playing as ${me||'—'} ${view}</div>
       <div class="sub">${bank?bank+' · ':''}${state.players.length} player${state.players.length===1?'':'s'} · share the link to add mates.</div></div>
@@ -829,6 +855,7 @@ function renderAdmin(){const el=document.getElementById('adminList');if(!el)retu
     const ok=await sbSetResult(id,s1,s2,'FT',scorers);
     if(SB_ENABLED&&!ok){btn.textContent='Retry';btn.disabled=false;return;}  // do not paint FT unless the DB confirmed
     const m=findMatch(id);if(m){m.s1=s1;m.s2=s2;m.status='FT';m.scorers=scorers?scorers.split(',').map(s=>s.trim()).filter(Boolean):[];}computeStandings();
+    if(SB_ENABLED&&ok&&m)sbEmit('Results','ft','FT · '+m.t1+' '+s1+'-'+s2+' '+m.t2);
     renderAll();renderAdmin();};});}
 
 // ================= HELPERS =================
@@ -846,6 +873,9 @@ function roundOf(m){return m.ko?m.round:'GROUP';}
 function activeJokerId(p,round){const preds=state.preds[p]||{};let best=null,bt=Infinity;
   for(const id in preds){const pr=preds[id];if(!pr||!pr[3]||!hasPick(pr)||!(pr[2]>0))continue;const m=findMatch(id);if(!m||roundOf(m)!==round)continue;const t=new Date(m.dt).getTime();if(t<bt){bt=t;best=id;}}return best;}
 const isJoker=(p,m)=>m.id===activeJokerId(p,roundOf(m));
+// end-game crescendo: knockout WINS pay a round multiplier (losses unchanged, so risk stays = stake)
+const ROUND_MULT={'Round of 32':1,'Round of 16':1.25,'Quarter-finals':1.5,'Semi-finals':2,'Third-place play-off':1.5,'FINAL':3};
+const roundMult=m=>m.ko?(ROUND_MULT[m.round]||1):1;
 // group qualifiers: top 2 of each finished group, resolved from the live standings table
 function groupDecided(g){const ms=matches.filter(m=>m.group===g);return ms.length>0&&ms.every(isFT);}
 function groupTop2(g){if(!groupDecided(g))return null;const rows=standings[g].map(t=>({nm:t[0],pts:t[7],gd:t[5]-t[6],gf:t[5]})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);return [rows[0].nm,rows[1].nm];}
@@ -903,8 +933,8 @@ function bankOf(p){
   const settled=ALL.filter(m=>isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)
     .sort((a,b)=>new Date(a.dt)-new Date(b.dt));
   let bal=START_BAL, won=0, lost=0;
-  settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));
-    const net=(pay-stake)*(isJoker(p,m)?2:1);const before=bal;bal=Math.max(FLOOR,bal+net);const realized=bal-before;
+  settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));const jk=isJoker(p,m)?2:1;const raw=(pay-stake)*jk;
+    const net=raw>0?raw*roundMult(m):raw;const before=bal;bal=Math.max(FLOOR,bal+net);const realized=bal-before;
     if(realized>=0)won+=realized; else lost+=-realized;});
   const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p);
   const bonus=qw+cw+ow+tw+sw+gqw;bal+=bonus;won+=bonus;
@@ -1006,10 +1036,10 @@ function renderBanner(){const w=document.getElementById('bannerWrap');if(!state.
   const done=open.filter(m=>{const pr=(state.preds[p]||{})[m.id];return pr&&pr[0]!=null&&pr[1]!=null;}).length;
   const pct=open.length?Math.round(done/open.length*100):0;
   w.innerHTML=`<div class="banner">${avatar(p)}<div class="info"><div class="who">Predicting as ${p}</div><div class="sub">${done} of ${open.length} open matches picked</div><div class="progress"><i style="width:${pct}%"></i></div></div></div>`;}
-function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><div class="sv ${set?'set':''}">${set?val:'–'}</div><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
-function wagerCtrl(id,stake){return `<div class="wstrip edit"><span class="wlabel">Wager</span>
+function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><input class="sv svin ${set?'set':''}" inputmode="numeric" maxlength="2" data-svin="${id}" data-s="${s}" value="${set?val:''}" placeholder="–"><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
+function wagerCtrl(id,stake,rm){rm=rm||1;return `<div class="wstrip edit"><span class="wlabel">Wager${rm>1?` <span class="jchip">KO ×${rm}</span>`:''}</span>
   <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">−</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
-  <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4)} · ${fmtMoney(stake*2.5)} · ${fmtMoney(stake*1.5)}</span></div>`;}
+  <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4*rm)} · ${fmtMoney(stake*2.5*rm)} · ${fmtMoney(stake*1.5*rm)}</span></div>`;}
 function renderPredict(){
   const wrap=document.getElementById('predList');renderBanner();updateLeagueBar();
   if(!state.active){wrap.innerHTML='<div class="empty">Add a player above to start predicting.</div>';return;}
@@ -1028,7 +1058,7 @@ function renderPredict(){
       if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span></div>`;}
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
-      strip=picked?wagerCtrl(m.id,stake):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;
+      strip=picked?wagerCtrl(m.id,stake,roundMult(m)):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;
       if(picked&&stake>0){const aj=activeJokerId(p,roundOf(m)),here=aj===m.id;
         strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
     const spick=sidep.scorer,cands=[...(SQUAD[m.t1]||[]),...(SQUAD[m.t2]||[])];
@@ -1049,13 +1079,18 @@ function renderPredict(){
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
       saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
+    wrap.querySelectorAll('.svin').forEach(inp=>inp.onchange=()=>{const id=inp.dataset.svin,s=+inp.dataset.s;let v=parseInt(inp.value,10);v=isNaN(v)?null:Math.max(0,Math.min(20,v));
+      const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;cur[s]=v;
+      if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
+      saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
-      let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));cur[2]=v;
+      let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));const wasAllIn=cur._ai;cur[2]=v;
+      const mm=findMatch(id);if(d>0&&v===maxStakeFor(p,id)&&v>=200&&!wasAllIn&&SB_ENABLED&&p===me){cur._ai=1;sbEmit(me,'allin',me+' went ALL-IN '+fmtMoney(v)+' on '+mm.t1+' v '+mm.t2);}else if(v<maxStakeFor(p,id))cur._ai=0;
       saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.jokerbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.jk;const cur=state.preds[p][id];if(!hasPick(cur)||!(cur[2]>0))return;
-      const round=roundOf(findMatch(id)),prev=activeJokerId(p,round);
+      const mm=findMatch(id),round=roundOf(mm),prev=activeJokerId(p,round);
       if(prev===id){cur[3]=0;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
-      else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
+      else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED){sbUpsertPred(p,id);if(p===me)sbEmit(me,'joker',me+' armed their Joker ★ on '+mm.t1+' v '+mm.t2);}}
       saveState();renderPredict();renderLeaderboard();updateLeagueBar();});
     wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.ou=o.ou===v?null:v;
       markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
@@ -1120,13 +1155,14 @@ function renderBoard(){
     }else{
       const rows=state.players.map(pl=>{const pr=(state.preds[pl]||{})[m.id];if(!hasPick(pr))return '';const stake=pr[2]||0;const jk=isJoker(pl,m);let res='';
         if(ft){const pts=points(pr,m),net=(stake*multFor(pts)-stake)*(jk?2:1);
-          res=`<span class="pillpts ${pts===0?'zero':''}">+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'+'+fmtMoney(net):net<0?'−'+fmtMoney(stake*(jk?2:1)):'—'}</span>`;}
+          res=`<span class="pillpts ${pts===0?'zero':''}">${pts>0?'✓ ':''}+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'✓ +'+fmtMoney(net):net<0?'✗ −'+fmtMoney(stake*(jk?2:1)):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}${jk?' <span class="jchip">★2×</span>':''}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
     const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];if(!s||(!s.ou&&!s.btts&&!s.scorer))return '';
-      const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${s.ou==='O'?'Over 2.5':'Under 2.5'}</span>`:'';
-      const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">BTTS ${s.btts}</span>`:'';
-      const sc=s.scorer?`<span class="oubadge ${ft?((m.scorers||[]).includes(s.scorer)?'win':'loss'):''}">⚽ ${s.scorer}</span>`:'';
+      const gx=ok=>ft?(ok?'✓ ':'✗ '):'';
+      const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}</span>`:'';
+      const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">${gx(s.btts===bttsResult(m))}BTTS ${s.btts}</span>`:'';
+      const sc=s.scorer?`<span class="oubadge ${ft?((m.scorers||[]).includes(s.scorer)?'win':'loss'):''}">${gx((m.scorers||[]).includes(s.scorer))}⚽ ${s.scorer}</span>`:'';
       return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
     const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
     return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
@@ -1204,7 +1240,11 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
 document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
-function renderAll(){computeStandings();resolveBracket();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
+function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)return 'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
+function renderTicker(){const el=document.getElementById('tickerWrap');if(!el)return;const ev=state.events||[];
+  if(!SB_ENABLED||!ev.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">⚽</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
+function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
