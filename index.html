@@ -146,8 +146,8 @@
   .pavatar.on .av{border-color:var(--txt);box-shadow:0 0 0 3px rgba(255,255,255,.08)}
   .pavatar .pn{font-size:11px;color:var(--mut);max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
   .pavatar.on .pn{color:var(--txt);font-weight:700}
-  .pavatar .del{position:absolute;top:-4px;right:6px;width:18px;height:18px;border-radius:50%;background:var(--live);color:#fff;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center;border:none}
-  .pavatar:hover .del{display:flex}
+  .pavatar .del{position:absolute;top:-4px;right:6px;width:18px;height:18px;border-radius:50%;background:var(--live);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;border:none;opacity:.55}
+  .pavatar:hover .del{opacity:1}
   .addp{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:2px dashed var(--line);background:transparent;color:var(--mut);font-size:22px;display:flex;align-items:center;justify-content:center}
   .addp:hover{border-color:var(--acc);color:var(--acc)}
   .addrow{display:none;gap:8px;margin-top:12px}.addrow.show{display:flex}
@@ -312,6 +312,8 @@
   .oubtn:hover,.bbtn:hover{border-color:var(--acc2);color:var(--acc2)}
   .oubtn.on,.bbtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
   .gbname{font-weight:700;font-size:13px}
+  .lockcd{font-size:9.5px;font-weight:800;color:var(--mut);background:var(--bg2);padding:1px 7px;border-radius:20px;letter-spacing:.3px}
+  .lockcd.soon{color:var(--live);background:rgba(255,93,119,.14);animation:lpulse 1.3s ease-in-out infinite}
   .scsel{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-size:12.5px;font-weight:600;max-width:220px}
   .scsel:focus{outline:none;border-color:var(--acc2)}
   .adminrow{flex-direction:column;align-items:stretch;gap:8px}
@@ -599,7 +601,8 @@ const knockout=[
   K('FINAL','M104','2026-07-19T20:00:00+01:00','Winner M101','Winner M102','New Jersey'),
 ];
 const ALL=matches.concat(knockout);
-ALL.forEach(m=>m.id=`${m.dt}|${m.t1}|${m.t2}`);
+ALL.forEach(m=>m.id=`${m.dt}|${m.t1}|${m.t2}`);  // id set ONCE, never recomputed — stays stable when KO teams resolve
+knockout.forEach(k=>{k.o1=k.t1;k.o2=k.t2;});      // remember the original placeholder slots
 
 const standings={
   A:[['Mexico',1,1,0,0,2,0,3],['South Korea',1,1,0,0,2,1,3],['Czech Republic',1,0,0,1,1,2,0],['South Africa',1,0,0,1,0,2,0]],
@@ -685,7 +688,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-20-f';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-20-g';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -730,7 +733,7 @@ async function sbLoadAll(){if(!sb)return;
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     state.groupquals={};if(!gq.error)(gq.data||[]).forEach(r=>{(state.groupquals[r.name]=state.groupquals[r.name]||{})[r.grp]=[r.team1,r.team2].filter(Boolean);});
     if(me){state.groupquals[me]=state.groupquals[me]||{};for(const g in pendingQual)state.groupquals[me][g]=pendingQual[g].slice();}
-    applyResults(rs.error?[]:rs.data);computeStandings();
+    applyResults(rs.error?[]:rs.data);computeStandings();resolveBracket();
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
       if(!mine&&open)return; // hide opponents' picks until kickoff
@@ -790,7 +793,10 @@ function updateLeagueBar(){const el=document.getElementById('leagueCard');if(!el
   el.innerHTML=`<div class="lgrow mebar"><div><div class="lglabel"><span class="livedot"></span>LIVE · playing as ${me||'—'} ${view}</div>
       <div class="sub">${bank?bank+' · ':''}${state.players.length} player${state.players.length===1?'':'s'} · share the link to add mates.</div></div>
       <div class="lgbtns"><button class="iconbtn" id="copyInvite">Copy invite link</button><button class="iconbtn" id="switchMe">Switch player</button></div></div>`;
-  const ci=el.querySelector('#copyInvite');if(ci)ci.onclick=()=>{const msg='Join my World Cup 2026 prediction league: '+inviteLink();navigator.clipboard.writeText(msg).then(()=>flash('Invite link copied — send it to your mates'),()=>flash(inviteLink()));};
+  const ci=el.querySelector('#copyInvite');if(ci)ci.onclick=async()=>{const msg='Join my World Cup 2026 prediction league: '+inviteLink();
+    try{if(navigator.share){await navigator.share({title:'World Cup 2026 Predictor',text:msg,url:inviteLink()});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+    try{await navigator.clipboard.writeText(msg);flash('Invite link copied — send it to your mates');}
+    catch(e){window.prompt('Copy your invite link:',inviteLink());}};
   const sw=el.querySelector('#switchMe');if(sw)sw.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;showJoin();};}
 
 // ================= ADMIN (results entry, ?admin=KEY) =================
@@ -844,6 +850,19 @@ const isJoker=(p,m)=>m.id===activeJokerId(p,roundOf(m));
 function groupDecided(g){const ms=matches.filter(m=>m.group===g);return ms.length>0&&ms.every(isFT);}
 function groupTop2(g){if(!groupDecided(g))return null;const rows=standings[g].map(t=>({nm:t[0],pts:t[7],gd:t[5]-t[6],gf:t[5]})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);return [rows[0].nm,rows[1].nm];}
 function qualWon(p){const gqs=state.groupquals[p]||{};let t=0;for(const g in gqs){const top=groupTop2(g);if(!top)continue;const hit=(gqs[g]||[]).filter(x=>top.includes(x)).length;t+=hit*QUAL_TEAM_BONUS;if(hit===2)t+=QUAL_PERFECT_BONUS;}return t;}
+// fill the knockout bracket from real results: groups -> R32, then each KO winner/loser forward
+function bestThirds(){const gks=Object.keys(standings);if(!gks.every(groupDecided))return null;
+  const thirds=gks.map(g=>standings[g].map(t=>({nm:t[0],pts:t[7],gd:t[5]-t[6],gf:t[5]})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf)[2]).filter(Boolean);
+  thirds.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);return thirds.slice(0,8).map(t=>t.nm);}
+function slotTeam(slot){let mm;
+  if(mm=slot.match(/^Winner ([A-L])$/)){const t=groupTop2(mm[1]);return t?t[0]:slot;}
+  if(mm=slot.match(/^Runner-up ([A-L])$/)){const t=groupTop2(mm[1]);return t?t[1]:slot;}
+  if(mm=slot.match(/^Winner (M\d+)/)){const k=knockout.find(x=>x.mno===mm[1]);return (k&&isFT(k))?(k.s1>k.s2?k.t1:k.s2>k.s1?k.t2:slot):slot;}
+  if(mm=slot.match(/^Loser (M\d+)/)){const k=knockout.find(x=>x.mno===mm[1]);return (k&&isFT(k))?(k.s1<k.s2?k.t1:k.s2<k.s1?k.t2:slot):slot;}
+  return slot;}
+function resolveBracket(){const thirds=bestThirds();let ti=0;
+  knockout.forEach(k=>{[['o1','t1'],['o2','t2']].forEach(([o,t])=>{const slot=k[o];
+    if(/^3rd/.test(slot))k[t]=thirds?(thirds[ti++]||slot):slot; else k[t]=slotTeam(slot);});});}
 const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
 const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
 function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
@@ -990,7 +1009,7 @@ function renderBanner(){const w=document.getElementById('bannerWrap');if(!state.
 function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><div class="sv ${set?'set':''}">${set?val:'–'}</div><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
 function wagerCtrl(id,stake){return `<div class="wstrip edit"><span class="wlabel">Wager</span>
   <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">−</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
-  <span class="wreturn">win up to ${fmtMoney(stake*4)}</span></div>`;}
+  <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4)} · ${fmtMoney(stake*2.5)} · ${fmtMoney(stake*1.5)}</span></div>`;}
 function renderPredict(){
   const wrap=document.getElementById('predList');renderBanner();updateLeagueBar();
   if(!state.active){wrap.innerHTML='<div class="empty">Add a player above to start predicting.</div>';return;}
@@ -1022,7 +1041,8 @@ function renderPredict(){
       if(bpick){const r=isFT(m)?bttsResult(m):null,ok=r&&bpick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
       if(spick){const r=isFT(m),ok=r&&(m.scorers||[]).includes(spick);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
-    return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
+    const _ms=new Date(m.dt)-Date.now(),_cd=(!locked&&_ms>0)?(_ms<36e5?Math.round(_ms/6e4)+'m':_ms<864e5?Math.round(_ms/36e5)+'h':Math.round(_ms/864e5)+'d'):'';
+    return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
       <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}</div>`;}).join('');
   if(canEdit){
     wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
@@ -1184,7 +1204,7 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
 document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
-function renderAll(){computeStandings();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
+function renderAll(){computeStandings();resolveBracket();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
