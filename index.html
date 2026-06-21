@@ -761,7 +761,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-m';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-n';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1493,6 +1493,46 @@ if(SB_ENABLED){
 setInterval(renderNext,60000);
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
 setInterval(checkUpdate,180000);
+
+// CLIENT-SIDE AUTO-SCORE-PULL: anyone with the app open keeps results live. Source: TheSportsDB v1 free public key.
+// Safety: never overwrites an existing FT score; only fills missing matches / missing scorers.
+// Throttled across tabs/devices via localStorage so we don't spam the API.
+const PULL_KEY='wc2026-pull-lock', PULL_EVERY=300000;  // 5 min
+const TSDB_TEAM={'United States':'USA','Bosnia & Herzegovina':'Bosnia-Herzegovina','Curaçao':'Curacao'};
+const tsdbTeam=t=>TSDB_TEAM[t]||t;
+const sleep2=ms=>new Promise(r=>setTimeout(r,ms));
+async function pullLiveScores(){
+  if(!SB_ENABLED||!sb)return;
+  try{const lock=parseInt(localStorage.getItem(PULL_KEY)||'0',10);if(Date.now()-lock<PULL_EVERY-5000)return;localStorage.setItem(PULL_KEY,String(Date.now()));}catch(e){}
+  try{
+    const ex=(await sb.from('results').select('match_id,s1,s2,status,scorers')).data||[];
+    const have={};ex.forEach(r=>have[r.match_id]={s1:r.s1,s2:r.s2,status:r.status,sc:r.scorers||''});
+    const now=Date.now();
+    const cand=ALL.filter(m=>SQUAD[m.t1]&&SQUAD[m.t2]&&new Date(m.dt).getTime()<=now);
+    const need=cand.filter(m=>{const h=have[m.id];if(!h)return true;if(h.status!=='FT')return true;return !h.sc&&(h.s1+h.s2)>0;});
+    if(!need.length)return;
+    const TSDB='https://www.thesportsdb.com/api/v1/json/3';let wrote=0;
+    for(const m of need){
+      try{
+        const q=encodeURIComponent(tsdbTeam(m.t1)+'_vs_'+tsdbTeam(m.t2));
+        const j=await fetch(TSDB+'/searchevents.php?e='+q+'&s=2026').then(r=>r.json()).catch(()=>null);
+        const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
+        if(!ev||ev.strStatus!=='FT'||ev.intHomeScore==null||ev.intAwayScore==null){await sleep2(450);continue;}
+        const s1=parseInt(ev.intHomeScore,10),s2=parseInt(ev.intAwayScore,10);
+        if(have[m.id]&&have[m.id].status==='FT'&&(have[m.id].s1!==s1||have[m.id].s2!==s2)){await sleep2(450);continue;}  // never overwrite
+        const tl=await fetch(TSDB+'/lookuptimeline.php?id='+ev.idEvent).then(r=>r.json()).catch(()=>null);
+        const goals=((tl&&tl.timeline)||[]).filter(e=>(e.strTimeline||'').toLowerCase()==='goal'&&!/shootout/i.test(e.strTimelineDetail||'')).sort((a,b)=>(parseInt(a.intTime||'0',10))-(parseInt(b.intTime||'0',10)));
+        const scorers=goals.map(g=>(g.strPlayer||'').trim()+(/own\s*goal/i.test(g.strTimelineDetail||'')?' (OG)':'')).filter(Boolean).join(', ');
+        const up=await sb.from('results').upsert({match_id:m.id,s1,s2,status:'FT',scorers},{onConflict:'match_id'});
+        if(!up.error){wrote++;if(SB_ENABLED)sbEmit('Results','ft',m.t1+' '+s1+'–'+s2+' '+m.t2+' (FT)');}
+        await sleep2(450);
+      }catch(e){}
+    }
+    if(wrote){flash(wrote+' new result'+(wrote>1?'s':'')+' synced');queueLoad();}
+  }catch(e){}
+}
+// initial pull a few seconds after boot (let the page settle) + every 5 min while open
+setTimeout(pullLiveScores,4000); setInterval(pullLiveScores,PULL_EVERY);
 </script>
 </body>
 </html>
