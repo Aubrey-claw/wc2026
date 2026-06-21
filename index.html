@@ -778,7 +778,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-q';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-r';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1493,7 +1493,7 @@ function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)re
 function renderTicker(){const el=document.getElementById('tickerWrap');if(!el)return;const ev=state.events||[];
   if(!SB_ENABLED||!ev.length){el.innerHTML='';return;}
   el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">⚽</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
-function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();if(typeof renderLive==='function')renderLive();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
+function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
