@@ -269,6 +269,21 @@
   .wstrip .wlabel{color:var(--mut);font-weight:700}
   .wstrip.hint .wlabel{font-style:italic;color:var(--mut)}
   .wstrip.warn{background:linear-gradient(90deg,rgba(255,93,119,.12),transparent)}.wstrip.warn .wlabel{color:var(--live);font-weight:800}
+  /* near-live match stats */
+  .liveband{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--live);text-transform:uppercase;margin-bottom:10px}
+  .livecard{background:var(--glass);border:1px solid var(--glassline);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .lvtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .lvteam{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:14px;flex:1;min-width:0}.lvteam.r{justify-content:flex-end;text-align:right}
+  .lvscore{font-size:26px;font-weight:800;letter-spacing:2px;flex:0 0 auto;padding:0 6px}
+  .lvclk{text-align:center;margin:6px 0 12px}
+  .livechip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:var(--live);background:rgba(255,93,119,.12);border:1px solid rgba(255,93,119,.3);border-radius:20px;padding:3px 11px;animation:lglow 2.4s ease-in-out infinite}
+  .lstats{display:flex;flex-direction:column;gap:9px}
+  .lstat{display:grid;grid-template-columns:108px 1fr 46px;align-items:center;gap:9px}
+  .lslbl{font-size:11.5px;color:var(--mut);font-weight:700}
+  .lsbar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden}
+  .lsh{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:6px}
+  .lsv{font-size:11.5px;font-weight:800;text-align:right}
+  @media(max-width:480px){.lstat{grid-template-columns:92px 1fr 42px}.lvteam{font-size:12.5px}.lvscore{font-size:22px}}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
   .wctrl{display:flex;align-items:center;gap:9px}
@@ -527,6 +542,7 @@
     <button class="fchip" data-bfilter="upcoming">Upcoming</button>
     <button class="fchip" data-bfilter="all">All</button>
   </div>
+  <div id="liveWrap"></div>
   <div id="boardList"></div>
 </section>
 
@@ -762,7 +778,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-p';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-q';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1477,7 +1493,7 @@ function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)re
 function renderTicker(){const el=document.getElementById('tickerWrap');if(!el)return;const ev=state.events||[];
   if(!SB_ENABLED||!ev.length){el.innerHTML='';return;}
   el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">⚽</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
-function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
+function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();if(typeof renderLive==='function')renderLive();renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
@@ -1543,7 +1559,45 @@ setTimeout(pullLiveScores,4000); setInterval(pullLiveScores,PULL_EVERY);
 // When the tab comes back to the foreground (e.g. after a phone call), timers were paused — force a fresh sync so
 // finished matches lock and stale in-progress edits on already-played games are discarded.
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SB_ENABLED&&sb){sbLoadAll().then(()=>renderAll()).catch(()=>{});try{localStorage.removeItem(PULL_KEY);}catch(e){}pullLiveScores();}});
-window.addEventListener('focus',()=>{if(SB_ENABLED&&sb)sbLoadAll().then(()=>renderAll()).catch(()=>{});});
+window.addEventListener('focus',()=>{if(SB_ENABLED&&sb){sbLoadAll().then(()=>renderAll()).catch(()=>{});refreshLive();}});
+
+// ===== NEAR-LIVE MATCH STATS (read-only): live score, clock & shot attempts for in-play matches =====
+// Free TheSportsDB feed gives score+status+shots (not possession/corners) and trails the TV by ~1-3 min — badged "near-live".
+const liveData={};                         // match_id -> {status,prog,s1,s2,shots,ts}
+let liveIdCache={};try{liveIdCache=JSON.parse(localStorage.getItem('wc2026-liveids')||'{}');}catch(e){}
+let liveBackoff=0;                         // pause upstream calls until this ts after a 429
+const isLiveMatch=m=>kickedOff(m)&&!isFT(m)&&!!SQUAD[m.t1]&&!!SQUAD[m.t2];
+const ftLike=s=>/^(FT|Match Finished|AET|After Extra|PEN|Penalt)/i.test(s||'');
+async function tsdbGet(u){const r=await fetch(u);if(r.status===429){liveBackoff=Date.now()+90000;throw new Error('429');}return r.json();}
+function applyLiveEv(m,ev){liveData[m.id]={status:ev.strStatus||'',prog:ev.strProgress||'',s1:ev.intHomeScore==null?null:+ev.intHomeScore,s2:ev.intAwayScore==null?null:+ev.intAwayScore,shots:(liveData[m.id]||{}).shots,ts:Date.now()};}
+async function fetchLiveOne(m){
+  const T='https://www.thesportsdb.com/api/v1/json/3';let id=liveIdCache[m.id];
+  if(!id){const q=encodeURIComponent(TSDB_TEAM[m.t1]||m.t1)+'_vs_'+encodeURIComponent(TSDB_TEAM[m.t2]||m.t2);
+    const j=await tsdbGet(T+'/searchevents.php?e='+q+'&s=2026');const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
+    if(!ev)return;id=ev.idEvent;liveIdCache[m.id]=id;try{localStorage.setItem('wc2026-liveids',JSON.stringify(liveIdCache));}catch(e){}applyLiveEv(m,ev);}
+  else{const j=await tsdbGet(T+'/lookupevent.php?id='+id);const ev=(j&&j.events||[])[0];if(ev)applyLiveEv(m,ev);}
+  try{const s=await tsdbGet(T+'/lookupeventstats.php?id='+id);const arr=(s&&s.eventstats)||[];
+    const g=n=>{const r=arr.find(x=>(x.strStat||'').toLowerCase()===n);return r?{h:+r.intHome||0,a:+r.intAway||0}:null;};
+    if(liveData[m.id])liveData[m.id].shots={onTarget:g('shots on goal'),total:g('total shots'),inBox:g('shots insidebox')};}catch(e){}
+}
+async function refreshLive(){
+  if(!SB_ENABLED||document.hidden||Date.now()<liveBackoff)return;
+  const live=ALL.filter(isLiveMatch);if(!live.length){renderLive();return;}
+  for(const m of live.slice(0,3)){try{await fetchLiveOne(m);}catch(e){if(String(e.message).includes('429'))break;}await sleep2(800);}
+  renderLive();
+}
+function lpct(h,a){const t=(h||0)+(a||0);return t?Math.round(h/t*100):50;}
+function renderLive(){
+  const el=document.getElementById('liveWrap');if(!el)return;
+  const live=ALL.filter(isLiveMatch).filter(m=>liveData[m.id]&&!ftLike(liveData[m.id].status));
+  if(!live.length){el.innerHTML='';return;}
+  const bar=(lbl,v)=>v&&(v.h||v.a)?`<div class="lstat"><span class="lslbl">${lbl}</span><div class="lsbar"><span class="lsh" style="width:${lpct(v.h,v.a)}%"></span></div><span class="lsv">${v.h} · ${v.a}</span></div>`:'';
+  el.innerHTML=`<div class="liveband"><span class="livedot"></span>NEAR-LIVE · may trail your TV by a minute or two</div>`+live.map(m=>{const d=liveData[m.id];const sh=d.shots||{};
+    const sc=(d.s1!=null?d.s1:'–')+'  '+(d.s2!=null?d.s2:'–');const clk=d.prog?d.prog+"'":(d.status||'LIVE');
+    const stats=(sh.onTarget||sh.total||sh.inBox)?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Shots in box',sh.inBox)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">shot stats loading…</div>';
+    return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">● ${clk}</span></div>${stats}</div>`;}).join('');
+}
+setTimeout(refreshLive,6000);setInterval(refreshLive,60000);
 </script>
 </body>
 </html>
