@@ -268,6 +268,7 @@
   .wstrip{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:11px 14px;font-size:12.5px;flex-wrap:wrap}
   .wstrip .wlabel{color:var(--mut);font-weight:700}
   .wstrip.hint .wlabel{font-style:italic;color:var(--mut)}
+  .wstrip.warn{background:linear-gradient(90deg,rgba(255,93,119,.12),transparent)}.wstrip.warn .wlabel{color:var(--live);font-weight:800}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
   .wctrl{display:flex;align-items:center;gap:9px}
@@ -761,7 +762,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-o';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-p';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1183,7 +1184,8 @@ function renderPredict(){
       if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span></div>`;}
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
-      strip=picked?wagerCtrl(m.id,stake,roundMult(m)):`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`;
+      const halfPick=(pr[0]!=null)!==(pr[1]!=null);  // exactly one score entered
+      strip=picked?wagerCtrl(m.id,stake,roundMult(m)):(halfPick?`<div class="wstrip warn"><span class="wlabel">⚠ Enter BOTH scores — this pick won't count or score yet</span></div>`:`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`);
       if(picked&&stake>0){const aj=activeJokerId(p,roundOf(m)),here=aj===m.id;
         strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
     const spick=sidep.scorer,haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
@@ -1538,6 +1540,10 @@ async function pullLiveScores(){
 }
 // initial pull a few seconds after boot (let the page settle) + every 5 min while open
 setTimeout(pullLiveScores,4000); setInterval(pullLiveScores,PULL_EVERY);
+// When the tab comes back to the foreground (e.g. after a phone call), timers were paused — force a fresh sync so
+// finished matches lock and stale in-progress edits on already-played games are discarded.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SB_ENABLED&&sb){sbLoadAll().then(()=>renderAll()).catch(()=>{});try{localStorage.removeItem(PULL_KEY);}catch(e){}pullLiveScores();}});
+window.addEventListener('focus',()=>{if(SB_ENABLED&&sb)sbLoadAll().then(()=>renderAll()).catch(()=>{});});
 </script>
 </body>
 </html>
