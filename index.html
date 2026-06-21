@@ -302,6 +302,20 @@
   .oddsnote{font-size:12.5px;color:var(--txt);background:linear-gradient(90deg,rgba(255,210,77,.12),transparent);border:1px solid rgba(255,210,77,.3);border-radius:10px;padding:9px 12px;margin:10px 0 4px}
   .oddschip{font-weight:800;font-size:12px;color:var(--gold);background:rgba(255,210,77,.12);border-radius:20px;padding:2px 9px;margin-left:auto}
   .cpub .bnet,.cpub .sub{margin-left:8px}
+  /* staked side bets */
+  .oubtn b,.bbtn b{font-size:11px;opacity:.85;margin-left:3px}
+  .wbtn.sm{width:26px;height:26px;font-size:15px;border-radius:8px}
+  .sidestake{display:flex;align-items:center;gap:7px;margin-left:auto}
+  .sidestake .wval{min-width:42px;text-align:center;font-weight:800;font-size:12.5px}
+  .sidestake .wreturn{color:var(--acc);font-weight:700}
+  .wstrip.ou.col{flex-direction:column;align-items:stretch;gap:9px}
+  .scchips{display:flex;flex-direction:column;gap:7px}
+  .scchip{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:5px 9px;flex-wrap:wrap}
+  .scchip .scn{font-weight:700;font-size:12.5px;flex:1;min-width:90px}.scchip .scn b{color:var(--gold);font-size:11.5px}
+  .scchip .wval{min-width:38px;text-align:center;font-weight:800;font-size:12px}
+  .scchip .scwin{color:var(--acc);font-weight:800;font-size:11.5px}
+  .scchip .scx{width:22px;height:22px;border-radius:50%;background:var(--live);color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer}
+  select.scadd{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
   .wctrl{display:flex;align-items:center;gap:9px}
@@ -803,7 +817,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-t';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-u';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -838,7 +852,7 @@ async function sbLoadAll(){if(!sb)return;
       sb.from('predictions').select('name,match_id,home,away,stake,joker'),
       sb.from('results').select('match_id,s1,s2,status,scorers'),
       sb.from('quiz').select('name,qid,choice'),
-      sb.from('sidepicks').select('name,match_id,ou,btts,scorer'),
+      sb.from('sidepicks').select('name,match_id,ou,btts,scorer,ou_stake,btts_stake,scbets'),
       sb.from('groupquals').select('name,grp,team1,team2'),
       sb.from('events').select('actor,kind,txt,ts').order('ts',{ascending:false}).limit(25),
       sb.from('accas').select('id,name,legs,stake'),
@@ -848,7 +862,7 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts||r.scorer)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer};});
+    state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];if(r.ou||r.btts||r.scorer||scb.length)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer,ouStake:r.ou_stake||0,bttsStake:r.btts_stake||0,scbets:scb};});
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     state.groupquals={};if(!gq.error)(gq.data||[]).forEach(r=>{(state.groupquals[r.name]=state.groupquals[r.name]||{})[r.grp]=[r.team1,r.team2].filter(Boolean);});
     state.events=(!ev.error&&ev.data)?ev.data:[];
@@ -886,7 +900,7 @@ function sbSubscribe(){if(!sb)return;
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
 async function sbSetChampion(name,team,odds){if(!sb)return;try{await sb.from('players').upsert({name,champion:team,champ_odds:odds==null?null:odds},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz').upsert({name,qid,choice,updated_at:new Date().toISOString()},{onConflict:'name,qid'});}catch(e){flash('Could not save answer');}}
-async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
+async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,ou_stake:v.ouStake||null,btts_stake:v.bttsStake||null,scbets:v.scbets||[],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQual(name,g){if(!sb)return;const v=(state.groupquals[name]||{})[g]||[];try{await sb.from('groupquals').upsert({name,grp:g,team1:v[0]||null,team2:v[1]||null,updated_at:new Date().toISOString()},{onConflict:'name,grp'});}catch(e){flash('Could not save pick');}}
 async function sbEmit(actor,kind,txt){if(!sb)return;try{await sb.from('events').insert({actor,kind,txt});}catch(e){}}
@@ -999,7 +1013,12 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
 const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200;
-function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(s.scorer)))t+=SCORER_BONUS;});return t;}
+// staked side-bet fixed odds (board-set): O/U + BTTS Under/No are the WC favourites so pay less; scorer tiered by squad slot
+const OU_ODDS={O:2.1,U:1.75}, BTTS_ODDS={Y:2.1,N:1.75};
+const SCORER_ODDS={};Object.keys(SQUAD).forEach(t=>(SQUAD[t]||[]).forEach((n,i)=>{SCORER_ODDS[normName(n)]=i===0?2.0:i<=2?3.5:6.0;}));
+const scorerOdds=p=>SCORER_ODDS[normName(p)]||6.0;     // star 2.0 / regular 3.5 / longshot 6.0
+function sideCap(p){return Math.max(MIN_WAGER,Math.min(100,Math.round(bankOf(p).bal*0.25)));}  // single side-bet cap = min($100, 25% of bank)
+function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&!(s.scbets&&s.scbets.length)&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(s.scorer)))t+=SCORER_BONUS;});return t;}
 // joker: one pick per round pays double points + double money swing
 function roundOf(m){return m.ko?m.round:'GROUP';}
 function activeJokerId(p,round){const preds=state.preds[p]||{};let best=null,bt=Infinity;
@@ -1027,7 +1046,7 @@ function resolveBracket(){const thirds=bestThirds();let ti=0;
     if(/^3rd/.test(slot))k[t]=thirds?(thirds[ti++]||slot):slot; else k[t]=slotTeam(slot);});});}
 const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
 const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
-function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
+function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&!(s.ouStake>0)&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&!(s.bttsStake>0)&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
 // canonical name key: strip accents/case/extra spaces so "Mbappé"=="Mbappe" everywhere names are matched
 function normName(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
 const isOwnGoal=s=>/\(\s*o\.?\s*g\.?\s*\)/i.test(s||'');
@@ -1116,9 +1135,17 @@ function bankOf(p){
     if(!isFT(m)){duelPlay+=d.amount;return;}
     const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;
     if(mine===his)return;const net=mine>his?d.amount:-d.amount;const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
+  // STAKED side bets (O/U, BTTS, anytime scorer) — fixed odds; stake-less legacy picks still pay flat via ouWon/scorerWon
+  let sidePlay=0;const book=(net)=>{const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;};
+  ALL.forEach(m=>{const s=(state.sidepicks[p]||{})[m.id];if(!s)return;const ft=isFT(m);
+    if(s.ou&&(s.ouStake||0)>0){if(!ft)sidePlay+=s.ouStake;else book(s.ou===ouResult(m)?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake);}
+    if(s.btts&&(s.bttsStake||0)>0){if(!ft)sidePlay+=s.bttsStake;else book(s.btts===bttsResult(m)?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake);}
+    (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;if(!ft){sidePlay+=st;return;}
+      if((m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(b.p)))book(st*(scorerOdds(b.p)-1));
+      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))book(-st);/* else feed incomplete → void/refund */}});});
   const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p);
   const bonus=qw+cw+ow+tw+sw+gqw;bal+=bonus;won+=bonus;
-  let inPlay=accaPlay+duelPlay; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2]*(isJoker(p,m)?2:1);});
+  let inPlay=accaPlay+duelPlay+sidePlay; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2]*(isJoker(p,m)?2:1);});
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -1250,23 +1277,29 @@ function renderPredict(){
       strip=picked?wagerCtrl(m.id,stake,roundMult(m)):(halfPick?`<div class="wstrip warn"><span class="wlabel">⚠ Enter BOTH scores — this pick won't count or score yet</span></div>`:`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`);
       if(picked&&stake>0){const aj=activeJokerId(p,roundOf(m)),here=aj===m.id;
         strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
-    const spick=sidep.scorer,haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
-    const scTeamOpts=(team)=>{const arr=(SQUAD[team]||[]).slice().sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0));
-      return arr.map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}" ${spick===pn?'selected':''}>${pn}${g?'  ·  '+g+' ⚽':''}</option>`;}).join('');};
+    const spick=sidep.scorer,scbets=sidep.scbets||[],haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
+    const ouSt=sidep.ouStake||0,btSt=sidep.bttsStake||0;
+    const stepHTML=(kind,st,odds)=>`<div class="sidestake"><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="-1">−</button><span class="wval">${fmtMoney(st)}</span><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(st*odds))}</span></div>`;
+    const addedKeys=new Set(scbets.map(b=>normName(b.p)));
+    const scTeamOpts=(team)=>(SQUAD[team]||[]).filter(pn=>!addedKeys.has(normName(pn))).sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0))
+      .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' · '+g+'⚽':''}</option>`;}).join('');
     if(canEdit&&!locked){
-      // anytime-scorer: show whichever team(s) are known; on knockout ties the picker unlocks as the bracket resolves
-      let scRow='';
-      if(haveT1||haveT2){const groups=(haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:'')+(haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:'');
-        const partial=m.ko&&(haveT1!==haveT2);
-        scRow=`<div class="wstrip ou"><span class="wlabel">Anytime scorer</span><select class="scsel" data-sc="${m.id}"><option value="">— pick a scorer —</option>${groups}</select><span class="wreturn">${partial?'other side unlocks when decided · ':spick?'⚽ marks goals so far · ':''}+${fmtMoney(SCORER_BONUS)}</span></div>`;}
-      else if(m.ko)scRow=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided · +${fmtMoney(SCORER_BONUS)}</span></div>`;
-      oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5</button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5</button></div><span class="wreturn">+${fmtMoney(OU_BONUS)}</span></div>`
-        +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes</button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No</button></div><span class="wreturn">+${fmtMoney(BTTS_BONUS)}</span></div>`
-        +scRow;
+      oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
+        +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
+      if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
+        oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
+          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval">${fmtMoney(b.st)}</span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
+          +`<select class="scadd" data-sc="${m.id}"><option value="">+ add a scorer…</option>${haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:''}${haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:''}</select></div>`;}
+      else if(m.ko)oustrip+=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided</span></div>`;
     }else{
-      if(oupick){const r=isFT(m)?ouResult(m):null,ok=r&&oupick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
-      if(bpick){const r=isFT(m)?bttsResult(m):null,ok=r&&bpick===r;oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
-      if(spick){const r=isFT(m),ok=r&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(spick));const stm=inSquad(m.t1,spick)?m.t1:inSquad(m.t2,spick)?m.t2:'';oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
+      const settled=(win,st,odds,label)=>`<div class="wstrip ${isFT(m)?(win?'win':'loss'):''}"><span class="wlabel">${label}</span>${isFT(m)?`<span class="wout">${win?'won '+fmtMoney(Math.round(st*(odds-1))):'lost '+fmtMoney(st)}</span>`:'<span class="wreturn">'+fmtMoney(st)+' on the line</span>'}</div>`;
+      if(oupick){if(ouSt>0)oustrip+=settled(oupick===ouResult(m),ouSt,OU_ODDS[oupick],'Goals '+(oupick==='O'?'Over':'Under')+' 2.5 @'+OU_ODDS[oupick]+'x');
+        else{const r=isFT(m),ok=r&&oupick===ouResult(m);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}}
+      if(bpick){if(btSt>0)oustrip+=settled(bpick===bttsResult(m),btSt,BTTS_ODDS[bpick],'Both score '+(bpick==='Y'?'Yes':'No')+' @'+BTTS_ODDS[bpick]+'x');
+        else{const r=isFT(m),ok=r&&bpick===bttsResult(m);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}}
+      scbets.forEach(b=>{const ft=isFT(m),scored=ft&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;const voided=ft&&!scored&&rec<(m.s1+m.s2);const stm=inSquad(m.t1,b.p)?m.t1:inSquad(m.t2,b.p)?m.t2:'';
+        oustrip+=`<div class="wstrip ${ft?(scored?'win':voided?'':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${b.p} @${scorerOdds(b.p)}x</span>${ft?`<span class="wout">${scored?'won '+fmtMoney(Math.round(b.st*(scorerOdds(b.p)-1))):voided?'void — refunded':'lost '+fmtMoney(b.st)}</span>`:'<span class="wreturn">'+fmtMoney(b.st)+' on the line</span>'}</div>`;});
+      if(spick&&!scbets.length){const r=isFT(m),ok=r&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(spick));const stm=inSquad(m.t1,spick)?m.t1:inSquad(m.t2,spick)?m.t2:'';oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
     const _ms=new Date(m.dt)-Date.now(),_cd=(!locked&&_ms>0)?(_ms<36e5?Math.round(_ms/6e4)+'m':_ms<864e5?Math.round(_ms/36e5)+'h':Math.round(_ms/864e5)+'d'):'';
     return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
@@ -1291,12 +1324,17 @@ function renderPredict(){
       if(prev===id){cur[3]=0;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
       else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED){sbUpsertPred(p,id);if(p===me)sbEmit(me,'joker',me+' armed their Joker ★ on '+mm.t1+' v '+mm.t2);}}
       saveState();renderPredict();renderLeaderboard();updateLeagueBar();});
-    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.ou=o.ou===v?null:v;
-      markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
-    wrap.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.btts=o.btts===v?null:v;
-      markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});
-    wrap.querySelectorAll('.scsel').forEach(s=>s.onchange=()=>{const id=s.dataset.sc;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scorer=s.value||null;
-      markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();});}
+    const defSt=(id)=>Math.max(MIN_WAGER,Math.min(sideCap(p),((state.preds[p][id]||[])[2])||DEFAULT_STAKE));
+    const saveSide=(id)=>{markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();};
+    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
+      if(o.ou===v)o.ou=null;else{o.ou=v;if(!(o.ouStake>0))o.ouStake=defSt(id);}saveSide(id);});
+    wrap.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
+      if(o.btts===v)o.btts=null;else{o.btts=v;if(!(o.bttsStake>0))o.bttsStake=defSt(id);}saveSide(id);});
+    wrap.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=b.dataset.ss,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o)return;const key=k==='ou'?'ouStake':'bttsStake';o[key]=Math.max(MIN_WAGER,Math.min(sideCap(p),(o[key]||0)+d*STAKE_STEP));saveSide(id);});
+    wrap.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
+      if(!o.scbets.some(x=>normName(x.p)===normName(v)))o.scbets.push({p:v,st:defSt(id)});saveSide(id);});
+    wrap.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));saveSide(id);});
+    wrap.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});}
 }
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();});
 document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();});
@@ -1386,11 +1424,13 @@ function renderBoard(){
           res=`<span class="pillpts ${pts===0?'zero':''}">${pts>0?'✓ ':''}+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'✓ +'+fmtMoney(net):net<0?'✗ −'+fmtMoney(stake*(jk?2:1)):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}${jk?' <span class="jchip">★2×</span>':''}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
-    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];if(!s||(!s.ou&&!s.btts&&!s.scorer))return '';
-      const gx=ok=>ft?(ok?'✓ ':'✗ '):'';
-      const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}</span>`:'';
-      const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">${gx(s.btts===bttsResult(m))}BTTS ${s.btts}</span>`:'';
-      const sc=s.scorer?`<span class="oubadge ${ft?((m.scorers||[]).includes(s.scorer)?'win':'loss'):''}">${gx((m.scorers||[]).includes(s.scorer))}⚽ ${s.scorer}</span>`:'';
+    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];const scb=(s&&s.scbets)||[];if(!s||(!s.ou&&!s.btts&&!s.scorer&&!scb.length))return '';
+      const gx=ok=>ft?(ok?'✓ ':'✗ '):'';const amt=v=>v>0?' '+fmtMoney(v):'';
+      const scoredP=name=>(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(name));
+      const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}${amt(s.ouStake)}</span>`:'';
+      const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">${gx(s.btts===bttsResult(m))}BTTS ${s.btts}${amt(s.bttsStake)}</span>`:'';
+      const sc=scb.length?scb.map(b=>`<span class="oubadge ${ft?(scoredP(b.p)?'win':'loss'):''}">${gx(scoredP(b.p))}⚽ ${b.p}${amt(b.st)}</span>`).join('')
+        :(s.scorer?`<span class="oubadge ${ft?(scoredP(s.scorer)?'win':'loss'):''}">${gx(scoredP(s.scorer))}⚽ ${s.scorer}</span>`:'');
       return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
     const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
     return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
