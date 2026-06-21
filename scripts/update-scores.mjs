@@ -47,11 +47,12 @@ function parseSquads(html) {
 
   const now = Date.now();
   const cand = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() <= now);
+  const scCount = s => (s || '').split(',').map(x => x.trim()).filter(Boolean).length;
   const need = cand.filter(m => {
     const h = have[m.id]; if (!h) return true;
     if (h.status !== 'FT') return true;
-    // FT and we already have score; only re-probe if scorers blank AND it wasn't a 0-0 (then there really are scorers to fetch)
-    return !h.sc && (h.s1 + h.s2) > 0;
+    // FT but timeline still incomplete (fewer recorded scorers than goals) -> keep re-pulling until it fills in
+    return scCount(h.sc) < (h.s1 + h.s2);
   });
 
   const wrote = [], skipped = [];
@@ -64,8 +65,9 @@ function parseSquads(html) {
         skipped.push(`${m.t1} v ${m.t2}: ${ev ? ev.strStatus : 'not found'}`); await sleep(450); continue;
       }
       const s1 = parseInt(ev.intHomeScore, 10), s2 = parseInt(ev.intAwayScore, 10);
-      if (have[m.id] && have[m.id].status === 'FT' && (have[m.id].s1 !== s1 || have[m.id].s2 !== s2)) {
-        skipped.push(`${m.t1} v ${m.t2}: DB ${have[m.id].s1}-${have[m.id].s2} vs TSDB ${s1}-${s2} — NOT overwriting`);
+      const h = have[m.id];
+      if (h && h.status === 'FT' && (h.s1 !== s1 || h.s2 !== s2)) {
+        skipped.push(`${m.t1} v ${m.t2}: DB ${h.s1}-${h.s2} vs TSDB ${s1}-${s2} — NOT overwriting`);
         await sleep(450); continue;
       }
       const tl = await fetch(`${TSDB}/lookuptimeline.php?id=${ev.idEvent}`).then(r => r.json()).catch(() => null);
@@ -73,6 +75,11 @@ function parseSquads(html) {
         .filter(e => (e.strTimeline || '').toLowerCase() === 'goal' && !/shootout/i.test(e.strTimelineDetail || ''))
         .sort((a, b) => (parseInt(a.intTime || '0', 10)) - (parseInt(b.intTime || '0', 10)));
       const scorers = goals.map(g => (g.strPlayer || '').trim() + (/own\s*goal/i.test(g.strTimelineDetail || '') ? ' (OG)' : '')).filter(Boolean).join(', ');
+      // for an already-FT match, only write if the new timeline ADDS scorers (never shrink a fuller/manual list)
+      if (h && h.status === 'FT' && goals.length <= scCount(h.sc)) {
+        skipped.push(`${m.t1} v ${m.t2}: timeline still incomplete (${goals.length}/${s1 + s2}) — no new scorers`);
+        await sleep(450); continue;
+      }
       const r = await sb('results?on_conflict=match_id', {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
