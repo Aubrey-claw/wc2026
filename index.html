@@ -284,6 +284,19 @@
   .lsh{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:6px}
   .lsv{font-size:11.5px;font-weight:800;text-align:right}
   @media(max-width:480px){.lstat{grid-template-columns:92px 1fr 42px}.lvteam{font-size:12.5px}.lvscore{font-size:22px}}
+  /* league chat */
+  .chatbox{height:min(58vh,460px);overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+  .cmsg{display:flex;align-items:flex-end;gap:8px;max-width:84%}
+  .cmsg.me{align-self:flex-end;flex-direction:row-reverse}
+  .cmsg .av{width:30px;height:30px;font-size:12px;flex:0 0 auto}
+  .cbub{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px 12px;min-width:0}
+  .cmsg.me .cbub{background:linear-gradient(135deg,rgba(31,230,171,.16),rgba(91,149,255,.12));border-color:rgba(31,230,171,.35)}
+  .cmeta{font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:2px}
+  .ctxt{font-size:13.5px;line-height:1.35;word-wrap:break-word;overflow-wrap:anywhere}
+  .chatinput{display:flex;gap:9px}
+  .chatinput input{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:var(--r-sm);padding:12px 14px;font-size:14px}
+  .chatinput input:focus{outline:none;border-color:var(--acc2)}
+  .chatinput .btn{flex:0 0 auto}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
   .wctrl{display:flex;align-items:center;gap:9px}
@@ -470,6 +483,7 @@
   <button class="tab league" data-tab="board">Everyone's picks</button>
   <button class="tab league" data-tab="sidebets">Side bets</button>
   <button class="tab league" data-tab="leaderboard">Leaderboard</button>
+  <button class="tab league" data-tab="chat">💬 Chat</button>
 </div>
 <div id="recapWrap"></div>
 <div id="tickerWrap"></div>
@@ -553,6 +567,12 @@
   <div class="card" id="accaWrap" style="margin-bottom:16px"></div>
   <div class="card" id="duelWrap" style="margin-bottom:16px"></div>
   <div class="card" id="quizWrap"></div>
+</section>
+
+<section id="chat">
+  <h2>💬 League chat <span class="sub" style="font-weight:400">— talk smack while you watch</span></h2>
+  <div class="chatbox" id="chatBox"></div>
+  <div class="chatinput"><input id="chatText" maxlength="280" placeholder="Message the league…" autocomplete="off"><button class="btn" id="chatSend">Send</button></div>
 </section>
 
 <section id="admin">
@@ -768,7 +788,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[],accas:{},duels:[]};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[],accas:{},duels:[],chat:[]};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -778,7 +798,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-r';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-s';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -808,7 +828,7 @@ function computeStandings(){
       if(m.s1>m.s2){a.w++;b.l++;a.pts+=3;}else if(m.s1<m.s2){b.w++;a.l++;b.pts+=3;}else{a.d++;b.d++;a.pts++;b.pts++;}});
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
-  try{const [pl,pr,rs,qz,sp,gq,ev,ac,du]=await Promise.all([
+  try{const [pl,pr,rs,qz,sp,gq,ev,ac,du,ch]=await Promise.all([
       sb.from('players').select('name,champion,topscorer'),
       sb.from('predictions').select('name,match_id,home,away,stake,joker'),
       sb.from('results').select('match_id,s1,s2,status,scorers'),
@@ -817,7 +837,8 @@ async function sbLoadAll(){if(!sb)return;
       sb.from('groupquals').select('name,grp,team1,team2'),
       sb.from('events').select('actor,kind,txt,ts').order('ts',{ascending:false}).limit(25),
       sb.from('accas').select('id,name,legs,stake'),
-      sb.from('duels').select('id,match_id,challenger,opponent,amount,status')]);
+      sb.from('duels').select('id,match_id,challenger,opponent,amount,status'),
+      sb.from('chat').select('name,txt,ts').order('ts',{ascending:true}).limit(200)]);
     if(pl.error||pr.error)throw(pl.error||pr.error);
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
@@ -828,6 +849,7 @@ async function sbLoadAll(){if(!sb)return;
     state.events=(!ev.error&&ev.data)?ev.data:[];
     state.accas={};if(!ac.error)(ac.data||[]).forEach(r=>{(state.accas[r.name]=state.accas[r.name]||[]).push({id:r.id,legs:(r.legs||'').split(',').filter(Boolean),stake:r.stake||0});});
     state.duels=(!du.error&&du.data)?du.data:[];
+    state.chat=(!ch.error&&ch.data)?ch.data:[];
     if(me){state.groupquals[me]=state.groupquals[me]||{};for(const g in pendingQual)state.groupquals[me][g]=pendingQual[g].slice();}
     applyResults(rs.error?[]:rs.data);computeStandings();resolveBracket();
     const preds={};
@@ -853,6 +875,7 @@ function sbSubscribe(){if(!sb)return;
     .on('postgres_changes',{event:'*',schema:'public',table:'events'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'accas'},queueLoad)
     .on('postgres_changes',{event:'*',schema:'public',table:'duels'},queueLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'chat'},queueLoad)
     .subscribe();
   setInterval(sbLoadAll,30000);}
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
@@ -866,6 +889,8 @@ async function sbSaveAcca(a){if(!sb)return;try{await sb.from('accas').upsert({id
 async function sbDelAcca(id){if(!sb)return;try{await sb.from('accas').delete().eq('id',id);}catch(e){}}
 async function sbCreateDuel(d){if(!sb)return;try{await sb.from('duels').upsert(d);}catch(e){flash('Could not send duel');}}
 async function sbSetDuel(id,status){if(!sb)return;try{await sb.from('duels').update({status}).eq('id',id);}catch(e){flash('Could not update duel');}}
+async function sbSendChat(txt){if(!sb)return false;try{const r=await sb.from('chat').insert({name:me,txt});return !r.error;}catch(e){flash('Could not send message');return false;}}
+const escHtml=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').delete().eq('name',name);await sb.from('players').delete().eq('name',name);}catch(e){}}
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0,0];
@@ -1228,10 +1253,12 @@ function renderPredict(){
   if(canEdit){
     wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
+      const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;  // setting one score auto-completes the other to 0 — no half-picks
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
       saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.svin').forEach(inp=>inp.onchange=()=>{const id=inp.dataset.svin,s=+inp.dataset.s;let v=parseInt(inp.value,10);v=isNaN(v)?null:Math.max(0,Math.min(20,v));
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;cur[s]=v;
+      if(v!=null){const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;}  // typing one score auto-completes the other to 0
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
       saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
@@ -1486,14 +1513,29 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
   let s=`${done} group matches played`;if(next)s+=` · next: ${next.t1} v ${next.t2}`;
   document.getElementById('statusline').textContent=s;
   document.getElementById('foot').innerHTML='Times in Adelaide (ACST, UTC+9:30) &amp; Sydney (AEST, UTC+10), converted live. Everyone on the shared link plays one league, synced in real time. Predictions lock at kickoff and reveal to everyone then.';}
-document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');});
+document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
 function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)return 'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
 function renderTicker(){const el=document.getElementById('tickerWrap');if(!el)return;const ev=state.events||[];
   if(!SB_ENABLED||!ev.length){el.innerHTML='';return;}
   el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">⚽</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
-function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();statusLine();updateLeagueBar();}
+let chatSeen=0;
+function renderChat(){const box=document.getElementById('chatBox');if(!box)return;
+  const msgs=state.chat||[];
+  const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;  // keep position unless already at bottom
+  if(!SB_ENABLED){box.innerHTML='<div class="empty">Chat needs the live link version.</div>';return;}
+  if(!msgs.length){box.innerHTML='<div class="empty">No messages yet — say hi 👋</div>';}
+  else box.innerHTML=msgs.map(m=>{const mine=m.name===me;
+    return `<div class="cmsg ${mine?'me':''}">${mine?'':avatar(m.name)}<div class="cbub"><div class="cmeta">${mine?'You':escHtml(m.name)} · <span class="cago">${relTime(m.ts)}</span></div><div class="ctxt">${escHtml(m.txt)}</div></div></div>`;}).join('');
+  if(atBottom||msgs.length>chatSeen)box.scrollTop=box.scrollHeight;chatSeen=msgs.length;
+  // notify dot on the chat tab when new messages arrive and you're not on the tab
+  const ct=document.querySelector('#tabs .tab[data-tab="chat"]');const onChat=document.getElementById('chat')&&document.getElementById('chat').classList.contains('on');
+  let seen=0;try{seen=+localStorage.getItem('wc2026-chatseen')||0;}catch(e){}
+  if(ct)ct.classList.toggle('notify',msgs.length>seen&&!onChat);
+  if(onChat){try{localStorage.setItem('wc2026-chatseen',msgs.length);}catch(e){}if(ct)ct.classList.remove('notify');}
+}
+function renderAll(){computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();renderChat();statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
@@ -1502,6 +1544,12 @@ if(SB_ENABLED){
   const jg=document.getElementById('joinGo');if(jg)jg.onclick=()=>claim(document.getElementById('joinName').value);
   const jn=document.getElementById('joinName');if(jn)jn.addEventListener('keydown',e=>{if(e.key==='Enter')claim(e.target.value);});
   const jp=document.getElementById('joinPick');if(jp)jp.onclick=e=>{const b=e.target.closest('.pk');if(b)claim(b.dataset.p,true);};
+  function doSendChat(){const i=document.getElementById('chatText');if(!i)return;const t=i.value.trim();if(!t)return;
+    if(!me){flash('Join the league to chat');showJoin();return;}
+    i.value='';state.chat=(state.chat||[]).concat([{name:me,txt:t,ts:new Date().toISOString()}]);renderChat();  // optimistic
+    sbSendChat(t);}
+  const csend=document.getElementById('chatSend');if(csend)csend.onclick=doSendChat;
+  const ctext=document.getElementById('chatText');if(ctext)ctext.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSendChat();}});
   const jmask=document.getElementById('joinMask');
   if(jmask)jmask.addEventListener('click',e=>{if(e.target===jmask){jmask.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('joinMask');if(m&&m.style.display!=='none'){m.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();}}});
