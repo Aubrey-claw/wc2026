@@ -1,0 +1,16 @@
+name: Update WC2026 scores
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Fetch scores from TheSportsDB and upsert to Supabase
+        run: node scripts/update-scores.mjs
