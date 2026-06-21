@@ -290,13 +290,18 @@
   .cmsg.me{align-self:flex-end;flex-direction:row-reverse}
   .cmsg .av{width:30px;height:30px;font-size:12px;flex:0 0 auto}
   .cbub{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px 12px;min-width:0}
-  .cmsg.me .cbub{background:linear-gradient(135deg,rgba(31,230,171,.16),rgba(91,149,255,.12));border-color:rgba(31,230,171,.35)}
+  .cmsg.me .cbub{background:var(--acc2);border-color:var(--acc2);color:#fff}
   .cmeta{font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:2px}
+  .cmsg.me .cmeta{color:rgba(255,255,255,.75)}
   .ctxt{font-size:13.5px;line-height:1.35;word-wrap:break-word;overflow-wrap:anywhere}
   .chatinput{display:flex;gap:9px}
   .chatinput input{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:var(--r-sm);padding:12px 14px;font-size:14px}
   .chatinput input:focus{outline:none;border-color:var(--acc2)}
   .chatinput .btn{flex:0 0 auto}
+  /* champion live odds */
+  .oddsnote{font-size:12.5px;color:var(--txt);background:linear-gradient(90deg,rgba(255,210,77,.12),transparent);border:1px solid rgba(255,210,77,.3);border-radius:10px;padding:9px 12px;margin:10px 0 4px}
+  .oddschip{font-weight:800;font-size:12px;color:var(--gold);background:rgba(255,210,77,.12);border-radius:20px;padding:2px 9px;margin-left:auto}
+  .cpub .bnet,.cpub .sub{margin-left:8px}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
   .wctrl{display:flex;align-items:center;gap:9px}
@@ -788,7 +793,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[],accas:{},duels:[],chat:[]};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},topscorer:{},groupquals:{},events:[],accas:{},duels:[],chat:[]};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -798,7 +803,7 @@ function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-s';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-t';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -829,7 +834,7 @@ function computeStandings(){
     standings[g]=Object.values(teams).map(t=>[t.nm,t.p,t.w,t.d,t.l,t.gf,t.ga,t.pts]);}}
 async function sbLoadAll(){if(!sb)return;
   try{const [pl,pr,rs,qz,sp,gq,ev,ac,du,ch]=await Promise.all([
-      sb.from('players').select('name,champion,topscorer'),
+      sb.from('players').select('name,champion,topscorer,champ_odds'),
       sb.from('predictions').select('name,match_id,home,away,stake,joker'),
       sb.from('results').select('match_id,s1,s2,status,scorers'),
       sb.from('quiz').select('name,qid,choice'),
@@ -841,7 +846,7 @@ async function sbLoadAll(){if(!sb)return;
       sb.from('chat').select('name,txt,ts').order('ts',{ascending:true}).limit(200)]);
     if(pl.error||pr.error)throw(pl.error||pr.error);
     state.players=(pl.data||[]).map(r=>r.name);
-    state.champion={};state.topscorer={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;});
+    state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
     state.sidepicks={};if(!sp.error)(sp.data||[]).forEach(r=>{if(r.ou||r.btts||r.scorer)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer};});
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
@@ -879,7 +884,7 @@ function sbSubscribe(){if(!sb)return;
     .subscribe();
   setInterval(sbLoadAll,30000);}
 async function sbAddPlayer(name){if(!sb)return;try{await sb.from('players').upsert({name},{onConflict:'name'});}catch(e){}}
-async function sbSetChampion(name,team){if(!sb)return;try{await sb.from('players').upsert({name,champion:team},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
+async function sbSetChampion(name,team,odds){if(!sb)return;try{await sb.from('players').upsert({name,champion:team,champ_odds:odds==null?null:odds},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz').upsert({name,qid,choice,updated_at:new Date().toISOString()},{onConflict:'name,qid'});}catch(e){flash('Could not save answer');}}
 async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
@@ -1075,7 +1080,23 @@ function quizUnlocked(p){
   return n;
 }
 let quizSeen=0;try{quizSeen=+localStorage.getItem('wc2026-quizseen')||0;}catch(e){}
-function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?CHAMP_BONUS:0;}
+// ===== CHAMPION SLIDING/DECAYING ODDS =====
+// payout = CHAMP_BASE × odds(team). odds slide with form (better team → lower) and decay over time (later pick → lower).
+const CHAMP_BASE=150;
+const SEED_STR={Brazil:9,France:9,Spain:9,Argentina:9,England:8,Germany:8,Portugal:8,Netherlands:7,Belgium:6,Croatia:5,Uruguay:5,Morocco:5,Colombia:4,Mexico:4,'United States':4,Senegal:4,Japan:4,Switzerland:4,Denmark:4,Italy:4};
+function teamFormStr(t){for(const g in standings){const r=standings[g].find(x=>x[0]===t);if(r)return r[7]*3+(r[5]-r[6])+r[5]*0.3;}return 0;}
+function teamStrength(t){return teamFormStr(t)+(SEED_STR[t]||2);}
+function champProgress(){return ALL.filter(isFT).length/ALL.length;}
+function champOdds(team,progOverride){if(!team)return 1.5;
+  const prog=progOverride!=null?progOverride:champProgress();
+  const allT=Object.keys(SQUAD);const s=teamStrength(team);
+  const pct=allT.length?allT.filter(t=>teamStrength(t)>s).length/allT.length:0.5;  // 0=strongest, ~1=weakest
+  let odds=2.2+13*pct;                       // strong→~2.2x, weak→~15x
+  odds*=(1.35-0.85*Math.min(1,prog));        // time decay: early(0)→×1.35, final(1)→×0.5
+  return Math.max(1.5,Math.round(odds*10)/10);}
+function champOddsOf(p){const o=state.champOdds&&state.champOdds[p];return (o!=null&&!isNaN(o))?o:champOdds(state.champion[p],0);}  // grandfather un-stamped picks at early-bird odds
+function champPay(p){return Math.round(CHAMP_BASE*champOddsOf(p));}
+function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?champPay(p):0;}
 function bankOf(p){
   const preds=state.preds[p]||{};
   const settled=ALL.filter(m=>isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)
@@ -1378,10 +1399,12 @@ function renderBoard(){
 function renderSidebets(){
   const cw=document.getElementById('champWrap'),qw=document.getElementById('quizWrap');if(!cw||!qw)return;
   const teams=Object.keys(TEAM).sort();const myChamp=me?state.champion[me]:null;const fw=finalWinner();
-  let html=`<h3 style="margin-bottom:6px">🏆 Champion pick</h3><p class="sub" style="margin-bottom:12px">Call the tournament winner — ${fmtMoney(CHAMP_BONUS)} bonus if you nail it. ${fw?'Winner: <b>'+fw+'</b>':'Locks when the final is played.'}</p>`;
-  if(me)html+=`<div class="champrow"><span class="wlabel">Your pick</span><select id="champSel" ${fw?'disabled':''}><option value="">— choose a team —</option>${teams.map(t=>`<option value="${t}" ${t===myChamp?'selected':''}>${t}</option>`).join('')}</select>${myChamp?badge(myChamp):''}</div>`;
-  const picks=state.players.map(pl=>{const c=state.champion[pl];if(!c)return '';const ok=fw&&c===fw;
-    return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badge(c)}${fw?(ok?'<span class="bnet win">+'+fmtMoney(CHAMP_BONUS)+'</span>':'<span class="bnet loss">missed</span>'):''}</div>`;}).filter(Boolean).join('');
+  const myOdds=myChamp?champOddsOf(me):null;
+  let html=`<h3 style="margin-bottom:6px">🏆 Champion — live odds</h3><p class="sub" style="margin-bottom:12px">Back the winner at <b>${fmtMoney(CHAMP_BASE)} × odds</b>. Odds slide with form (stronger team = shorter odds) and <b>shrink the longer you wait</b> — so pick early for the big payout. Your odds <b>lock in</b> the moment you pick. ${fw?'Winner: <b>'+fw+'</b>':''}</p>`;
+  if(me)html+=`<div class="champrow"><span class="wlabel">Your pick</span><select id="champSel" ${fw?'disabled':''}><option value="">— choose a team —</option>${teams.map(t=>`<option value="${t}" ${t===myChamp?'selected':''}>${t} — ${(t===myChamp?myOdds:champOdds(t))}x</option>`).join('')}</select>${myChamp?badge(myChamp):''}</div>`;
+  if(me&&myChamp)html+=`<div class="oddsnote">🔒 Locked at <b>${myOdds}x</b> → pays <b>${fmtMoney(champPay(me))}</b> if ${myChamp} win it. ${fw?'':'Switch team to take that team’s current odds.'}</div>`;
+  const picks=state.players.map(pl=>{const c=state.champion[pl];if(!c)return '';const ok=fw&&c===fw;const od=champOddsOf(pl);
+    return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badge(c)}<span class="oddschip">${od}x</span>${fw?(ok?'<span class="bnet win">+'+fmtMoney(champPay(pl))+'</span>':'<span class="bnet loss">missed</span>'):'<span class="sub">→ '+fmtMoney(champPay(pl))+'</span>'}</div>`;}).filter(Boolean).join('');
   if(picks)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${picks}`;
   // Golden Boot pick (top scorer of the tournament)
   const gbW=goldenBoot();const sc=gbCandidates();const myGB=me?state.topscorer[me]:null;
@@ -1399,7 +1422,7 @@ function renderSidebets(){
     return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="gbname">${c}${g?' <small class="gbgsm">'+g+'g</small>':''}</span>${gbW?(ok?'<span class="bnet win">+'+fmtMoney(GB_BONUS)+'</span>':'<span class="bnet loss">missed</span>'):''}</div>`;}).filter(Boolean).join('');
   if(gbp)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${gbp}`;
   cw.innerHTML=html;
-  const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{state.champion[me]=sel.value;if(SB_ENABLED)sbSetChampion(me,sel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
+  const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{const t=sel.value;const odds=t?champOdds(t):null;state.champion[me]=t;state.champOdds[me]=odds;if(SB_ENABLED)sbSetChampion(me,t,odds);flash(t?'Locked '+t+' at '+odds+'x':'Champion pick cleared');renderSidebets();renderLeaderboard();updateLeagueBar();};
   const gsel=document.getElementById('gbSel');if(gsel)gsel.onchange=()=>{state.topscorer[me]=gsel.value;if(SB_ENABLED)sbSetTopScorer(me,gsel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
   // Group qualifiers — call the top 2 of each group
   const qgw=document.getElementById('qualWrap');
