@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>World Cup 2026 ‚Äî Tracker &amp; Prediction League</title>
+<title>World Cup 2026 — Tracker &amp; Prediction League</title>
 <style>
   :root{
     --bg:#04060e; --bg2:#0a0f1e; --panel:#101728; --panel2:#18213a; --line:#283450;
@@ -509,7 +509,7 @@
   .mo-skel{border-radius:var(--r-sm);background:linear-gradient(100deg,var(--panel) 30%,var(--panel2) 50%,var(--panel) 70%);background-size:220% 100%;animation:mo-shimmer 1.25s linear infinite}
   .mo-skel.row{height:62px;margin-bottom:11px}
   .mo-skel.card{height:150px;margin-bottom:13px}
-  /* global press feedback ‚Äî makes selecting anything feel tactile */
+  /* global press feedback — makes selecting anything feel tactile */
   .tab,.fchip,.oubtn,.bbtn,.qopt,.csbtn,.htbtn,.jokerbtn,.iconbtn,.btn,.pk,.mcbtn,.scadd{transition:transform .12s ease,background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
   .tab:active,.fchip:active,.oubtn:active,.bbtn:active,.qopt:active,.csbtn:active,.htbtn:active,.jokerbtn:active,.iconbtn:active,.pk:active{transform:scale(.96)}
   /* modal scale-in + backdrop fade */
@@ -534,7 +534,7 @@
   .glovetab tr.glovetop .nmcell{font-weight:800}
   .gnote{margin-top:10px;line-height:1.5}
 
-  /* live budget bar (Predict & wager) ‚Äî what you can still bet right now, reserves pending stakes live */
+  /* live budget bar (Predict & wager) — what you can still bet right now, reserves pending stakes live */
   .budgetbar{display:flex;align-items:stretch;margin-top:11px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
   .bgcol{flex:1;display:flex;flex-direction:column;gap:2px;padding:9px 12px;text-align:center}
   .bgcol.bgfree{background:linear-gradient(135deg,rgba(31,230,171,.13),transparent)}
@@ -551,8 +551,8 @@
 <body>
 <header>
   <div class="brand">
-    <div class="badge">CANADA ¬∑ MEXICO ¬∑ USA</div>
-    <h1>World Cup 2026 ‚Äî Tracker &amp; Prediction League</h1>
+    <div class="badge">CANADA · MEXICO · USA</div>
+    <h1>World Cup 2026 — Tracker &amp; Prediction League</h1>
     <div class="statusline" id="statusline"></div>
   </div>
   <div class="ctrls">
@@ -578,31 +578,31 @@
   <button class="tab" data-tab="bracket">Bracket</button>
   <button class="tab" data-tab="fixtures">Fixtures</button>
   <button class="tab" data-tab="scorers">Scorers</button>
-  <button class="tab" data-tab="glove">üß§ Golden Glove</button>
+  <button class="tab" data-tab="glove">🧤 Golden Glove</button>
   <span class="tabdiv"></span>
-  <span class="tablabel">Prediction League ‚Äî play with mates</span>
+  <span class="tablabel">Prediction League — play with mates</span>
   <button class="tab league" data-tab="predict">Predict &amp; wager</button>
   <button class="tab league" data-tab="board">Everyone's picks</button>
   <button class="tab league" data-tab="sidebets">Side bets</button>
   <button class="tab league" data-tab="leaderboard">Leaderboard</button>
-  <button class="tab league" data-tab="chat">üí¨ Chat</button>
+  <button class="tab league" data-tab="chat">💬 Chat</button>
 </div>
 <div id="recapWrap"></div>
 <div id="tickerWrap"></div>
 
 <section id="next" class="on">
-  <h2>Next up <span class="sub" style="font-weight:400">‚Äî kickoffs in your selected time</span></h2>
+  <h2>Next up <span class="sub" style="font-weight:400">— kickoffs in your selected time</span></h2>
   <div class="grid g-next" id="nextGrid"></div>
 </section>
 
 <section id="standings">
-  <h2>Group standings ‚Äî leaders marked <span class="star">‚òÖ</span></h2>
+  <h2>Group standings — leaders marked <span class="star">★</span></h2>
   <div class="legend"><i></i> Top 2 qualify automatically (plus 8 best 3rd-placed teams advance)</div>
   <div class="grid g-groups" id="groups"></div>
 </section>
 
 <section id="bracket">
-  <h2>Knockout bracket <span class="sub" style="font-weight:400">‚Äî fills in as teams qualify</span></h2>
+  <h2>Knockout bracket <span class="sub" style="font-weight:400">— fills in as teams qualify</span></h2>
   <div id="koRounds"></div>
 </section>
 
@@ -617,7 +617,7 @@
 </section>
 
 <section id="glove">
-  <h2>üß§ Golden Glove race <span class="sub" style="font-weight:400">‚Äî the tournament's meanest defences</span></h2>
+  <h2>🧤 Golden Glove race <span class="sub" style="font-weight:400">— the tournament's meanest defences</span></h2>
   <div id="gloveList"></div>
 </section>
 
@@ -626,7 +626,7 @@
   <div class="card rail" style="margin-bottom:14px">
     <div class="lab">Players</div>
     <div class="prail" id="prail"></div>
-    <div class="addrow" id="addrow"><input type="text" id="newPlayer" placeholder="Friend's name‚Ä¶" maxlength="18"><button class="btn" id="addPlayer">Add</button></div>
+    <div class="addrow" id="addrow"><input type="text" id="newPlayer" placeholder="Friend's name…" maxlength="18"><button class="btn" id="addPlayer">Add</button></div>
   </div>
   <div id="bannerWrap"></div>
   <div class="chips" id="chips">
@@ -647,17 +647,17 @@
   <div class="card rules">
     <h3 style="margin-bottom:8px">How it works</h3>
     <ul>
-      <li>Everyone starts with <span class="pp">$1,000</span>. Every pick carries a wager. Payouts: <span class="pp">4√ó</span> exact score ¬∑ <span class="pp">2.5√ó</span> right result + goal difference ¬∑ <span class="pp">1.5√ó</span> right result ¬∑ <span class="pp">lose stake</span> if wrong.</li>
-      <li>Points are also tracked (<span class="pp">5 / 3 / 2 / 0</span>) for the side standings. Your bank never drops below $10, so you're never out ‚Äî go all-in to chase the leader.</li>
-      <li><span class="pp">‚òÖ Joker</span>: once per round, arm your Joker on one pick ‚Äî it pays <span class="pp">double</span> points and double money, win or lose. Choose the match you trust most.</li>
+      <li>Everyone starts with <span class="pp">$1,000</span>. Every pick carries a wager. Payouts: <span class="pp">4×</span> exact score · <span class="pp">2.5×</span> right result + goal difference · <span class="pp">1.5×</span> right result · <span class="pp">lose stake</span> if wrong.</li>
+      <li>Points are also tracked (<span class="pp">5 / 3 / 2 / 0</span>) for the side standings. Your bank never drops below $10, so you're never out — go all-in to chase the leader.</li>
+      <li><span class="pp">★ Joker</span>: once per round, arm your Joker on one pick — it pays <span class="pp">double</span> points and double money, win or lose. Choose the match you trust most.</li>
       <li>Side bets: Over/Under, Both-teams-score, Anytime scorer, Champion, Golden Boot, and <span class="pp">Group qualifiers</span> (call each group's top 2). All extra cash on top of your wagers.</li>
     </ul>
-    <p class="sub" style="margin-top:8px">Picks and wagers lock and reveal to everyone at kickoff. Share the link to add mates ‚Äî it all syncs live.</p>
+    <p class="sub" style="margin-top:8px">Picks and wagers lock and reveal to everyone at kickoff. Share the link to add mates — it all syncs live.</p>
   </div>
 </section>
 
 <section id="board">
-  <h2>Everyone's picks <span class="sub" style="font-weight:400">‚Äî scores reveal at kickoff</span></h2>
+  <h2>Everyone's picks <span class="sub" style="font-weight:400">— scores reveal at kickoff</span></h2>
   <div class="chips" id="boardChips">
     <button class="fchip on" data-bfilter="revealed">Revealed &amp; results</button>
     <button class="fchip" data-bfilter="upcoming">Upcoming</button>
@@ -668,7 +668,7 @@
 </section>
 
 <section id="sidebets">
-  <h2>Side bets <span class="sub" style="font-weight:400">‚Äî go big or claw your way back</span></h2>
+  <h2>Side bets <span class="sub" style="font-weight:400">— go big or claw your way back</span></h2>
   <div class="card" id="champWrap" style="margin-bottom:16px"></div>
   <div class="card" id="qualWrap" style="margin-bottom:16px"></div>
   <div class="card" id="accaWrap" style="margin-bottom:16px"></div>
@@ -677,13 +677,13 @@
 </section>
 
 <section id="chat">
-  <h2>üí¨ League chat <span class="sub" style="font-weight:400">‚Äî talk smack while you watch</span></h2>
+  <h2>💬 League chat <span class="sub" style="font-weight:400">— talk smack while you watch</span></h2>
   <div class="chatbox" id="chatBox"></div>
-  <div class="chatinput"><input id="chatText" maxlength="280" placeholder="Message the league‚Ä¶" autocomplete="off"><button class="btn" id="chatSend">Send</button></div>
+  <div class="chatinput"><input id="chatText" maxlength="280" placeholder="Message the league…" autocomplete="off"><button class="btn" id="chatSend">Send</button></div>
 </section>
 
 <section id="admin">
-  <h2>Admin ‚Äî enter results <span class="sub" style="font-weight:400">‚Äî saves live for everyone</span></h2>
+  <h2>Admin — enter results <span class="sub" style="font-weight:400">— saves live for everyone</span></h2>
   <div class="legend">Type the final score and hit FT. It syncs to every player instantly and updates standings, scores and points.</div>
   <div class="chips" id="adminChips">
     <button class="fchip on" data-afilter="open">Not finished</button>
@@ -696,7 +696,7 @@
 
 <div class="joinmask" id="joinMask" style="display:none">
   <div class="joinbox">
-    <div class="badge">CANADA ¬∑ MEXICO ¬∑ USA</div>
+    <div class="badge">CANADA · MEXICO · USA</div>
     <h2 id="joinTitle">World Cup 2026 Predictor</h2>
     <p class="sub">Everyone with this link plays the same league, live. Pick your name to join.</p>
     <input type="text" id="joinName" placeholder="Your name" maxlength="18">
@@ -710,7 +710,7 @@
 <footer id="foot"></footer>
 
 <script>
-// ================= MATCH DATA (M()/K() format ‚Äî auto-refresh updates these) =================
+// ================= MATCH DATA (M()/K() format — auto-refresh updates these) =================
 const M=(group,dt,t1,t2,s1,s2,venue,status='sched')=>({group,dt,t1,t2,s1,s2,venue,status,ko:false});
 const matches=[
   M('A','2026-06-11T20:00:00+01:00','Mexico','South Africa',2,0,'Mexico City','FT'),
@@ -721,7 +721,7 @@ const matches=[
   M('C','2026-06-13T23:00:00+01:00','Brazil','Morocco',1,1,'New Jersey','FT'),
   M('C','2026-06-14T18:00:00+01:00','Haiti','Scotland',0,1,'Foxborough','FT'),
   M('D','2026-06-14T21:00:00+01:00','Australia','Turkey',2,0,'Vancouver','FT'),
-  M('E','2026-06-14T19:00:00+01:00','Germany','Cura√ßao',7,1,'Houston','FT'),
+  M('E','2026-06-14T19:00:00+01:00','Germany','Curaçao',7,1,'Houston','FT'),
   M('F','2026-06-14T23:30:00+01:00','Netherlands','Japan',2,2,'Arlington','FT'),
   M('E','2026-06-15T18:00:00+01:00','Ivory Coast','Ecuador',1,0,'Philadelphia','FT'),
   M('F','2026-06-15T20:00:00+01:00','Sweden','Tunisia',5,1,'Monterrey','FT'),
@@ -747,7 +747,7 @@ const matches=[
   M('D','2026-06-20T04:00:00+01:00','Turkey','Paraguay',null,null,'Santa Clara'),
   M('F','2026-06-20T18:00:00+01:00','Netherlands','Sweden',null,null,'Houston'),
   M('E','2026-06-20T21:00:00+01:00','Germany','Ivory Coast',null,null,'Toronto'),
-  M('E','2026-06-21T01:00:00+01:00','Ecuador','Cura√ßao',null,null,'Kansas City'),
+  M('E','2026-06-21T01:00:00+01:00','Ecuador','Curaçao',null,null,'Kansas City'),
   M('F','2026-06-21T05:00:00+01:00','Tunisia','Japan',null,null,'Monterrey'),
   M('H','2026-06-21T17:00:00+01:00','Spain','Saudi Arabia',null,null,'Atlanta'),
   M('G','2026-06-21T20:00:00+01:00','Belgium','Iran',null,null,'Los Angeles'),
@@ -767,7 +767,7 @@ const matches=[
   M('C','2026-06-24T23:00:00+01:00','Scotland','Brazil',null,null,'Miami'),
   M('A','2026-06-25T02:00:00+01:00','South Africa','South Korea',null,null,'Monterrey'),
   M('A','2026-06-25T02:00:00+01:00','Czech Republic','Mexico',null,null,'Mexico City'),
-  M('E','2026-06-25T21:00:00+01:00','Cura√ßao','Ivory Coast',null,null,'Philadelphia'),
+  M('E','2026-06-25T21:00:00+01:00','Curaçao','Ivory Coast',null,null,'Philadelphia'),
   M('E','2026-06-25T21:00:00+01:00','Ecuador','Germany',null,null,'New Jersey'),
   M('F','2026-06-26T00:00:00+01:00','Tunisia','Netherlands',null,null,'Kansas City'),
   M('F','2026-06-26T00:00:00+01:00','Japan','Sweden',null,null,'Arlington'),
@@ -818,7 +818,7 @@ const knockout=[
   K('FINAL','M104','2026-07-19T20:00:00+01:00','Winner M101','Winner M102','New Jersey'),
 ];
 const ALL=matches.concat(knockout);
-ALL.forEach(m=>m.id=`${m.dt}|${m.t1}|${m.t2}`);  // id set ONCE, never recomputed ‚Äî stays stable when KO teams resolve
+ALL.forEach(m=>m.id=`${m.dt}|${m.t1}|${m.t2}`);  // id set ONCE, never recomputed — stays stable when KO teams resolve
 knockout.forEach(k=>{k.o1=k.t1;k.o2=k.t2;});      // remember the original placeholder slots
 
 const standings={
@@ -826,7 +826,7 @@ const standings={
   B:[['Canada',1,0,1,0,1,1,1],['Bosnia & Herzegovina',1,0,1,0,1,1,1],['Qatar',1,0,1,0,1,1,1],['Switzerland',1,0,1,0,1,1,1]],
   C:[['Scotland',1,1,0,0,1,0,3],['Brazil',1,0,1,0,1,1,1],['Morocco',1,0,1,0,1,1,1],['Haiti',1,0,0,1,0,1,0]],
   D:[['United States',1,1,0,0,4,1,3],['Australia',1,1,0,0,2,0,3],['Turkey',1,0,0,1,0,2,0],['Paraguay',1,0,0,1,1,4,0]],
-  E:[['Germany',1,1,0,0,7,1,3],['Ivory Coast',1,1,0,0,1,0,3],['Ecuador',1,0,0,1,0,1,0],['Cura√ßao',1,0,0,1,1,7,0]],
+  E:[['Germany',1,1,0,0,7,1,3],['Ivory Coast',1,1,0,0,1,0,3],['Ecuador',1,0,0,1,0,1,0],['Curaçao',1,0,0,1,1,7,0]],
   F:[['Sweden',1,1,0,0,5,1,3],['Netherlands',1,0,1,0,2,2,1],['Japan',1,0,1,0,2,2,1],['Tunisia',1,0,0,1,1,5,0]],
   G:[['Belgium',1,0,1,0,1,1,1],['Egypt',1,0,1,0,1,1,1],['Iran',1,0,1,0,2,2,1],['New Zealand',1,0,1,0,2,2,1]],
   H:[['Spain',1,0,1,0,0,0,1],['Cape Verde',1,0,1,0,0,0,1],['Saudi Arabia',1,0,1,0,1,1,1],['Uruguay',1,0,1,0,1,1,1]],
@@ -845,7 +845,7 @@ const TEAM={
   'Canada':['CAN','#d52b1e'],'Bosnia & Herzegovina':['BIH','#002395'],'Qatar':['QAT','#8d1b3d'],'Switzerland':['SUI','#d52b1e'],
   'United States':['USA','#1c3f94'],'Paraguay':['PAR','#cd2a3e'],'Brazil':['BRA','#ffdf00'],'Morocco':['MAR','#c1272d'],
   'Haiti':['HAI','#00209f'],'Scotland':['SCO','#0065bf'],'Australia':['AUS','#00843d'],'Turkey':['TUR','#e30a17'],
-  'Germany':['GER','#444b57'],'Cura√ßao':['CUW','#002b7f'],'Ivory Coast':['CIV','#f77f00'],'Ecuador':['ECU','#ffce00'],
+  'Germany':['GER','#444b57'],'Curaçao':['CUW','#002b7f'],'Ivory Coast':['CIV','#f77f00'],'Ecuador':['ECU','#ffce00'],
   'Netherlands':['NED','#ff6a13'],'Japan':['JPN','#bc002d'],'Sweden':['SWE','#1f6fb0'],'Tunisia':['TUN','#e70013'],
   'Spain':['ESP','#c60b1e'],'Cape Verde':['CPV','#003893'],'Belgium':['BEL','#c8102e'],'Egypt':['EGY','#ce1126'],
   'Saudi Arabia':['KSA','#006c35'],'Uruguay':['URU','#4f9fd6'],'Iran':['IRN','#239f40'],'New Zealand':['NZL','#1b1b1b'],
@@ -853,14 +853,14 @@ const TEAM={
   'Argentina':['ARG','#6c9fd8'],'Algeria':['ALG','#006233'],'Austria':['AUT','#ed2939'],'Jordan':['JOR','#0c7b41'],
   'Portugal':['POR','#046a38'],'DR Congo':['COD','#2b7fff'],'Colombia':['COL','#fcd116'],'Uzbekistan':['UZB','#1eb53a'],
   'England':['ENG','#cf142b'],'Croatia':['CRO','#e1141e'],'Ghana':['GHA','#147b3a'],'Panama':['PAN','#c8102e']};
-const FLAG={'Mexico':'üá≤üáΩ','South Africa':'üáøüá¶','South Korea':'üá∞üá∑','Czech Republic':'üá®üáø','Canada':'üá®üá¶','Bosnia & Herzegovina':'üáßüá¶',
-  'Qatar':'üá∂üá¶','Switzerland':'üá®üá≠','United States':'üá∫üá∏','Paraguay':'üáµüáæ','Brazil':'üáßüá∑','Morocco':'üá≤üá¶','Haiti':'üá≠üáπ','Scotland':'üè¥Û†ÅßÛ†Å¢Û†Å≥Û†Å£Û†Å¥Û†Åø',
-  'Australia':'üá¶üá∫','Turkey':'üáπüá∑','Germany':'üá©üá™','Cura√ßao':'üá®üáº','Ivory Coast':'üá®üáÆ','Ecuador':'üá™üá®','Netherlands':'üá≥üá±','Japan':'üáØüáµ',
-  'Sweden':'üá∏üá™','Tunisia':'üáπüá≥','Spain':'üá™üá∏','Cape Verde':'üá®üáª','Belgium':'üáßüá™','Egypt':'üá™üá¨','Saudi Arabia':'üá∏üá¶','Uruguay':'üá∫üáæ',
-  'Iran':'üáÆüá∑','New Zealand':'üá≥üáø','France':'üá´üá∑','Senegal':'üá∏üá≥','Norway':'üá≥üá¥','Iraq':'üáÆüá∂','Argentina':'üá¶üá∑','Algeria':'üá©üáø',
-  'Austria':'üá¶üáπ','Jordan':'üáØüá¥','Portugal':'üáµüáπ','DR Congo':'üá®üá©','Colombia':'üá®üá¥','Uzbekistan':'üá∫üáø','England':'üè¥Û†ÅßÛ†Å¢Û†Å•Û†ÅÆÛ†ÅßÛ†Åø','Croatia':'üá≠üá∑',
-  'Ghana':'üá¨üá≠','Panama':'üáµüá¶'};
-const SQUAD={"Mexico":["Santiago Gimenez","Raul Jimenez","Hirving Lozano","Alexis Vega","Cesar Huerta"],"South Africa":["Percy Tau","Lyle Foster","Themba Zwane","Evidence Makgopa","Mihlali Mayambela"],"South Korea":["Son Heung-min","Lee Kang-in","Hwang Hee-chan","Cho Gue-sung","Oh Hyeon-gyu"],"Czech Republic":["Patrik Schick","Adam Hlozek","Tomas Soucek","Mojmir Chytil","Vaclav Cerny"],"Canada":["Jonathan David","Alphonso Davies","Cyle Larin","Tajon Buchanan","Jacob Shaffelburg"],"Bosnia & Herzegovina":["Edin Dzeko","Ermedin Demirovic","Smail Prevljak","Said Hamulic","Dzenis Burnic"],"Qatar":["Almoez Ali","Akram Afif","Hassan Al-Haydos","Yusuf Abdurisag","Ahmed Alaaeldin"],"Switzerland":["Breel Embolo","Dan Ndoye","Ruben Vargas","Xherdan Shaqiri","Zeki Amdouni"],"United States":["Christian Pulisic","Folarin Balogun","Ricardo Pepi","Timothy Weah","Gio Reyna"],"Paraguay":["Miguel Almiron","Antonio Sanabria","Julio Enciso","Adam Bareiro","Diego Gomez"],"Brazil":["Vinicius Junior","Rodrygo","Raphinha","Endrick","Gabriel Jesus"],"Morocco":["Achraf Hakimi","Hakim Ziyech","Youssef En-Nesyri","Brahim Diaz","Ayoub El Kaabi"],"Haiti":["Frantzdy Pierrot","Duckens Nazon","Danley Jean Jacques","Jean-Kevin Augustin","Derrick Etienne"],"Scotland":["Che Adams","Lyndon Dykes","John McGinn","Scott McTominay","Ryan Christie"],"Australia":["Mathew Leckie","Mitchell Duke","Jackson Irvine","Craig Goodwin","Kusini Yengi"],"Turkey":["Arda Guler","Kenan Yildiz","Hakan Calhanoglu","Baris Alper Yilmaz","Kerem Akturkoglu"],"Germany":["Florian Wirtz","Jamal Musiala","Kai Havertz","Niclas Fullkrug","Serge Gnabry"],"Cura√ßao":["Leandro Bacuna","Tahith Chong","Juninho Bacuna","Cuco Martina","Sontje Hansen"],"Ivory Coast":["Sebastien Haller","Nicolas Pepe","Wilfried Zaha","Simon Adingra","Franck Kessie"],"Ecuador":["Enner Valencia","Kendry Paez","Gonzalo Plata","Jeremy Sarmiento","Kevin Rodriguez"],"Netherlands":["Memphis Depay","Cody Gakpo","Donyell Malen","Xavi Simons","Wout Weghorst"],"Japan":["Takefusa Kubo","Kaoru Mitoma","Daizen Maeda","Ayase Ueda","Takumi Minamino"],"Sweden":["Alexander Isak","Viktor Gyokeres","Dejan Kulusevski","Anthony Elanga","Emil Forsberg"],"Tunisia":["Youssef Msakni","Wahbi Khazri","Hannibal Mejbri","Naim Sliti","Elias Achouri"],"Spain":["Lamine Yamal","Nico Williams","Alvaro Morata","Mikel Oyarzabal","Dani Olmo"],"Cape Verde":["Ryan Mendes","Garry Rodrigues","Bryan Teixeira","Gilson Tavares","Jamiro Monteiro"],"Belgium":["Romelu Lukaku","Kevin De Bruyne","Jeremy Doku","Leandro Trossard","Loic Openda"],"Egypt":["Mohamed Salah","Omar Marmoush","Trezeguet","Mostafa Mohamed","Mahmoud Hassan"],"Saudi Arabia":["Salem Al-Dawsari","Firas Al-Buraikan","Saleh Al-Shehri","Abdullah Al-Hamdan","Feras Al-Brikan"],"Uruguay":["Darwin Nunez","Federico Valverde","Facundo Pellistri","Maxi Araujo","Brian Rodriguez"],"Iran":["Mehdi Taremi","Sardar Azmoun","Alireza Jahanbakhsh","Karim Ansarifard","Mehdi Ghayedi"],"New Zealand":["Chris Wood","Ben Waine","Kosta Barbarouses","Elijah Just","Marko Stamenic"],"France":["Kylian Mbappe","Ousmane Dembele","Marcus Thuram","Bradley Barcola","Michael Olise"],"Senegal":["Sadio Mane","Nicolas Jackson","Ismaila Sarr","Boulaye Dia","Iliman Ndiaye"],"Norway":["Erling Haaland","Martin Odegaard","Alexander Sorloth","Antonio Nusa","Oscar Bobb"],"Iraq":["Aymen Hussein","Mohanad Ali","Ali Al-Hamadi","Zidane Iqbal","Amjad Attwan"],"Argentina":["Lionel Messi","Julian Alvarez","Lautaro Martinez","Angel Di Maria","Giuliano Simeone"],"Algeria":["Riyad Mahrez","Islam Slimani","Baghdad Bounedjah","Amine Gouiri","Mohamed Amoura"],"Austria":["Marcel Sabitzer","Michael Gregoritsch","Marko Arnautovic","Christoph Baumgartner","Patrick Wimmer"],"Jordan":["Mousa Al-Tamari","Yazan Al-Naimat","Ali Olwan","Mahmoud Al-Mardi","Mohammad Abu Hashish"],"Portugal":["Cristiano Ronaldo","Bruno Fernandes","Rafael Leao","Goncalo Ramos","Bernardo Silva"],"DR Congo":["Cedric Bakambu","Yoane Wissa","Silas Katompa","Meschack Elia","Fiston Mayele"],"Colombia":["Luis Diaz","James Rodriguez","Jhon Duran","Rafael Santos Borre","Jhon Cordoba"],"Uzbekistan":["Eldor Shomurodov","Igor Sergeev","Abbosbek Fayzullaev","Jaloliddin Masharipov","Oston Urunov"],"England":["Harry Kane","Bukayo Saka","Phil Foden","Cole Palmer","Jude Bellingham"],"Croatia":["Andrej Kramaric","Bruno Petkovic","Ante Budimir","Mario Pasalic","Lovro Majer"],"Ghana":["Mohammed Kudus","Inaki Williams","Jordan Ayew","Antoine Semenyo","Kamaldeen Sulemana"],"Panama":["Jose Fajardo","Cecilio Waterman","Ismael Diaz","Eric Davis","Cesar Yanis"]};
+const FLAG={'Mexico':'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰🇷','Czech Republic':'🇨🇿','Canada':'🇨🇦','Bosnia & Herzegovina':'🇧🇦',
+  'Qatar':'🇶🇦','Switzerland':'🇨🇭','United States':'🇺🇸','Paraguay':'🇵🇾','Brazil':'🇧🇷','Morocco':'🇲🇦','Haiti':'🇭🇹','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Australia':'🇦🇺','Turkey':'🇹🇷','Germany':'🇩🇪','Curaçao':'🇨🇼','Ivory Coast':'🇨🇮','Ecuador':'🇪🇨','Netherlands':'🇳🇱','Japan':'🇯🇵',
+  'Sweden':'🇸🇪','Tunisia':'🇹🇳','Spain':'🇪🇸','Cape Verde':'🇨🇻','Belgium':'🇧🇪','Egypt':'🇪🇬','Saudi Arabia':'🇸🇦','Uruguay':'🇺🇾',
+  'Iran':'🇮🇷','New Zealand':'🇳🇿','France':'🇫🇷','Senegal':'🇸🇳','Norway':'🇳🇴','Iraq':'🇮🇶','Argentina':'🇦🇷','Algeria':'🇩🇿',
+  'Austria':'🇦🇹','Jordan':'🇯🇴','Portugal':'🇵🇹','DR Congo':'🇨🇩','Colombia':'🇨🇴','Uzbekistan':'🇺🇿','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Croatia':'🇭🇷',
+  'Ghana':'🇬🇭','Panama':'🇵🇦'};
+const SQUAD={"Mexico":["Santiago Gimenez","Raul Jimenez","Hirving Lozano","Alexis Vega","Cesar Huerta"],"South Africa":["Percy Tau","Lyle Foster","Themba Zwane","Evidence Makgopa","Mihlali Mayambela"],"South Korea":["Son Heung-min","Lee Kang-in","Hwang Hee-chan","Cho Gue-sung","Oh Hyeon-gyu"],"Czech Republic":["Patrik Schick","Adam Hlozek","Tomas Soucek","Mojmir Chytil","Vaclav Cerny"],"Canada":["Jonathan David","Alphonso Davies","Cyle Larin","Tajon Buchanan","Jacob Shaffelburg"],"Bosnia & Herzegovina":["Edin Dzeko","Ermedin Demirovic","Smail Prevljak","Said Hamulic","Dzenis Burnic"],"Qatar":["Almoez Ali","Akram Afif","Hassan Al-Haydos","Yusuf Abdurisag","Ahmed Alaaeldin"],"Switzerland":["Breel Embolo","Dan Ndoye","Ruben Vargas","Xherdan Shaqiri","Zeki Amdouni"],"United States":["Christian Pulisic","Folarin Balogun","Ricardo Pepi","Timothy Weah","Gio Reyna"],"Paraguay":["Miguel Almiron","Antonio Sanabria","Julio Enciso","Adam Bareiro","Diego Gomez"],"Brazil":["Vinicius Junior","Rodrygo","Raphinha","Endrick","Gabriel Jesus"],"Morocco":["Achraf Hakimi","Hakim Ziyech","Youssef En-Nesyri","Brahim Diaz","Ayoub El Kaabi"],"Haiti":["Frantzdy Pierrot","Duckens Nazon","Danley Jean Jacques","Jean-Kevin Augustin","Derrick Etienne"],"Scotland":["Che Adams","Lyndon Dykes","John McGinn","Scott McTominay","Ryan Christie"],"Australia":["Mathew Leckie","Mitchell Duke","Jackson Irvine","Craig Goodwin","Kusini Yengi"],"Turkey":["Arda Guler","Kenan Yildiz","Hakan Calhanoglu","Baris Alper Yilmaz","Kerem Akturkoglu"],"Germany":["Florian Wirtz","Jamal Musiala","Kai Havertz","Niclas Fullkrug","Serge Gnabry"],"Curaçao":["Leandro Bacuna","Tahith Chong","Juninho Bacuna","Cuco Martina","Sontje Hansen"],"Ivory Coast":["Sebastien Haller","Nicolas Pepe","Wilfried Zaha","Simon Adingra","Franck Kessie"],"Ecuador":["Enner Valencia","Kendry Paez","Gonzalo Plata","Jeremy Sarmiento","Kevin Rodriguez"],"Netherlands":["Memphis Depay","Cody Gakpo","Donyell Malen","Xavi Simons","Wout Weghorst"],"Japan":["Takefusa Kubo","Kaoru Mitoma","Daizen Maeda","Ayase Ueda","Takumi Minamino"],"Sweden":["Alexander Isak","Viktor Gyokeres","Dejan Kulusevski","Anthony Elanga","Emil Forsberg"],"Tunisia":["Youssef Msakni","Wahbi Khazri","Hannibal Mejbri","Naim Sliti","Elias Achouri"],"Spain":["Lamine Yamal","Nico Williams","Alvaro Morata","Mikel Oyarzabal","Dani Olmo"],"Cape Verde":["Ryan Mendes","Garry Rodrigues","Bryan Teixeira","Gilson Tavares","Jamiro Monteiro"],"Belgium":["Romelu Lukaku","Kevin De Bruyne","Jeremy Doku","Leandro Trossard","Loic Openda"],"Egypt":["Mohamed Salah","Omar Marmoush","Trezeguet","Mostafa Mohamed","Mahmoud Hassan"],"Saudi Arabia":["Salem Al-Dawsari","Firas Al-Buraikan","Saleh Al-Shehri","Abdullah Al-Hamdan","Feras Al-Brikan"],"Uruguay":["Darwin Nunez","Federico Valverde","Facundo Pellistri","Maxi Araujo","Brian Rodriguez"],"Iran":["Mehdi Taremi","Sardar Azmoun","Alireza Jahanbakhsh","Karim Ansarifard","Mehdi Ghayedi"],"New Zealand":["Chris Wood","Ben Waine","Kosta Barbarouses","Elijah Just","Marko Stamenic"],"France":["Kylian Mbappe","Ousmane Dembele","Marcus Thuram","Bradley Barcola","Michael Olise"],"Senegal":["Sadio Mane","Nicolas Jackson","Ismaila Sarr","Boulaye Dia","Iliman Ndiaye"],"Norway":["Erling Haaland","Martin Odegaard","Alexander Sorloth","Antonio Nusa","Oscar Bobb"],"Iraq":["Aymen Hussein","Mohanad Ali","Ali Al-Hamadi","Zidane Iqbal","Amjad Attwan"],"Argentina":["Lionel Messi","Julian Alvarez","Lautaro Martinez","Angel Di Maria","Giuliano Simeone"],"Algeria":["Riyad Mahrez","Islam Slimani","Baghdad Bounedjah","Amine Gouiri","Mohamed Amoura"],"Austria":["Marcel Sabitzer","Michael Gregoritsch","Marko Arnautovic","Christoph Baumgartner","Patrick Wimmer"],"Jordan":["Mousa Al-Tamari","Yazan Al-Naimat","Ali Olwan","Mahmoud Al-Mardi","Mohammad Abu Hashish"],"Portugal":["Cristiano Ronaldo","Bruno Fernandes","Rafael Leao","Goncalo Ramos","Bernardo Silva"],"DR Congo":["Cedric Bakambu","Yoane Wissa","Silas Katompa","Meschack Elia","Fiston Mayele"],"Colombia":["Luis Diaz","James Rodriguez","Jhon Duran","Rafael Santos Borre","Jhon Cordoba"],"Uzbekistan":["Eldor Shomurodov","Igor Sergeev","Abbosbek Fayzullaev","Jaloliddin Masharipov","Oston Urunov"],"England":["Harry Kane","Bukayo Saka","Phil Foden","Cole Palmer","Jude Bellingham"],"Croatia":["Andrej Kramaric","Bruno Petkovic","Ante Budimir","Mario Pasalic","Lovro Majer"],"Ghana":["Mohammed Kudus","Inaki Williams","Jordan Ayew","Antoine Semenyo","Kamaldeen Sulemana"],"Panama":["Jose Fajardo","Cecilio Waterman","Ismael Diaz","Eric Davis","Cesar Yanis"]};
 function lum(hex){const n=parseInt(hex.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;return .299*r+.587*g+.114*b;}
 function badge(team,big){
   const m=TEAM[team];
@@ -889,9 +889,9 @@ function tblock(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
   return `<div class="r"><span class="c">Adelaide</span><b>${a}</b></div><div class="r"><span class="c">Sydney</span><b>${s}</b></div>`;}
 function tinline(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
   if(tzMode==='adl')return `<b>${a}</b> ACST`;if(tzMode==='syd')return `<b>${s}</b> AEST`;
-  return `<b>${a}</b> ACST ¬∑ <b>${s}</b> AEST`;}
+  return `<b>${a}</b> ACST · <b>${s}</b> AEST`;}
 function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
-  if(tzMode==='adl')return `${a} ACST`;if(tzMode==='syd')return `${s} AEST`;return `${a} ACST ¬∑ ${s} AEST`;}
+  if(tzMode==='adl')return `${a} ACST`;if(tzMode==='syd')return `${s} AEST`;return `${a} ACST · ${s} AEST`;}
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
@@ -900,8 +900,8 @@ function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)stat
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));
-  if(!SB_ENABLED)setSaveTag('Auto-saved ¬∑ '+new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}));
-  }catch(e){setSaveTag('Browser blocked auto-save ‚Äî use Save to file',true);}}
+  if(!SB_ENABLED)setSaveTag('Auto-saved · '+new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}));
+  }catch(e){setSaveTag('Browser blocked auto-save — use Save to file',true);}}
 let toastT;function flash(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 // ===== MOTION HELPERS (no-op under prefers-reduced-motion) =====
 const MO_REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -986,9 +986,9 @@ async function sbLoadAll(){if(!sb)return;
     if(me){state.preds[me]=state.preds[me]||{};for(const id in pendingMine)state.preds[me][id]=pendingMine[id].slice();} // keep my in-flight edits
     if(me&&!state.players.includes(me))state.players.push(me);
     if(!state.active||!state.players.includes(state.active))state.active=me||state.players[0]||null;
-    if(rs.error)setSaveTag('Live ¬∑ scores sync issue, retrying‚Ä¶',true);else setSaveTag('Live ¬∑ synced '+new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}));
+    if(rs.error)setSaveTag('Live · scores sync issue, retrying…',true);else setSaveTag('Live · synced '+new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}));
     renderAll();if(adminMode)renderAdmin();
-  }catch(e){setSaveTag('Sync issue ‚Äî retrying‚Ä¶',true);}}
+  }catch(e){setSaveTag('Sync issue — retrying…',true);}}
 const queueLoad=()=>{clearTimeout(loadT);loadT=setTimeout(sbLoadAll,250);};
 function sbSubscribe(){if(!sb)return;
   sb.channel('wc2026')
@@ -1021,10 +1021,10 @@ async function sbDelPlayer(name){if(!sb)return;try{await sb.from('predictions').
 function sbUpsertPred(name,id){if(!sb)return;const k=name+'|'+id;clearTimeout(predTimers[k]);
   predTimers[k]=setTimeout(async()=>{const v=(state.preds[name]||{})[id]||[null,null,0,0];
     try{await sb.from('predictions').upsert({name,match_id:id,home:v[0],away:v[1],stake:v[2]||0,joker:!!v[3],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}
-    catch(e){setSaveTag('Could not save pick ‚Äî will retry',true);}},450);}
-async function sbSetResult(id,s1,s2,status,scorers){if(!sb){flash('Local mode ‚Äî not saved live');return false;}
+    catch(e){setSaveTag('Could not save pick — will retry',true);}},450);}
+async function sbSetResult(id,s1,s2,status,scorers){if(!sb){flash('Local mode — not saved live');return false;}
   try{await sb.from('results').upsert({match_id:id,s1,s2,status:status||'FT',scorers:scorers||null,updated_at:new Date().toISOString()},{onConflict:'match_id'});flash('Result saved & shared live');return true;}
-  catch(e){console.error('sbSetResult failed',e);flash('Could not save result ‚Äî NOT shared');return false;}}
+  catch(e){console.error('sbSetResult failed',e);flash('Could not save result — NOT shared');return false;}}
 
 const inviteLink=()=>location.href.split('?')[0];
 function showJoin(){const mask=document.getElementById('joinMask');if(!mask)return;
@@ -1036,7 +1036,7 @@ function showJoin(){const mask=document.getElementById('joinMask');if(!mask)retu
   if(mr){mr.innerHTML=switching?`<button class="iconbtn" id="joinCancel">Cancel</button><button class="iconbtn danger" id="joinLogout">Log out of ${me}</button>`:`<button class="iconbtn" id="joinSpectate">Browse as spectator</button>`;
     const cn=document.getElementById('joinCancel');if(cn)cn.onclick=()=>{mask.style.display='none';};
     const sp=document.getElementById('joinSpectate');if(sp)sp.onclick=()=>{mask.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();};
-    const lo=document.getElementById('joinLogout');if(lo)lo.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;state.active=state.players[0]||null;mask.style.display='none';renderAll();flash('Logged out ‚Äî you are spectating. Tap Join to play.');};}
+    const lo=document.getElementById('joinLogout');if(lo)lo.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;state.active=state.players[0]||null;mask.style.display='none';renderAll();flash('Logged out — you are spectating. Tap Join to play.');};}
   mask.style.display='flex';const n=document.getElementById('joinName');if(n&&!switching)n.focus();}
 function claim(name,deliberate){name=(name||'').trim();if(!name)return;
   // only warn on a freshly TYPED name that collides; tapping an existing name in the list is a deliberate switch
@@ -1045,24 +1045,24 @@ function claim(name,deliberate){name=(name||'').trim();if(!name)return;
   state.active=name;if(!state.players.includes(name))state.players.push(name);
   const mask=document.getElementById('joinMask');if(mask)mask.style.display='none';
   if(SB_ENABLED){const fresh=!(state.events||[]).some(e=>e.kind==='join'&&e.actor===name);sbAddPlayer(name);if(fresh)sbEmit(name,'join',name+' joined the league');}
-  saveState();renderAll();flash('You are in ‚Äî playing as '+name);}
+  saveState();renderAll();flash('You are in — playing as '+name);}
 let prevBank=null;
 let accaDraft={legs:[],stake:100};let duelDraft={match:'',opp:'',amount:100};
 let recapShown=false;
 function showRecap(){if(recapShown||!me)return;recapShown=true;let snap=null;try{snap=JSON.parse(localStorage.getItem('wc2026-seen')||'null');}catch(e){}
   const ftNow=ALL.filter(isFT).length,bankNow=Math.round(bankOf(me).bal);
   if(snap&&ftNow>snap.ft){const dG=ftNow-snap.ft,dB=bankNow-(snap.bank||START_BAL),el=document.getElementById('recapWrap');
-    if(el){el.innerHTML=`<div class="recap"><div>‚òï <b>While you were away</b> ¬∑ ${dG} match${dG===1?'':'es'} finished ¬∑ your bank ${dB>=0?'rose '+fmtMoney(dB):'dropped '+fmtMoney(-dB)} to <b>${fmtMoney(bankNow)}</b></div><button class="iconbtn" id="recapX">Got it</button></div>`;
+    if(el){el.innerHTML=`<div class="recap"><div>☕ <b>While you were away</b> · ${dG} match${dG===1?'':'es'} finished · your bank ${dB>=0?'rose '+fmtMoney(dB):'dropped '+fmtMoney(-dB)} to <b>${fmtMoney(bankNow)}</b></div><button class="iconbtn" id="recapX">Got it</button></div>`;
       const x=document.getElementById('recapX');if(x)x.onclick=()=>el.innerHTML='';}}
   try{localStorage.setItem('wc2026-seen',JSON.stringify({ft:ftNow,bank:bankNow}));}catch(e){}}
 function confetti(){const c=['#1fe6ab','#5b95ff','#ffd24d','#ff5d77','#b78bff','#ff9d3d'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='cfetti';d.style.left=(Math.random()*100)+'vw';d.style.background=c[i%c.length];d.style.animationDelay=(Math.random()*0.35)+'s';d.style.transform='rotate('+(Math.random()*360)+'deg)';document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}}
 function updateLeagueBar(){
   const mc=document.getElementById('meChip');
-  if(mc){mc.innerHTML=me?`<button class="mcbtn" id="meChipBtn">üë§ <b>${me}</b> <span class="mccaret">‚ñæ</span></button>`:`<button class="mcbtn join" id="meChipBtn">Join / log in</button>`;
+  if(mc){mc.innerHTML=me?`<button class="mcbtn" id="meChipBtn">👤 <b>${me}</b> <span class="mccaret">▾</span></button>`:`<button class="mcbtn join" id="meChipBtn">Join / log in</button>`;
     const mb=document.getElementById('meChipBtn');if(mb)mb.onclick=()=>showJoin();}
   const el=document.getElementById('leagueCard');if(!el)return;
   if(!SB_ENABLED){el.classList.remove('live');
-    el.innerHTML=`<div class="lgrow"><div><div class="lglabel">LOCAL MODE ‚Äî backend not configured</div>
+    el.innerHTML=`<div class="lgrow"><div><div class="lglabel">LOCAL MODE — backend not configured</div>
       <div class="sub">Picks save on this device only. The live link version syncs everyone.</div></div></div>`;return;}
   el.classList.add('live');
   const view=state.active&&state.active!==me?`<span class="viewing">viewing ${state.active}</span>`:'';
@@ -1070,13 +1070,13 @@ function updateLeagueBar(){
   const fromBal=prevBank;
   if(b){if(prevBank!=null&&b.bal>prevBank+0.5){confetti();flash('+'+fmtMoney(b.bal-prevBank)+'! Bank now '+fmtMoney(b.bal));}prevBank=b.bal;}
   const bank=b?`<span class="bankchip">${fmtMoney(b.bal)}</span>${b.inPlay>0?`<span class="inplay">${fmtMoney(b.inPlay)} in play</span><span class="freechip">${fmtMoney(b.free)} free</span>`:''}`:'';
-  el.innerHTML=`<div class="lgrow mebar"><div><div class="lglabel"><span class="livedot"></span>LIVE ¬∑ playing as ${me||'‚Äî'} ${view}</div>
-      <div class="sub">${bank?bank+' ¬∑ ':''}${state.players.length} player${state.players.length===1?'':'s'} ¬∑ share the link to add mates.</div></div>
+  el.innerHTML=`<div class="lgrow mebar"><div><div class="lglabel"><span class="livedot"></span>LIVE · playing as ${me||'—'} ${view}</div>
+      <div class="sub">${bank?bank+' · ':''}${state.players.length} player${state.players.length===1?'':'s'} · share the link to add mates.</div></div>
       <div class="lgbtns"><button class="iconbtn" id="copyInvite">Copy invite link</button><button class="iconbtn" id="switchMe">Switch player</button></div></div>`;
   if(b){const bc=el.querySelector('.bankchip');if(bc)moCountUp(bc,fromBal,b.bal,fmtMoney,700);}
   const ci=el.querySelector('#copyInvite');if(ci)ci.onclick=async()=>{const msg='Join my World Cup 2026 prediction league: '+inviteLink();
     try{if(navigator.share){await navigator.share({title:'World Cup 2026 Predictor',text:msg,url:inviteLink()});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-    try{await navigator.clipboard.writeText(msg);flash('Invite link copied ‚Äî send it to your mates');}
+    try{await navigator.clipboard.writeText(msg);flash('Invite link copied — send it to your mates');}
     catch(e){window.prompt('Copy your invite link:',inviteLink());}};
   const sw=el.querySelector('#switchMe');if(sw)sw.onclick=()=>showJoin();}
 
@@ -1084,7 +1084,7 @@ function updateLeagueBar(){
 let adminFilter='open';
 function setupAdmin(){
   const tabs=document.getElementById('tabs');const b=document.createElement('button');
-  b.className='tab';b.dataset.tab='admin';b.textContent='‚öô Admin';b.style.borderColor='var(--live)';b.style.color='var(--live)';
+  b.className='tab';b.dataset.tab='admin';b.textContent='⚙ Admin';b.style.borderColor='var(--live)';b.style.color='var(--live)';
   tabs.appendChild(b);
   b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('admin').classList.add('on');renderAdmin();};
   document.getElementById('adminChips').querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{document.getElementById('adminChips').querySelectorAll('.fchip').forEach(x=>x.classList.remove('on'));c.classList.add('on');adminFilter=c.dataset.afilter;renderAdmin();});
@@ -1097,8 +1097,8 @@ function renderAdmin(){const el=document.getElementById('adminList');if(!el)retu
   el.innerHTML=list.map(m=>{const done=isFT(m);const tag=m.ko?m.mno:'GRP '+m.group;
     return `<div class="adminrow ${done?'done':''}" data-id="${m.id}"><div class="artop"><span class="gt">${tag}</span>
       <span class="am1">${m.t1} ${badge(m.t1)}</span>
-      <input type="number" min="0" max="30" class="as1" value="${m.s1!=null?m.s1:''}" placeholder="‚Äì">
-      <input type="number" min="0" max="30" class="as2" value="${m.s2!=null?m.s2:''}" placeholder="‚Äì">
+      <input type="number" min="0" max="30" class="as1" value="${m.s1!=null?m.s1:''}" placeholder="–">
+      <input type="number" min="0" max="30" class="as2" value="${m.s2!=null?m.s2:''}" placeholder="–">
       <span class="am2">${badge(m.t2)} ${m.t2}</span>
       <button class="asave">${done?'Update':'Save FT'}</button></div>
       <input type="text" class="ascorers" placeholder="goalscorers, comma-separated (for scorer bets)" value="${(m.scorers||[]).join(', ')}"></div>`;}).join('');
@@ -1106,11 +1106,11 @@ function renderAdmin(){const el=document.getElementById('adminList');if(!el)retu
     const id=row.dataset.id,s1=parseInt(row.querySelector('.as1').value,10),s2=parseInt(row.querySelector('.as2').value,10);
     if(isNaN(s1)||isNaN(s2)){flash('Enter both scores');return;}
     const scorers=row.querySelector('.ascorers').value.trim();
-    const btn=row.querySelector('.asave');const lbl=btn.textContent;btn.textContent='Saving‚Ä¶';btn.disabled=true;
+    const btn=row.querySelector('.asave');const lbl=btn.textContent;btn.textContent='Saving…';btn.disabled=true;
     const ok=await sbSetResult(id,s1,s2,'FT',scorers);
     if(SB_ENABLED&&!ok){btn.textContent='Retry';btn.disabled=false;return;}  // do not paint FT unless the DB confirmed
     const m=findMatch(id);if(m){m.s1=s1;m.s2=s2;m.status='FT';m.scorers=scorers?scorers.split(',').map(s=>s.trim()).filter(Boolean):[];}computeStandings();
-    if(SB_ENABLED&&ok&&m)sbEmit('Results','ft','FT ¬∑ '+m.t1+' '+s1+'-'+s2+' '+m.t2);
+    if(SB_ENABLED&&ok&&m)sbEmit('Results','ft','FT · '+m.t1+' '+s1+'-'+s2+' '+m.t2);
     renderAll();renderAdmin();};});}
 
 // ================= HELPERS =================
@@ -1124,12 +1124,12 @@ const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200;
 // staked side-bet fixed odds (board-set): O/U + BTTS Under/No are the WC favourites so pay less; scorer tiered by squad slot
 const OU_ODDS={O:2.1,U:1.75}, BTTS_ODDS={Y:2.1,N:1.75};
-// HALF-TIME live props ‚Äî bet the 2nd half, settled from (final score ‚àí HT score) so they never depend on the flaky goal timeline.
-// Fixed odds (Poisson Œª‚âà1.25 goals/half, modest house edge): oh=2nd-half O/U 1.5, ag=any 2nd-half goal, t2=a team scores 2+ in 2nd half.
+// HALF-TIME live props — bet the 2nd half, settled from (final score − HT score) so they never depend on the flaky goal timeline.
+// Fixed odds (Poisson λ≈1.25 goals/half, modest house edge): oh=2nd-half O/U 1.5, ag=any 2nd-half goal, t2=a team scores 2+ in 2nd half.
 const HT_ODDS={oh:{O:2.6,U:1.5}, ag:{Y:1.35,N:3.3}, t2:{Y:3.5,N:1.25}};
 const HT_MKT=[{k:'oh',lbl:'2nd-half goals',o:['O','U'],ot:['Over 1.5','Under 1.5']},{k:'ag',lbl:'A goal in the 2nd half',o:['Y','N'],ot:['Yes','No']},{k:'t2',lbl:'A team scores 2+ in 2nd half',o:['Y','N'],ot:['Yes','No']}];
-const htCap=p=>Math.max(MIN_WAGER,Math.min(40,sideCap(p)));   // half-time props are higher-variance live bets ‚Üí smaller cap than full side bets
-function htDesc(mk,pk){const m=HT_MKT.find(x=>x.k===mk);if(!m)return '';const i=m.o.indexOf(pk);return m.lbl+' ¬∑ '+(m.ot[i]||pk);}
+const htCap=p=>Math.max(MIN_WAGER,Math.min(40,sideCap(p)));   // half-time props are higher-variance live bets → smaller cap than full side bets
+function htDesc(mk,pk){const m=HT_MKT.find(x=>x.k===mk);if(!m)return '';const i=m.o.indexOf(pk);return m.lbl+' · '+(m.ot[i]||pk);}
 // settle one half-time bet from the HT snapshot stored in the bet vs the final score. returns 'won'|'lost'|'void'|'open'
 function htSettle(b,m){if(!m||!isFT(m))return 'open';if(b.ht1==null||b.ht2==null)return 'void';const a=m.s1-b.ht1,c=m.s2-b.ht2,tot=a+c;if(a<0||c<0)return 'void';
   let win;if(b.mk==='oh')win=b.pk==='O'?tot>=2:tot<=1;else if(b.mk==='ag')win=b.pk==='Y'?tot>=1:tot===0;else if(b.mk==='t2')win=b.pk==='Y'?(a>=2||c>=2):!(a>=2||c>=2);else return 'void';
@@ -1166,24 +1166,24 @@ function resolveBracket(){const thirds=bestThirds();let ti=0;
 const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
 const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
 function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&!(s.ouStake>0)&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&!(s.bttsStake>0)&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
-// canonical name key: strip accents/case/extra spaces so "Mbapp√©"=="Mbappe" everywhere names are matched
-function normName(s){return (s||'').normalize('NFD').replace(/[ÃÄ-ÕØ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
+// canonical name key: strip accents/case/extra spaces so "Mbappé"=="Mbappe" everywhere names are matched
+function normName(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
 const isOwnGoal=s=>/\(\s*o\.?\s*g\.?\s*\)/i.test(s||'');
 const SCORER_TEAM={},SQUAD_SET={};
 Object.keys(SQUAD).forEach(t=>{SQUAD_SET[t]=new Set((SQUAD[t]||[]).map(normName));(SQUAD[t]||[]).forEach(n=>{SCORER_TEAM[normName(n)]=t;});});
 const inSquad=(t,n)=>!!(SQUAD_SET[t]&&SQUAD_SET[t].has(normName(n)));
-// real scorers from played matches ‚Üí [name, team, goals]; own goals excluded, spellings merged, team resolved from the matches they scored in
+// real scorers from played matches → [name, team, goals]; own goals excluded, spellings merged, team resolved from the matches they scored in
 function liveScorers(){const g={},disp={},pairs={};
   ALL.forEach(m=>{if(!isFT(m))return;(m.scorers||[]).forEach(raw=>{if(isOwnGoal(raw))return;const k=normName(raw);if(!k)return;g[k]=(g[k]||0)+1;if(!disp[k])disp[k]=(raw||'').trim();(pairs[k]=pairs[k]||[]).push([m.t1,m.t2]);});});
   const teamOf=(k,name)=>{const ps=pairs[k]||[];if(!ps.length)return SCORER_TEAM[k]||'';
     let inter=ps[0].slice();for(let i=1;i<ps.length;i++)inter=inter.filter(t=>ps[i].includes(t));
-    if(inter.length===1)return inter[0];                                    // scored across matches ‚Üí the common team
-    if(SCORER_TEAM[k]&&ps[0].includes(SCORER_TEAM[k]))return SCORER_TEAM[k]; // single match ‚Üí squad lookup
+    if(inter.length===1)return inter[0];                                    // scored across matches → the common team
+    if(SCORER_TEAM[k]&&ps[0].includes(SCORER_TEAM[k]))return SCORER_TEAM[k]; // single match → squad lookup
     if(inSquad(ps[0][0],name))return ps[0][0];
     if(inSquad(ps[0][1],name))return ps[0][1];
-    return SCORER_TEAM[k]||'';};   // ambiguous & unknown ‚Üí blank rather than a wrong guess
+    return SCORER_TEAM[k]||'';};   // ambiguous & unknown → blank rather than a wrong guess
   return Object.keys(g).map(k=>[disp[k],teamOf(k,disp[k]),g[k]]).sort((a,b)=>b[2]-a[2]||a[0].localeCompare(b[0]));}
-// candidates for the Golden Boot pick ‚Üí [name, team, goals, hasScored]; real scorers first, then seeded contenders (0 real goals), deduped by canonical name
+// candidates for the Golden Boot pick → [name, team, goals, hasScored]; real scorers first, then seeded contenders (0 real goals), deduped by canonical name
 function gbCandidates(){const seen=new Set(),out=[];
   liveScorers().forEach(s=>{const k=normName(s[0]);if(!seen.has(k)){seen.add(k);out.push([s[0],s[1],s[2],true]);}});
   scorers.forEach(s=>{const k=normName(s[0]);if(!seen.has(k)){seen.add(k);out.push([s[0],s[1],0,false]);}});return out;}
@@ -1193,12 +1193,12 @@ function goldenBootWon(pick){if(!pick)return false;return goldenBootWinners().so
 function topscorerWon(p){return goldenBootWon(state.topscorer[p])?GB_BONUS:0;}
 const multFor=v=>v===5?4:v===3?2.5:v===2?1.5:0;            // payout multiple by points
 const fmtMoney=n=>'$'+Math.round(n).toLocaleString('en-AU');
-// fun side quizzes ‚Äî correct answers pay out cash (also the way to claw back when you're low)
+// fun side quizzes — correct answers pay out cash (also the way to claw back when you're low)
 const QUIZ=[
   {id:'q1',q:'Which nation has won the most World Cups?',opts:['Brazil','Germany','Italy','Argentina'],a:'Brazil',reward:50},
   {id:'q2',q:'Who won the 2022 World Cup?',opts:['France','Argentina','Brazil','Croatia'],a:'Argentina',reward:50},
   {id:'q3',q:'How many teams play in the 2026 World Cup?',opts:['32','40','48','64'],a:'48',reward:50},
-  {id:'q4',q:'Who holds the record for most World Cup goals ever?',opts:['Ronaldo (BRA)','Miroslav Klose','Pel√©','Lionel Messi'],a:'Miroslav Klose',reward:75},
+  {id:'q4',q:'Who holds the record for most World Cup goals ever?',opts:['Ronaldo (BRA)','Miroslav Klose','Pelé','Lionel Messi'],a:'Miroslav Klose',reward:75},
   {id:'q5',q:'Comeback question: most goals in a single World Cup match?',opts:['10','12','7','9'],a:'12',reward:150}
 ];
 function finalWinner(){const f=knockout.find(k=>k.round==='FINAL');if(!f||!isFT(f))return null;return f.s1>f.s2?f.t1:f.s2>f.s1?f.t2:null;}
@@ -1214,12 +1214,12 @@ function quizUnlocked(p){
   let n=roundsDone();                                  // a quiz unlocks each time a round wraps up
   if(bankOf(p).bal<200)n=Math.max(n,answeredCount(p)+1); // ...or a lifeline whenever you drop below $200
   n=Math.min(QUIZ.length,n);
-  if(p===me)n=Math.max(n,quizSeen);                    // sticky on this device ‚Äî never re-locks once shown
+  if(p===me)n=Math.max(n,quizSeen);                    // sticky on this device — never re-locks once shown
   return n;
 }
 let quizSeen=0;try{quizSeen=+localStorage.getItem('wc2026-quizseen')||0;}catch(e){}
 // ===== CHAMPION SLIDING/DECAYING ODDS =====
-// payout = CHAMP_BASE √ó odds(team). odds slide with form (better team ‚Üí lower) and decay over time (later pick ‚Üí lower).
+// payout = CHAMP_BASE × odds(team). odds slide with form (better team → lower) and decay over time (later pick → lower).
 const CHAMP_BASE=150;
 const SEED_STR={Brazil:9,France:9,Spain:9,Argentina:9,England:8,Germany:8,Portugal:8,Netherlands:7,Belgium:6,Croatia:5,Uruguay:5,Morocco:5,Colombia:4,Mexico:4,'United States':4,Senegal:4,Japan:4,Switzerland:4,Denmark:4,Italy:4};
 function teamFormStr(t){for(const g in standings){const r=standings[g].find(x=>x[0]===t);if(r)return r[7]*3+(r[5]-r[6])+r[5]*0.3;}return 0;}
@@ -1229,8 +1229,8 @@ function champOdds(team,progOverride){if(!team)return 1.5;
   const prog=progOverride!=null?progOverride:champProgress();
   const allT=Object.keys(SQUAD);const s=teamStrength(team);
   const pct=allT.length?allT.filter(t=>teamStrength(t)>s).length/allT.length:0.5;  // 0=strongest, ~1=weakest
-  let odds=2.2+13*pct;                       // strong‚Üí~2.2x, weak‚Üí~15x
-  odds*=(1.35-0.85*Math.min(1,prog));        // time decay: early(0)‚Üí√ó1.35, final(1)‚Üí√ó0.5
+  let odds=2.2+13*pct;                       // strong→~2.2x, weak→~15x
+  odds*=(1.35-0.85*Math.min(1,prog));        // time decay: early(0)→×1.35, final(1)→×0.5
   return Math.max(1.5,Math.round(odds*10)/10);}
 function champOddsOf(p){const o=state.champOdds&&state.champOdds[p];return (o!=null&&!isNaN(o))?o:champOdds(state.champion[p],0);}  // grandfather un-stamped picks at early-bird odds
 function champPay(p){return Math.round(CHAMP_BASE*champOddsOf(p));}
@@ -1254,15 +1254,15 @@ function bankOf(p){
     if(!isFT(m)){duelPlay+=d.amount;return;}
     const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;
     if(mine===his)return;const net=mine>his?d.amount:-d.amount;const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  // STAKED side bets (O/U, BTTS, anytime scorer) ‚Äî fixed odds; stake-less legacy picks still pay flat via ouWon/scorerWon
+  // STAKED side bets (O/U, BTTS, anytime scorer) — fixed odds; stake-less legacy picks still pay flat via ouWon/scorerWon
   let sidePlay=0;const book=(net)=>{const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;};
   ALL.forEach(m=>{const s=(state.sidepicks[p]||{})[m.id];if(!s)return;const ft=isFT(m);
     if(s.ou&&(s.ouStake||0)>0){if(!ft)sidePlay+=s.ouStake;else book(s.ou===ouResult(m)?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake);}
     if(s.btts&&(s.bttsStake||0)>0){if(!ft)sidePlay+=s.bttsStake;else book(s.btts===bttsResult(m)?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake);}
     (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;if(!ft){sidePlay+=st;return;}
       if((m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(b.p)))book(st*(scorerOdds(b.p)-1));
-      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))book(-st);/* else feed incomplete ‚Üí void/refund */}});});
-  // HALF-TIME live props ‚Äî settled deterministically from each bet's stored HT snapshot vs the final score (no timeline dependency). Void = refund (no book).
+      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))book(-st);/* else feed incomplete → void/refund */}});});
+  // HALF-TIME live props — settled deterministically from each bet's stored HT snapshot vs the final score (no timeline dependency). Void = refund (no book).
   let htPlay=0;const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;
     (myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open'){htPlay+=st;return;}if(r==='void')return;book(r==='won'?st*((HT_ODDS[b.mk]&&HT_ODDS[b.mk][b.pk]||1)-1):-st);});}
   const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p);
@@ -1301,7 +1301,7 @@ function renderStandings(){
     const played=rows.some(r=>r.p>0);
     const body=rows.map((r,i)=>{const lead=played&&i===0&&r.pts>0;
       return `<tr class="${i<2?'qual':''} ${lead?'lead':''}"><td>${i+1}</td>
-        <td class="l"><span class="teamcell">${badge(r.nm)} ${r.nm} ${lead?'<span class="star">‚òÖ</span>':''}</span></td>
+        <td class="l"><span class="teamcell">${badge(r.nm)} ${r.nm} ${lead?'<span class="star">★</span>':''}</span></td>
         <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gd>0?'+':''}${r.gd}</td><td class="pts">${r.pts}</td></tr>`;}).join('');
     return `<div class="card gcard"><h3>Group ${g}</h3>
       <table><thead><tr><th>#</th><th class="l">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${body}</tbody></table>
@@ -1314,14 +1314,14 @@ function renderKnockouts(){
   document.getElementById('koRounds').innerHTML=rounds.map(rd=>{
     const ms=knockout.filter(k=>k.round===rd);const dts=ms.map(k=>new Date(k.dt));
     const fmtd=t=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,day:'numeric',month:'short'}).format(t);
-    const span=`${fmtd(new Date(Math.min(...dts)))} ‚Äì ${fmtd(new Date(Math.max(...dts)))}`;
+    const span=`${fmtd(new Date(Math.min(...dts)))} – ${fmtd(new Date(Math.max(...dts)))}`;
     const cards=ms.map(k=>{const done=k.status==='FT';const w1=done&&k.s1>k.s2,w2=done&&k.s2>k.s1;
       return `<div class="card kocard ${rd==='FINAL'?'final':''}">
-        <div class="mno">${k.mno}${rd==='FINAL'?' ¬∑ THE FINAL':''}</div>
-        <div class="korow ${isPH(k.t1)?'ph':''} ${w1?'win':''}">${badge(k.t1)} <span>${k.t1}${w1?' ‚òÖ':''}</span>${done?`<span class="ks">${k.s1}</span>`:''}</div>
+        <div class="mno">${k.mno}${rd==='FINAL'?' · THE FINAL':''}</div>
+        <div class="korow ${isPH(k.t1)?'ph':''} ${w1?'win':''}">${badge(k.t1)} <span>${k.t1}${w1?' ★':''}</span>${done?`<span class="ks">${k.s1}</span>`:''}</div>
         <div class="kosep"></div>
-        <div class="korow ${isPH(k.t2)?'ph':''} ${w2?'win':''}">${badge(k.t2)} <span>${k.t2}${w2?' ‚òÖ':''}</span>${done?`<span class="ks">${k.s2}</span>`:''}</div>
-        <div class="kometa">${k.venue} ¬∑ ${tinline(k.dt)}</div></div>`;}).join('');
+        <div class="korow ${isPH(k.t2)?'ph':''} ${w2?'win':''}">${badge(k.t2)} <span>${k.t2}${w2?' ★':''}</span>${done?`<span class="ks">${k.s2}</span>`:''}</div>
+        <div class="kometa">${k.venue} · ${tinline(k.dt)}</div></div>`;}).join('');
     return `<div class="koround"><div class="rh"><h3>${rd}</h3><span class="rd">${span}</span></div><div class="grid g-ko">${cards}</div></div>`;}).join('');
 }
 
@@ -1331,10 +1331,10 @@ function renderFixtures(){
   document.getElementById('fixtureList').innerHTML=Object.keys(byDay).map(day=>{
     const items=byDay[day].sort((a,b)=>new Date(a.dt)-new Date(b.dt)).map(m=>{
       const done=m.status==='FT',tbd=m.status==='TBD';
-      let sc=done?`<span class="sc ft">${m.s1}‚Äì${m.s2}</span>`:tbd?`<span class="pill">LIVE</span>`:`<span class="sc" style="color:var(--mut)">v</span>`;
+      let sc=done?`<span class="sc ft">${m.s1}–${m.s2}</span>`:tbd?`<span class="pill">LIVE</span>`:`<span class="sc" style="color:var(--mut)">v</span>`;
       return `<div class="fx ${done?'done':''}"><span class="gtag">GRP ${m.group}</span>
         <span class="ft1">${m.t1} ${badge(m.t1)}</span>${sc}<span class="ft2">${badge(m.t2)} ${m.t2}</span>
-        <span class="ftl">${done?'FT':''}</span><span class="at">${m.venue} ¬∑ ${tinline(m.dt)}</span></div>`;}).join('');
+        <span class="ftl">${done?'FT':''}</span><span class="at">${m.venue} · ${tinline(m.dt)}</span></div>`;}).join('');
     return `<div class="daygroup"><div class="dayhdr">${day} (${tzMode==='syd'?'Sydney':'Adelaide'})</div>${items}</div>`;}).join('');
 }
 
@@ -1342,12 +1342,12 @@ function renderFixtures(){
 function renderScorers(){
   const live=liveScorers();const isLive=live.length>0;
   const list=isLive?live:scorers.map(s=>[s[0],s[1],s[2]]);
-  const note=isLive?`<div class="sub" style="margin-bottom:12px">Live from played matches ‚Äî ${live.length} player${live.length===1?'':'s'} on the scoresheet so far.</div>`
-    :'<div class="sub" style="margin-bottom:12px">No goals recorded yet ‚Äî showing pre-tournament favourites.</div>';
+  const note=isLive?`<div class="sub" style="margin-bottom:12px">Live from played matches — ${live.length} player${live.length===1?'':'s'} on the scoresheet so far.</div>`
+    :'<div class="sub" style="margin-bottom:12px">No goals recorded yet — showing pre-tournament favourites.</div>';
   document.getElementById('scorerList').innerHTML=note+list.map((s,i)=>{
     const bk=state.players.filter(pl=>state.topscorer[pl]===s[0]).length;
-    return `<div class="card scard ${i===0?'top':''}"><span class="srank">${i+1}</span><div class="sinfo"><div class="nm">${s[0]} ${i===0?'<span class="star">‚òÖ</span>':''}</div>
-      <div class="ct">${s[1]?badge(s[1])+' '+s[1]:'<span class="sub">team ‚Äî</span>'}${bk?' ¬∑ <span class="gbback">'+bk+' Golden Boot pick'+(bk>1?'s':'')+'</span>':''}</div></div><div class="g">${s[2]}<small>g</small></div></div>`;}).join('');
+    return `<div class="card scard ${i===0?'top':''}"><span class="srank">${i+1}</span><div class="sinfo"><div class="nm">${s[0]} ${i===0?'<span class="star">★</span>':''}</div>
+      <div class="ct">${s[1]?badge(s[1])+' '+s[1]:'<span class="sub">team —</span>'}${bk?' · <span class="gbback">'+bk+' Golden Boot pick'+(bk>1?'s':'')+'</span>':''}</div></div><div class="g">${s[2]}<small>g</small></div></div>`;}).join('');
 }
 
 // ================= PREDICT =================
@@ -1356,7 +1356,7 @@ function filtered(){if(filter==='group')return ALL.filter(m=>!m.ko);if(filter===
   if(filter==='next'){const now=Date.now();return ALL.filter(m=>!kickedOff(m)&&new Date(m.dt)>now).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(0,12);}return ALL;}
 function renderRail(){
   const r=document.getElementById('prail');
-  r.innerHTML=state.players.map(p=>`<div class="pavatar ${p===state.active?'on':''}" data-p="${p}">${(p===me||!SB_ENABLED)?`<button class="del" data-del="${p}">‚úï</button>`:''}${avatar(p)}<span class="pn">${p}${p===me?' (you)':''}</span></div>`).join('')+`<button class="addp" id="addp">+</button>`;
+  r.innerHTML=state.players.map(p=>`<div class="pavatar ${p===state.active?'on':''}" data-p="${p}">${(p===me||!SB_ENABLED)?`<button class="del" data-del="${p}">✕</button>`:''}${avatar(p)}<span class="pn">${p}${p===me?' (you)':''}</span></div>`).join('')+`<button class="addp" id="addp">+</button>`;
   r.querySelectorAll('.pavatar').forEach(a=>a.onclick=e=>{if(e.target.dataset.del!==undefined)return;setMe(a.dataset.p);renderPredict();renderRail();});
   r.querySelectorAll('.del').forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.dataset.del;
     if(SB_ENABLED&&!confirm('Remove "'+p+'" and delete ALL their picks & wagers for everyone? This cannot be undone.'))return;
@@ -1371,14 +1371,14 @@ function renderBanner(){const w=document.getElementById('bannerWrap');if(!state.
   const p=state.active;const open=ALL.filter(m=>!kickedOff(m));
   const done=open.filter(m=>{const pr=(state.preds[p]||{})[m.id];return pr&&pr[0]!=null&&pr[1]!=null;}).length;
   const pct=open.length?Math.round(done/open.length*100):0;
-  const b=bankOf(p);const low=b.free<MIN_WAGER;  // every stake you place reserves from FREE live ‚Äî so this is what you can still bet right now
-  const budget=`<div class="budgetbar"><div class="bgcol bgfree${low?' low':''}"><span class="bglbl">üí∞ Free to wager</span><span class="bgval" id="bgFree">${fmtMoney(b.free)}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">On the line</span><span class="bgval inplayv">${b.inPlay>0?fmtMoney(b.inPlay):'‚Äî'}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">Bank</span><span class="bgval">${fmtMoney(b.bal)}</span></div></div>${low?'<div class="sub bgnote">You‚Äôve committed nearly everything ‚Äî settle a bet or trim a wager to free up cash.</div>':''}`;
+  const b=bankOf(p);const low=b.free<MIN_WAGER;  // every stake you place reserves from FREE live — so this is what you can still bet right now
+  const budget=`<div class="budgetbar"><div class="bgcol bgfree${low?' low':''}"><span class="bglbl">💰 Free to wager</span><span class="bgval" id="bgFree">${fmtMoney(b.free)}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">On the line</span><span class="bgval inplayv">${b.inPlay>0?fmtMoney(b.inPlay):'—'}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">Bank</span><span class="bgval">${fmtMoney(b.bal)}</span></div></div>${low?'<div class="sub bgnote">You’ve committed nearly everything — settle a bet or trim a wager to free up cash.</div>':''}`;
   w.innerHTML=`<div class="banner">${avatar(p)}<div class="info"><div class="who">Predicting as ${p}</div><div class="sub">${done} of ${open.length} open matches picked</div><div class="progress"><i style="width:${pct}%"></i></div></div></div>${budget}`;
   const fe=document.getElementById('bgFree');if(fe){moCountUp(fe,moPrev['free:'+p],b.free,fmtMoney,600);moPrev['free:'+p]=b.free;}}
-function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">‚ñ≤</button><input class="sv svin ${set?'set':''}" inputmode="numeric" maxlength="2" data-svin="${id}" data-s="${s}" value="${set?val:''}" placeholder="‚Äì"><button data-id="${id}" data-s="${s}" data-d="-1">‚ñº</button></div>`;}
-function wagerCtrl(id,stake,rm){rm=rm||1;return `<div class="wstrip edit"><span class="wlabel">Wager${rm>1?` <span class="jchip">KO √ó${rm}</span>`:''}</span>
-  <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">‚àí</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
-  <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4*rm)} ¬∑ ${fmtMoney(stake*2.5*rm)} ¬∑ ${fmtMoney(stake*1.5*rm)}</span></div>`;}
+function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><input class="sv svin ${set?'set':''}" inputmode="numeric" maxlength="2" data-svin="${id}" data-s="${s}" value="${set?val:''}" placeholder="–"><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
+function wagerCtrl(id,stake,rm){rm=rm||1;return `<div class="wstrip edit"><span class="wlabel">Wager${rm>1?` <span class="jchip">KO ×${rm}</span>`:''}</span>
+  <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">−</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
+  <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4*rm)} · ${fmtMoney(stake*2.5*rm)} · ${fmtMoney(stake*1.5*rm)}</span></div>`;}
 function renderPredict(){
   const wrap=document.getElementById('predList');renderBanner();updateLeagueBar();
   if(!state.active){wrap.innerHTML='<div class="empty">Add a player above to start predicting.</div>';return;}
@@ -1388,33 +1388,33 @@ function renderPredict(){
   const canEdit=(!SB_ENABLED)||p===me;
   const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});  // goals scored so far, for the scorer picker
   wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
-    const tag=m.ko?m.mno+(m.round?' ¬∑ '+m.round:''):'GROUP '+m.group;
+    const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
     let center,strip='',oustrip='';const sidep=(state.sidepicks[p]||{})[m.id]||{},oupick=sidep.ou,bpick=sidep.btts;
     if(isFT(m)){const pts=points(pr,m);
-      center=`<div class="result"><div class="rscore">${m.s1}‚Äì${m.s2}</div><div class="rft">FULL TIME</div>${picked?`<span class="pillpts ${pts===0?'zero':''}">+${pts*(jdbl?2:1)} pt${pts===1&&!jdbl?'':'s'}${jdbl?' ‚òÖ2√ó':''}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}‚Äì${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;
+      center=`<div class="result"><div class="rscore">${m.s1}–${m.s2}</div><div class="rft">FULL TIME</div>${picked?`<span class="pillpts ${pts===0?'zero':''}">+${pts*(jdbl?2:1)} pt${pts===1&&!jdbl?'':'s'}${jdbl?' ★2×':''}</span><span class="yourpick">${canEdit?'you':p}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick</span>'}</div>`;
       if(picked&&stake>0){const net=(stake*multFor(pts)-stake)*(jdbl?2:1);
-        strip=`<div class="wstrip ${net>0?'win':net<0?'loss':''}"><span class="wlabel">Wagered ${fmtMoney(stake)}${jdbl?' <span class="jchip">‚òÖ2√ó</span>':''}</span><span class="wout">${net>0?'won '+fmtMoney(net):net<0?'lost '+fmtMoney(stake*(jdbl?2:1)):'stake back'}</span></div>`;}}
-    else if(locked){center=`<div class="result"><span class="lockbadge">LOCKED</span>${picked?`<span class="yourpick">${canEdit?'your pick':'pick'}: ${pr[0]}‚Äì${pr[1]}</span>`:'<span class="yourpick">no pick made</span>'}</div>`;
-      if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">‚òÖ2√ó</span>':''}</span></div>`;}
+        strip=`<div class="wstrip ${net>0?'win':net<0?'loss':''}"><span class="wlabel">Wagered ${fmtMoney(stake)}${jdbl?' <span class="jchip">★2×</span>':''}</span><span class="wout">${net>0?'won '+fmtMoney(net):net<0?'lost '+fmtMoney(stake*(jdbl?2:1)):'stake back'}</span></div>`;}}
+    else if(locked){center=`<div class="result"><span class="lockbadge">LOCKED</span>${picked?`<span class="yourpick">${canEdit?'your pick':'pick'}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick made</span>'}</div>`;
+      if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span></div>`;}
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
       const halfPick=(pr[0]!=null)!==(pr[1]!=null);  // exactly one score entered
-      strip=picked?wagerCtrl(m.id,stake,roundMult(m)):(halfPick?`<div class="wstrip warn"><span class="wlabel">‚ö† Enter BOTH scores ‚Äî this pick won't count or score yet</span></div>`:`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`);
+      strip=picked?wagerCtrl(m.id,stake,roundMult(m)):(halfPick?`<div class="wstrip warn"><span class="wlabel">⚠ Enter BOTH scores — this pick won't count or score yet</span></div>`:`<div class="wstrip hint"><span class="wlabel">Pick a score to place your wager</span></div>`);
       if(picked&&stake>0){const aj=activeJokerId(p,roundOf(m)),here=aj===m.id;
-        strip+=`<div class="wstrip ou"><span class="wlabel">‚òÖ Joker (2√ó)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2√ó':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
+        strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
     const spick=sidep.scorer,scbets=sidep.scbets||[],haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
     const ouSt=sidep.ouStake||0,btSt=sidep.bttsStake||0;
-    const stepHTML=(kind,st,odds)=>`<div class="sidestake"><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="-1">‚àí</button><span class="wval">${fmtMoney(st)}</span><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="1">+</button><span class="wreturn">‚Üí ${fmtMoney(Math.round(st*odds))}</span></div>`;
+    const stepHTML=(kind,st,odds)=>`<div class="sidestake"><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="-1">−</button><span class="wval">${fmtMoney(st)}</span><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(st*odds))}</span></div>`;
     const addedKeys=new Set(scbets.map(b=>normName(b.p)));
     const scTeamOpts=(team)=>(SQUAD[team]||[]).filter(pn=>!addedKeys.has(normName(pn))).sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0))
-      .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' ¬∑ '+g+'‚öΩ':''}</option>`;}).join('');
+      .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' · '+g+'⚽':''}</option>`;}).join('');
     if(canEdit&&!locked){
       oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
       if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
-        oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">‚Äî pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
-          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="-1">‚àí</button><span class="wval">${fmtMoney(b.st)}</span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">‚Üí${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" data-scx="${m.id}" data-i="${i}">‚úï</button></span>`).join('')+`</div>`:'')
-          +`<select class="scadd" data-sc="${m.id}"><option value="">+ add a scorer‚Ä¶</option>${haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:''}${haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:''}</select></div>`;}
+        oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
+          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval">${fmtMoney(b.st)}</span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
+          +`<select class="scadd" data-sc="${m.id}"><option value="">+ add a scorer…</option>${haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:''}${haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:''}</select></div>`;}
       else if(m.ko)oustrip+=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided</span></div>`;
     }else{
       const settled=(win,st,odds,label)=>`<div class="wstrip ${isFT(m)?(win?'win':'loss'):''}"><span class="wlabel">${label}</span>${isFT(m)?`<span class="wout">${win?'won '+fmtMoney(Math.round(st*(odds-1))):'lost '+fmtMoney(st)}</span>`:'<span class="wreturn">'+fmtMoney(st)+' on the line</span>'}</div>`;
@@ -1423,16 +1423,16 @@ function renderPredict(){
       if(bpick){if(btSt>0)oustrip+=settled(bpick===bttsResult(m),btSt,BTTS_ODDS[bpick],'Both score '+(bpick==='Y'?'Yes':'No')+' @'+BTTS_ODDS[bpick]+'x');
         else{const r=isFT(m),ok=r&&bpick===bttsResult(m);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}}
       scbets.forEach(b=>{const ft=isFT(m),scored=ft&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;const voided=ft&&!scored&&rec<(m.s1+m.s2);const stm=inSquad(m.t1,b.p)?m.t1:inSquad(m.t2,b.p)?m.t2:'';
-        oustrip+=`<div class="wstrip ${ft?(scored?'win':voided?'':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${b.p} @${scorerOdds(b.p)}x</span>${ft?`<span class="wout">${scored?'won '+fmtMoney(Math.round(b.st*(scorerOdds(b.p)-1))):voided?'void ‚Äî refunded':'lost '+fmtMoney(b.st)}</span>`:'<span class="wreturn">'+fmtMoney(b.st)+' on the line</span>'}</div>`;});
+        oustrip+=`<div class="wstrip ${ft?(scored?'win':voided?'':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${b.p} @${scorerOdds(b.p)}x</span>${ft?`<span class="wout">${scored?'won '+fmtMoney(Math.round(b.st*(scorerOdds(b.p)-1))):voided?'void — refunded':'lost '+fmtMoney(b.st)}</span>`:'<span class="wreturn">'+fmtMoney(b.st)+' on the line</span>'}</div>`;});
       if(spick&&!scbets.length){const r=isFT(m),ok=r&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(spick));const stm=inSquad(m.t1,spick)?m.t1:inSquad(m.t2,spick)?m.t2:'';oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
     const _ms=new Date(m.dt)-Date.now(),_cd=(!locked&&_ms>0)?(_ms<36e5?Math.round(_ms/6e4)+'m':_ms<864e5?Math.round(_ms/36e5)+'h':Math.round(_ms/864e5)+'d'):'';
-    return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} ¬∑ ${m.venue}</span></div>
+    return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
       <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}</div>`;}).join('');
   if(canEdit){
     wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
-      const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;  // setting one score auto-completes the other to 0 ‚Äî no half-picks
+      const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;  // setting one score auto-completes the other to 0 — no half-picks
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
       saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
     wrap.querySelectorAll('.svin').forEach(inp=>inp.onchange=()=>{const id=inp.dataset.svin,s=+inp.dataset.s;let v=parseInt(inp.value,10);v=isNaN(v)?null:Math.max(0,Math.min(20,v));
@@ -1447,7 +1447,7 @@ function renderPredict(){
     wrap.querySelectorAll('.jokerbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.jk;const cur=state.preds[p][id];if(!hasPick(cur)||!(cur[2]>0))return;
       const mm=findMatch(id),round=roundOf(mm),prev=activeJokerId(p,round);
       if(prev===id){cur[3]=0;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
-      else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED){sbUpsertPred(p,id);if(p===me)sbEmit(me,'joker',me+' armed their Joker ‚òÖ on '+mm.t1+' v '+mm.t2);}}
+      else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED){sbUpsertPred(p,id);if(p===me)sbEmit(me,'joker',me+' armed their Joker ★ on '+mm.t1+' v '+mm.t2);}}
       saveState();renderPredict();renderLeaderboard();updateLeagueBar();const jb=wrap.querySelector('.jokerbtn.on[data-jk="'+id+'"]');if(jb){moOnce(jb,'mo-glow',700);const st=jb.querySelector('.jkstar');moOnce(st||jb,'mo-spin-star',520);}});
     const defSt=(id)=>Math.max(MIN_WAGER,Math.min(sideCap(p),((state.preds[p][id]||[])[2])||DEFAULT_STAKE));
     const saveSide=(id)=>{markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();};
@@ -1478,8 +1478,8 @@ function renderPitch(){
   const t=totals();const ptsBy={};t.forEach(x=>ptsBy[x.p]=x.pts);const leadPts=Math.max(0,...t.map(x=>x.pts));
   const lanes=state.players.map(p=>{const pts=ptsBy[p]||0;const prog=maxPts>0?Math.min(1,pts/maxPts):0;const left=8+prog*84;const lead=pts>0&&pts===leadPts;
     return `<div class="lane"><div class="track"></div><div class="runner ${lead?'lead':''}" style="left:${left}%">${avatar(p)}<span class="rtag">${p}</span><span class="rpts">${pts} pt${pts===1?'':'s'}</span></div></div>`;}).join('');
-  const note=maxPts>0?`A perfect tournament (${maxPts} pts) reaches the goal ¬∑ ${ftGames} game${ftGames===1?'':'s'} played so far`:'The race begins once the first results come in';
-  el.innerHTML=`<div class="pitch"><span class="ptitle">‚öΩ The race to glory</span><span class="goalflag"><span class="post"></span>GOAL</span>
+  const note=maxPts>0?`A perfect tournament (${maxPts} pts) reaches the goal · ${ftGames} game${ftGames===1?'':'s'} played so far`:'The race begins once the first results come in';
+  el.innerHTML=`<div class="pitch"><span class="ptitle">⚽ The race to glory</span><span class="goalflag"><span class="post"></span>GOAL</span>
     <div class="box left"></div><div class="box right"></div><div class="halfway"></div><div class="circle"></div>
     ${lanes}<div class="finishnote">${note}</div></div>`;
 }
@@ -1492,15 +1492,15 @@ function renderLeaderboard(){
     return `<div class="pod ${rcls[rk]}"><span class="medal" style="background:${mcol[rk]}">${rk}</span>${avatar(x.p)}<span class="nm">${x.p}</span><div class="pedestal"><span class="pts money">${fmtMoney(x.bal)}</span><span class="plc">${rk===1?'1st':rk===2?'2nd':'3rd'}</span></div></div>`;}).join('')+'</div>';
   pw.querySelectorAll('.pod').forEach(pod=>{const el=pod.querySelector('.pts.money'),nm=pod.querySelector('.nm');if(!el||!nm)return;const row=t.find(x=>x.p===nm.textContent);if(!row)return;const k='pod:'+row.p;moCountUp(el,moPrev[k],row.bal,fmtMoney,650);moPrev[k]=row.bal;});
   const max=Math.max(START_BAL,...t.map(x=>x.bal));
-  cw.innerHTML='<div class="lbhead"><h3>The Bank</h3>'+(me?'<button class="iconbtn" id="shareCardBtn">üì∏ Share my card</button>':'')+'</div>'+t.map((x,i)=>`<div class="bar ${i===0?'lead':''}">${avatar(x.p)}<span class="nm">${x.p}</span><span class="track"><span class="fill" style="width:${Math.max(10,x.bal/max*100)}%">${fmtMoney(x.bal)}</span></span></div>`).join('');
+  cw.innerHTML='<div class="lbhead"><h3>The Bank</h3>'+(me?'<button class="iconbtn" id="shareCardBtn">📸 Share my card</button>':'')+'</div>'+t.map((x,i)=>`<div class="bar ${i===0?'lead':''}">${avatar(x.p)}<span class="nm">${x.p}</span><span class="track"><span class="fill" style="width:${Math.max(10,x.bal/max*100)}%">${fmtMoney(x.bal)}</span></span></div>`).join('');
   tw.innerHTML='<h3 style="margin-bottom:8px">Breakdown</h3><div class="tablescroll"><table><thead><tr><th class="l">Player</th><th>Bank</th><th>In&nbsp;play</th><th>Pts</th><th>Played</th><th>Exact</th><th>Won</th><th>Lost</th></tr></thead><tbody>'+
-    t.map(x=>`<tr><td class="l"><span class="nmcell">${avatar(x.p)}${x.p}</span></td><td><b>${fmtMoney(x.bal)}</b></td><td>${x.inPlay>0?fmtMoney(x.inPlay):'‚Äî'}</td><td>${x.pts}</td><td>${x.played}</td><td>${x.exact}</td><td class="${x.won>0?'pos':''}">${x.won>0?fmtMoney(x.won):'‚Äî'}</td><td class="${x.lost>0?'neg':''}">${x.lost>0?fmtMoney(x.lost):'‚Äî'}</td></tr>`).join('')+'</tbody></table></div>'+
+    t.map(x=>`<tr><td class="l"><span class="nmcell">${avatar(x.p)}${x.p}</span></td><td><b>${fmtMoney(x.bal)}</b></td><td>${x.inPlay>0?fmtMoney(x.inPlay):'—'}</td><td>${x.pts}</td><td>${x.played}</td><td>${x.exact}</td><td class="${x.won>0?'pos':''}">${x.won>0?fmtMoney(x.won):'—'}</td><td class="${x.lost>0?'neg':''}">${x.lost>0?fmtMoney(x.lost):'—'}</td></tr>`).join('')+'</tbody></table></div>'+
     (t.every(x=>x.played===0)?'<div class="sub" style="margin-top:10px">Everyone starts at '+fmtMoney(START_BAL)+'. Bank moves once your wagered matches are played.</div>':'<div class="sub" style="margin-top:8px">Swipe the table sideways to see every stat.</div>');
   const sb2=document.getElementById('shareCardBtn');if(sb2)sb2.onclick=shareCard;
 }
 // ================= GOLDEN GLOVE (goalkeeping / defence board) =================
-// Clean sheets + goals conceded are EXACT from the score. Derived saves (opp shots-on-target ‚àí conceded) come from the
-// in-memory live shot feed when available this session ‚Äî shown as an estimate, never used to settle money.
+// Clean sheets + goals conceded are EXACT from the score. Derived saves (opp shots-on-target − conceded) come from the
+// in-memory live shot feed when available this session — shown as an estimate, never used to settle money.
 function gloveStats(){const T={};const ensure=t=>T[t]||(T[t]={team:t,played:0,cs:0,ga:0,gf:0,wins:0,sot:0,saves:0,sotMatches:0});
   ALL.forEach(m=>{if(!isFT(m)||isPH(m.t1)||isPH(m.t2))return;
     [[m.t1,m.s1,m.s2],[m.t2,m.s2,m.s1]].forEach(a=>{const o=ensure(a[0]);o.played++;o.gf+=a[1];o.ga+=a[2];if(a[2]===0)o.cs++;if(a[1]>a[2])o.wins++;});
@@ -1509,14 +1509,14 @@ function gloveStats(){const T={};const ensure=t=>T[t]||(T[t]={team:t,played:0,cs
   return Object.values(T).sort((a,b)=>b.cs-a.cs||a.ga-b.ga||(a.ga/a.played)-(b.ga/b.played)||b.wins-a.wins);}
 function renderGlove(){const el=document.getElementById('gloveList');if(!el)return;
   const rows=gloveStats();
-  if(!rows.length){el.innerHTML='<div class="empty">No matches finished yet ‚Äî clean sheets and the meanest defences show up here once games are played.</div>';return;}
+  if(!rows.length){el.innerHTML='<div class="empty">No matches finished yet — clean sheets and the meanest defences show up here once games are played.</div>';return;}
   const ld=rows[0],anySaves=rows.some(r=>r.sotMatches>0);
-  el.innerHTML=`<div class="glovelead">üß§ <b>${ld.team}</b> leads ‚Äî ${ld.cs} clean sheet${ld.cs===1?'':'s'}, ${ld.ga} conceded in ${ld.played} game${ld.played===1?'':'s'}. <span class="sub" style="font-weight:400">Ranked by clean sheets, then fewest goals conceded.</span></div>`
+  el.innerHTML=`<div class="glovelead">🧤 <b>${ld.team}</b> leads — ${ld.cs} clean sheet${ld.cs===1?'':'s'}, ${ld.ga} conceded in ${ld.played} game${ld.played===1?'':'s'}. <span class="sub" style="font-weight:400">Ranked by clean sheets, then fewest goals conceded.</span></div>`
     +`<div class="tablescroll"><table class="glovetab"><thead><tr><th class="l">#</th><th class="l">Team</th><th>Clean sheets</th><th>Conceded</th><th>GA / game</th><th>Played</th>${anySaves?'<th>Saves*</th><th>Save%*</th>':''}</tr></thead><tbody>`
-    +rows.map((r,i)=>{const gapg=(r.ga/r.played).toFixed(2),svp=r.sot>0?Math.round(r.saves/r.sot*100)+'%':'‚Äì';
-      return `<tr class="${i===0?'glovetop':''}"><td class="l">${i+1}</td><td class="l"><span class="nmcell">${badge(r.team)} ${r.team}</span></td><td><b class="csval">${r.cs}</b></td><td>${r.ga}</td><td>${gapg}</td><td>${r.played}</td>${anySaves?`<td>${r.sotMatches?r.saves:'‚Äì'}</td><td>${r.sotMatches?svp:'‚Äì'}</td>`:''}</tr>`;}).join('')
+    +rows.map((r,i)=>{const gapg=(r.ga/r.played).toFixed(2),svp=r.sot>0?Math.round(r.saves/r.sot*100)+'%':'–';
+      return `<tr class="${i===0?'glovetop':''}"><td class="l">${i+1}</td><td class="l"><span class="nmcell">${badge(r.team)} ${r.team}</span></td><td><b class="csval">${r.cs}</b></td><td>${r.ga}</td><td>${gapg}</td><td>${r.played}</td>${anySaves?`<td>${r.sotMatches?r.saves:'–'}</td><td>${r.sotMatches?svp:'–'}</td>`:''}</tr>`;}).join('')
     +`</tbody></table></div>`
-    +(anySaves?`<div class="sub gnote">* Saves &amp; save% are a free-feed estimate (opponent shots on target ‚àí goals conceded), only for matches whose live stats loaded this session. Clean sheets &amp; goals conceded are exact from the score.</div>`:`<div class="sub gnote">Ranked by clean sheets, then fewest goals conceded. Live save estimates appear here for in-play / recently-watched matches.</div>`);}
+    +(anySaves?`<div class="sub gnote">* Saves &amp; save% are a free-feed estimate (opponent shots on target − goals conceded), only for matches whose live stats loaded this session. Clean sheets &amp; goals conceded are exact from the score.</div>`:`<div class="sub gnote">Ranked by clean sheets, then fewest goals conceded. Live save estimates appear here for in-play / recently-watched matches.</div>`);}
 function rr(c,x0,y0,w,h,r){c.beginPath();c.moveTo(x0+r,y0);c.arcTo(x0+w,y0,x0+w,y0+h,r);c.arcTo(x0+w,y0+h,x0,y0+h,r);c.arcTo(x0,y0+h,x0,y0,r);c.arcTo(x0,y0,x0+w,y0,r);c.closePath();}
 function shareCard(){
   if(!me){flash('Join the league first');return;}
@@ -1527,22 +1527,22 @@ function shareCard(){
   x.strokeStyle='rgba(31,230,171,.10)';x.lineWidth=2;for(let i=1;i<6;i++){x.beginPath();x.moveTo(0,i*180);x.lineTo(1080,i*180);x.stroke();}
   x.strokeStyle='#1fe6ab';x.lineWidth=6;rr(x,30,30,1020,1020,28);x.stroke();
   x.textAlign='center';
-  x.fillStyle='#8a98ba';x.font='700 28px system-ui,-apple-system,Arial';x.fillText('WORLD CUP 2026 ¬∑ PREDICTION LEAGUE',540,118);
+  x.fillStyle='#8a98ba';x.font='700 28px system-ui,-apple-system,Arial';x.fillText('WORLD CUP 2026 · PREDICTION LEAGUE',540,118);
   x.beginPath();x.arc(540,300,92,0,7);x.fillStyle=avcol(me);x.fill();
   x.fillStyle='#04060e';x.font='800 74px system-ui,-apple-system,Arial';x.textBaseline='middle';x.fillText(initials(me),540,304);x.textBaseline='alphabetic';
   x.fillStyle='#eef2fb';x.font='800 66px system-ui,-apple-system,Arial';x.fillText(me,540,475);
   const medal=rank===1?'#ffd24d':rank===2?'#cdd6e6':rank===3?'#e0935a':'#283450';
   x.fillStyle=medal;rr(x,375,512,330,66,33);x.fill();
-  x.fillStyle=rank<=3?'#04060e':'#eef2fb';x.font='800 34px system-ui,-apple-system,Arial';x.fillText((rank===1?'üëë ':'')+'RANK '+rank+' of '+n,540,556);
+  x.fillStyle=rank<=3?'#04060e':'#eef2fb';x.font='800 34px system-ui,-apple-system,Arial';x.fillText((rank===1?'👑 ':'')+'RANK '+rank+' of '+n,540,556);
   x.fillStyle='#8a98ba';x.font='700 30px system-ui,-apple-system,Arial';x.fillText('BANK',540,662);
   x.fillStyle='#ffd24d';x.font='800 150px system-ui,-apple-system,Arial';x.fillText(fmtMoney(row.bal),540,792);
-  x.fillStyle='#eef2fb';x.font='700 36px system-ui,-apple-system,Arial';x.fillText(row.pts+' pts   ¬∑   '+row.exact+' exact   ¬∑   '+row.played+' played',540,886);
+  x.fillStyle='#eef2fb';x.font='700 36px system-ui,-apple-system,Arial';x.fillText(row.pts+' pts   ·   '+row.exact+' exact   ·   '+row.played+' played',540,886);
   if(champ){x.fillStyle='#8a98ba';x.font='600 30px system-ui,-apple-system,Arial';x.fillText('Calling '+champ+' for the title',540,940);}
   x.fillStyle='#1fe6ab';x.font='800 34px system-ui,-apple-system,Arial';x.fillText('aubrey-claw.github.io/wc2026',540,1010);
   C.toBlob(async(blob)=>{if(!blob){flash('Could not build card');return;}
     try{const file=new File([blob],'wc2026-'+me+'.png',{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'World Cup 2026 Predictor',text:'My World Cup 2026 league standing ‚Äî catch me if you can. '+inviteLink()});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wc2026-'+me+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);flash('Card saved ‚Äî share it with your mates!');
+      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'World Cup 2026 Predictor',text:'My World Cup 2026 league standing — catch me if you can. '+inviteLink()});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wc2026-'+me+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);flash('Card saved — share it with your mates!');
   },'image/png');
 }
 
@@ -1558,26 +1558,26 @@ function renderBoard(){
   const list=boardMatches();
   if(!list.length){el.innerHTML='<div class="empty">Nothing to show here yet.</div>';return;}
   el.innerHTML=list.map(m=>{const revealed=kickedOff(m),ft=isFT(m);
-    const head=`<div class="mtop"><span class="gt">${m.ko?m.mno:'GRP '+m.group}</span><span class="tm">${ft?'FT ¬∑ '+m.s1+'‚Äì'+m.s2:tcard(m.dt)}</span></div>`;
+    const head=`<div class="mtop"><span class="gt">${m.ko?m.mno:'GRP '+m.group}</span><span class="tm">${ft?'FT · '+m.s1+'–'+m.s2:tcard(m.dt)}</span></div>`;
     const teams=`<div class="bteams"><span class="bt r">${m.t1} ${badge(m.t1)}</span><span class="bvs">v</span><span class="bt">${badge(m.t2)} ${m.t2}</span></div>`;
     let body;
     if(!revealed){const mine=(state.preds[me]||{})[m.id];
-      body=`<div class="bhidden"><span class="lockbadge">HIDDEN</span> picks reveal at kickoff${hasPick(mine)?` ¬∑ your pick <b>${mine[0]}‚Äì${mine[1]}</b> (${fmtMoney(mine[2]||0)})`:''}</div>`;
+      body=`<div class="bhidden"><span class="lockbadge">HIDDEN</span> picks reveal at kickoff${hasPick(mine)?` · your pick <b>${mine[0]}–${mine[1]}</b> (${fmtMoney(mine[2]||0)})`:''}</div>`;
     }else{
       const rows=state.players.map(pl=>{const pr=(state.preds[pl]||{})[m.id];if(!hasPick(pr))return '';const stake=pr[2]||0;const jk=isJoker(pl,m);let res='';
         if(ft){const pts=points(pr,m),net=(stake*multFor(pts)-stake)*(jk?2:1);
-          res=`<span class="pillpts ${pts===0?'zero':''}">${pts>0?'‚úì ':''}+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'‚úì +'+fmtMoney(net):net<0?'‚úó ‚àí'+fmtMoney(stake*(jk?2:1)):'‚Äî'}</span>`;}
-        return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}‚Äì${pr[1]}${jk?' <span class="jchip">‚òÖ2√ó</span>':''}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
+          res=`<span class="pillpts ${pts===0?'zero':''}">${pts>0?'✓ ':''}+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'✓ +'+fmtMoney(net):net<0?'✗ −'+fmtMoney(stake*(jk?2:1)):'—'}</span>`;}
+        return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}${jk?' <span class="jchip">★2×</span>':''}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
     const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];const scb=(s&&s.scbets)||[];if(!s||(!s.ou&&!s.btts&&!s.scorer&&!scb.length))return '';
-      const gx=ok=>ft?(ok?'‚úì ':'‚úó '):'';const amt=v=>v>0?' '+fmtMoney(v):'';
+      const gx=ok=>ft?(ok?'✓ ':'✗ '):'';const amt=v=>v>0?' '+fmtMoney(v):'';
       const scoredP=name=>(m.scorers||[]).some(x=>!isOwnGoal(x)&&normName(x)===normName(name));
       const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}${amt(s.ouStake)}</span>`:'';
       const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">${gx(s.btts===bttsResult(m))}BTTS ${s.btts}${amt(s.bttsStake)}</span>`:'';
-      const sc=scb.length?scb.map(b=>`<span class="oubadge ${ft?(scoredP(b.p)?'win':'loss'):''}">${gx(scoredP(b.p))}‚öΩ ${b.p}${amt(b.st)}</span>`).join('')
-        :(s.scorer?`<span class="oubadge ${ft?(scoredP(s.scorer)?'win':'loss'):''}">${gx(scoredP(s.scorer))}‚öΩ ${s.scorer}</span>`:'');
+      const sc=scb.length?scb.map(b=>`<span class="oubadge ${ft?(scoredP(b.p)?'win':'loss'):''}">${gx(scoredP(b.p))}⚽ ${b.p}${amt(b.st)}</span>`).join('')
+        :(s.scorer?`<span class="oubadge ${ft?(scoredP(s.scorer)?'win':'loss'):''}">${gx(scoredP(s.scorer))}⚽ ${s.scorer}</span>`:'');
       return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
-    const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' ¬∑ '+(m.s1+m.s2)+' goals':' ¬∑ shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
+    const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
     return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
 }
 // ================= SIDE BETS (champion pick + quizzes) =================
@@ -1585,40 +1585,40 @@ function renderSidebets(){
   const cw=document.getElementById('champWrap'),qw=document.getElementById('quizWrap');if(!cw||!qw)return;
   const teams=Object.keys(TEAM).sort();const myChamp=me?state.champion[me]:null;const fw=finalWinner();
   const myOdds=myChamp?champOddsOf(me):null;
-  let html=`<h3 style="margin-bottom:6px">üèÜ Champion ‚Äî live odds</h3><p class="sub" style="margin-bottom:12px">Back the winner at <b>${fmtMoney(CHAMP_BASE)} √ó odds</b>. Odds slide with form (stronger team = shorter odds) and <b>shrink the longer you wait</b> ‚Äî so pick early for the big payout. Your odds <b>lock in</b> the moment you pick. ${fw?'Winner: <b>'+fw+'</b>':''}</p>`;
-  if(me)html+=`<div class="champrow"><span class="wlabel">Your pick</span><select id="champSel" ${fw?'disabled':''}><option value="">‚Äî choose a team ‚Äî</option>${teams.map(t=>`<option value="${t}" ${t===myChamp?'selected':''}>${t} ‚Äî ${(t===myChamp?myOdds:champOdds(t))}x</option>`).join('')}</select>${myChamp?badge(myChamp):''}</div>`;
-  if(me&&myChamp)html+=`<div class="oddsnote">üîí Locked at <b>${myOdds}x</b> ‚Üí pays <b>${fmtMoney(champPay(me))}</b> if ${myChamp} win it. ${fw?'':'Switch team to take that team‚Äôs current odds.'}</div>`;
+  let html=`<h3 style="margin-bottom:6px">🏆 Champion — live odds</h3><p class="sub" style="margin-bottom:12px">Back the winner at <b>${fmtMoney(CHAMP_BASE)} × odds</b>. Odds slide with form (stronger team = shorter odds) and <b>shrink the longer you wait</b> — so pick early for the big payout. Your odds <b>lock in</b> the moment you pick. ${fw?'Winner: <b>'+fw+'</b>':''}</p>`;
+  if(me)html+=`<div class="champrow"><span class="wlabel">Your pick</span><select id="champSel" ${fw?'disabled':''}><option value="">— choose a team —</option>${teams.map(t=>`<option value="${t}" ${t===myChamp?'selected':''}>${t} — ${(t===myChamp?myOdds:champOdds(t))}x</option>`).join('')}</select>${myChamp?badge(myChamp):''}</div>`;
+  if(me&&myChamp)html+=`<div class="oddsnote">🔒 Locked at <b>${myOdds}x</b> → pays <b>${fmtMoney(champPay(me))}</b> if ${myChamp} win it. ${fw?'':'Switch team to take that team’s current odds.'}</div>`;
   const picks=state.players.map(pl=>{const c=state.champion[pl];if(!c)return '';const ok=fw&&c===fw;const od=champOddsOf(pl);
-    return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badge(c)}<span class="oddschip">${od}x</span>${fw?(ok?'<span class="bnet win">+'+fmtMoney(champPay(pl))+'</span>':'<span class="bnet loss">missed</span>'):'<span class="sub">‚Üí '+fmtMoney(champPay(pl))+'</span>'}</div>`;}).filter(Boolean).join('');
+    return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badge(c)}<span class="oddschip">${od}x</span>${fw?(ok?'<span class="bnet win">+'+fmtMoney(champPay(pl))+'</span>':'<span class="bnet loss">missed</span>'):'<span class="sub">→ '+fmtMoney(champPay(pl))+'</span>'}</div>`;}).filter(Boolean).join('');
   if(picks)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${picks}`;
   // Golden Boot pick (top scorer of the tournament)
   const gbW=goldenBoot();const sc=gbCandidates();const myGB=me?state.topscorer[me]:null;
   const gbBackers=name=>state.players.filter(pl=>state.topscorer[pl]&&normName(state.topscorer[pl])===normName(name)).length;
   const gbGoals=name=>{const c=sc.find(s=>normName(s[0])===normName(name));return c?c[2]:0;};
   const scored=sc.filter(c=>c[3]),yet=sc.filter(c=>!c[3]);
-  html+=`<div style="border-top:1px solid var(--line);margin:18px 0"></div><h3 style="margin-bottom:6px">‚öΩ Golden Boot pick</h3><p class="sub" style="margin-bottom:12px">Call the tournament's top scorer ‚Äî ${fmtMoney(GB_BONUS)} bonus. ${gbW?'Winner: <b>'+gbW+'</b>':'Resolves at the final.'}</p>`;
-  // live race ‚Äî who has actually scored, with team + goals + how many league players backed them
+  html+=`<div style="border-top:1px solid var(--line);margin:18px 0"></div><h3 style="margin-bottom:6px">⚽ Golden Boot pick</h3><p class="sub" style="margin-bottom:12px">Call the tournament's top scorer — ${fmtMoney(GB_BONUS)} bonus. ${gbW?'Winner: <b>'+gbW+'</b>':'Resolves at the final.'}</p>`;
+  // live race — who has actually scored, with team + goals + how many league players backed them
   if(scored.length){html+=`<div class="wlabel" style="margin:0 0 7px">Scored so far</div><div class="gbrace">`+scored.slice(0,8).map((c,i)=>{const bk=gbBackers(c[0]);
-    return `<div class="gbrow ${i===0?'lead':''}"><span class="gbrank">${i+1}</span><span class="gbn">${c[0]}</span><span class="gbteam">${c[1]?badge(c[1])+' '+c[1]:'<span class="sub">‚Äî</span>'}</span><span class="gbg">${c[2]}<small>g</small></span>${bk?`<span class="gbback">${bk} pick${bk>1?'s':''}</span>`:''}</div>`;}).join('')+`</div>`;}
-  else html+=`<p class="sub" style="margin-bottom:12px">No goals recorded yet ‚Äî pick from the seeded contenders below.</p>`;
-  const gbOpt=c=>`<option value="${c[0]}" ${c[0]===myGB?'selected':''}>${c[0]}${c[1]?' ‚Äî '+c[1]:''}${c[3]?' ('+c[2]+'g)':''}</option>`;
-  if(me)html+=`<div class="champrow" style="margin-top:12px"><span class="wlabel">Your pick</span><select id="gbSel" ${gbW?'disabled':''}><option value="">‚Äî choose a scorer ‚Äî</option>${scored.length?`<optgroup label="Scored so far">${scored.map(gbOpt).join('')}</optgroup>`:''}${yet.length?`<optgroup label="Yet to score">${yet.map(gbOpt).join('')}</optgroup>`:''}</select>${(()=>{const tm=myGB?((sc.find(s=>s[0]===myGB)||[])[1]||''):'';return tm?badge(tm):'';})()}</div>`;
+    return `<div class="gbrow ${i===0?'lead':''}"><span class="gbrank">${i+1}</span><span class="gbn">${c[0]}</span><span class="gbteam">${c[1]?badge(c[1])+' '+c[1]:'<span class="sub">—</span>'}</span><span class="gbg">${c[2]}<small>g</small></span>${bk?`<span class="gbback">${bk} pick${bk>1?'s':''}</span>`:''}</div>`;}).join('')+`</div>`;}
+  else html+=`<p class="sub" style="margin-bottom:12px">No goals recorded yet — pick from the seeded contenders below.</p>`;
+  const gbOpt=c=>`<option value="${c[0]}" ${c[0]===myGB?'selected':''}>${c[0]}${c[1]?' — '+c[1]:''}${c[3]?' ('+c[2]+'g)':''}</option>`;
+  if(me)html+=`<div class="champrow" style="margin-top:12px"><span class="wlabel">Your pick</span><select id="gbSel" ${gbW?'disabled':''}><option value="">— choose a scorer —</option>${scored.length?`<optgroup label="Scored so far">${scored.map(gbOpt).join('')}</optgroup>`:''}${yet.length?`<optgroup label="Yet to score">${yet.map(gbOpt).join('')}</optgroup>`:''}</select>${(()=>{const tm=myGB?((sc.find(s=>s[0]===myGB)||[])[1]||''):'';return tm?badge(tm):'';})()}</div>`;
   const gbp=state.players.map(pl=>{const c=state.topscorer[pl];if(!c)return '';const ok=goldenBootWon(c);const g=gbGoals(c);
     return `<div class="cpub"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="gbname">${c}${g?' <small class="gbgsm">'+g+'g</small>':''}</span>${gbW?(ok?'<span class="bnet win">+'+fmtMoney(GB_BONUS)+'</span>':'<span class="bnet loss">missed</span>'):''}</div>`;}).filter(Boolean).join('');
   if(gbp)html+=`<div class="wlabel" style="margin:16px 0 7px">The board's calls</div>${gbp}`;
   cw.innerHTML=html;
   const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{const t=sel.value;const odds=t?champOdds(t):null;state.champion[me]=t;state.champOdds[me]=odds;if(SB_ENABLED)sbSetChampion(me,t,odds);flash(t?'Locked '+t+' at '+odds+'x':'Champion pick cleared');renderSidebets();renderLeaderboard();updateLeagueBar();};
   const gsel=document.getElementById('gbSel');if(gsel)gsel.onchange=()=>{state.topscorer[me]=gsel.value;if(SB_ENABLED)sbSetTopScorer(me,gsel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
-  // Group qualifiers ‚Äî call the top 2 of each group
+  // Group qualifiers — call the top 2 of each group
   const qgw=document.getElementById('qualWrap');
   if(qgw){const myQ=me?(state.groupquals[me]||{}):{};
-    let qh=`<h3 style="margin-bottom:6px">ü•áü•à Group qualifiers</h3><p class="sub" style="margin-bottom:12px">Call the 2 teams to advance from each group. ${fmtMoney(QUAL_TEAM_BONUS)} per correct team, +${fmtMoney(QUAL_PERFECT_BONUS)} for both. Locks &amp; pays automatically when a group finishes.</p><div class="qualgrid">`;
+    let qh=`<h3 style="margin-bottom:6px">🥇🥈 Group qualifiers</h3><p class="sub" style="margin-bottom:12px">Call the 2 teams to advance from each group. ${fmtMoney(QUAL_TEAM_BONUS)} per correct team, +${fmtMoney(QUAL_PERFECT_BONUS)} for both. Locks &amp; pays automatically when a group finishes.</p><div class="qualgrid">`;
     Object.keys(standings).forEach(g=>{const decided=groupDecided(g),top=decided?groupTop2(g):null;const teamsIn=standings[g].map(t=>t[0]);const mine=myQ[g]||[];
-      qh+=`<div class="qualgrp"><div class="qghd">Group ${g}${decided?' ¬∑ <span class="qgactual">'+top[0]+' &amp; '+top[1]+' ‚òÖ</span>':(mine.length+'/2 picked')}</div><div class="qgteams">`;
+      qh+=`<div class="qualgrp"><div class="qghd">Group ${g}${decided?' · <span class="qgactual">'+top[0]+' &amp; '+top[1]+' ★</span>':(mine.length+'/2 picked')}</div><div class="qgteams">`;
       qh+=teamsIn.map(t=>{const picked=mine.includes(t),adv=top&&top.includes(t);const cls=(picked?'on ':'')+(decided&&adv?'adv ':'')+(decided&&picked&&!adv?'miss ':'');
-        return `<button class="qbtn ${cls}" ${decided||!me?'disabled':''} data-qg="${g}" data-qt="${t}">${badge(t)} ${t}${decided&&adv?' ‚òÖ':''}</button>`;}).join('');
+        return `<button class="qbtn ${cls}" ${decided||!me?'disabled':''} data-qg="${g}" data-qt="${t}">${badge(t)} ${t}${decided&&adv?' ★':''}</button>`;}).join('');
       qh+=`</div>`;
-      if(decided&&me){const hit=mine.filter(x=>top.includes(x)).length;qh+=`<div class="qgres ${hit?'win':'loss'}">${mine.length?hit+'/2 right ¬∑ +'+fmtMoney(hit*QUAL_TEAM_BONUS+(hit===2?QUAL_PERFECT_BONUS:0)):'no pick'}</div>`;}
+      if(decided&&me){const hit=mine.filter(x=>top.includes(x)).length;qh+=`<div class="qgres ${hit?'win':'loss'}">${mine.length?hit+'/2 right · +'+fmtMoney(hit*QUAL_TEAM_BONUS+(hit===2?QUAL_PERFECT_BONUS:0)):'no pick'}</div>`;}
       qh+=`</div>`;});
     qh+=`</div>`;qgw.innerHTML=qh;
     qgw.querySelectorAll('.qbtn').forEach(b=>b.onclick=()=>{const g=b.dataset.qg,t=b.dataset.qt;const gq=state.groupquals[me]=state.groupquals[me]||{};let arr=gq[g]=gq[g]||[];
@@ -1628,15 +1628,15 @@ function renderSidebets(){
   const aw=document.getElementById('accaWrap');
   if(aw){const free=me?bankOf(me).free:0;const mine=me?(state.accas[me]||[]):[];
     const lm=(m)=>{const pr=(state.preds[me]||{})[m.id];return isFT(m)?(points(pr,m)===5?2.5:points(pr,m)>=2?1.8:0):1.8;};
-    let ah=`<h3 style="margin-bottom:6px">üéüÔ∏è Acca / parlay</h3><p class="sub" style="margin-bottom:12px">Chain 2‚Äì5 of your match picks into one bet. Every leg must get the result right ‚Äî pays the legs multiplied (exact 2.5√ó, result 1.8√ó), busts if any leg misses. Free to stake: <b>${fmtMoney(free)}</b>.</p>`;
+    let ah=`<h3 style="margin-bottom:6px">🎟️ Acca / parlay</h3><p class="sub" style="margin-bottom:12px">Chain 2–5 of your match picks into one bet. Every leg must get the result right — pays the legs multiplied (exact 2.5×, result 1.8×), busts if any leg misses. Free to stake: <b>${fmtMoney(free)}</b>.</p>`;
     mine.forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);const ftL=legs.filter(isFT);const right=legs.filter(m=>{const pr=(state.preds[me]||{})[m.id];return isFT(m)&&hasPick(pr)&&points(pr,m)>=2;}).length;
       const allFT=legs.length&&legs.every(isFT),allRight=allFT&&right===legs.length,dead=ftL.some(m=>{const pr=(state.preds[me]||{})[m.id];return !(hasPick(pr)&&points(pr,m)>=2);});
       const wonAmt=a.stake*legs.reduce((x,m)=>x*(points((state.preds[me]||{})[m.id],m)===5?2.5:1.8),1)-a.stake;
-      ah+=`<div class="accacard ${allFT?(allRight?'win':'loss'):(dead?'loss':'live')}"><div class="acatop"><b>${fmtMoney(a.stake)} ¬∑ ${legs.length} legs</b>${allFT?(allRight?'<span class="bnet win">‚úì won '+fmtMoney(wonAmt)+'</span>':'<span class="bnet loss">‚úó busted</span>'):'<span class="acastat">'+right+'/'+legs.length+' landed'+(dead?' ¬∑ dead':'')+'</span>'}${!ftL.length?`<button class="acadel" data-acadel="${a.id}">‚úï</button>`:''}</div><div class="acalegs">`+legs.map(m=>{const pr=(state.preds[me]||{})[m.id];const st=isFT(m)?(hasPick(pr)&&points(pr,m)>=2?'win':'loss'):'';return `<span class="acaleg ${st}">${badge(m.t1)}${pr?' '+pr[0]+'-'+pr[1]+' ':' v '}${badge(m.t2)}</span>`;}).join('')+`</div></div>`;});
+      ah+=`<div class="accacard ${allFT?(allRight?'win':'loss'):(dead?'loss':'live')}"><div class="acatop"><b>${fmtMoney(a.stake)} · ${legs.length} legs</b>${allFT?(allRight?'<span class="bnet win">✓ won '+fmtMoney(wonAmt)+'</span>':'<span class="bnet loss">✗ busted</span>'):'<span class="acastat">'+right+'/'+legs.length+' landed'+(dead?' · dead':'')+'</span>'}${!ftL.length?`<button class="acadel" data-acadel="${a.id}">✕</button>`:''}</div><div class="acalegs">`+legs.map(m=>{const pr=(state.preds[me]||{})[m.id];const st=isFT(m)?(hasPick(pr)&&points(pr,m)>=2?'win':'loss'):'';return `<span class="acaleg ${st}">${badge(m.t1)}${pr?' '+pr[0]+'-'+pr[1]+' ':' v '}${badge(m.t2)}</span>`;}).join('')+`</div></div>`;});
     const openPicks=me?ALL.filter(m=>!kickedOff(m)&&hasPick((state.preds[me]||{})[m.id])).sort((a,b)=>new Date(a.dt)-new Date(b.dt)):[];
     if(me&&openPicks.length){const dl=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id)).length;const dmult=dl>=2?Math.pow(1.8,dl):0;
-      ah+=`<div class="wlabel" style="margin:14px 0 7px">New acca ‚Äî tap your picks to add legs</div><div class="acaopts">`+openPicks.map(m=>`<button class="acaopt ${accaDraft.legs.includes(m.id)?'on':''}" data-acaopt="${m.id}">${badge(m.t1)} v ${badge(m.t2)}</button>`).join('')+`</div>`;
-      ah+=`<div class="wstrip ou"><span class="wlabel">Stake</span><div class="wctrl"><button class="wbtn" id="acaSdn">‚àí</button><span class="wval">${fmtMoney(accaDraft.stake)}</span><button class="wbtn" id="acaSup">+</button></div><span class="wreturn">${dl>=2?'win ~'+fmtMoney(accaDraft.stake*dmult)+' if all '+dl+' land':'pick 2+ legs'}</span></div>`;
+      ah+=`<div class="wlabel" style="margin:14px 0 7px">New acca — tap your picks to add legs</div><div class="acaopts">`+openPicks.map(m=>`<button class="acaopt ${accaDraft.legs.includes(m.id)?'on':''}" data-acaopt="${m.id}">${badge(m.t1)} v ${badge(m.t2)}</button>`).join('')+`</div>`;
+      ah+=`<div class="wstrip ou"><span class="wlabel">Stake</span><div class="wctrl"><button class="wbtn" id="acaSdn">−</button><span class="wval">${fmtMoney(accaDraft.stake)}</span><button class="wbtn" id="acaSup">+</button></div><span class="wreturn">${dl>=2?'win ~'+fmtMoney(accaDraft.stake*dmult)+' if all '+dl+' land':'pick 2+ legs'}</span></div>`;
       ah+=`<button class="btn" id="acaPlace" ${dl<2||accaDraft.stake>free?'disabled':''} style="width:100%">Place ${dl}-leg acca</button>`;
     }else if(me){ah+=`<p class="sub">Make some match picks first, then chain them into an acca here.</p>`;}
     aw.innerHTML=ah;
@@ -1644,31 +1644,31 @@ function renderSidebets(){
     const sup=document.getElementById('acaSup');if(sup)sup.onclick=()=>{accaDraft.stake=Math.min(bankOf(me).free||MIN_WAGER,accaDraft.stake+STAKE_STEP*5);renderSidebets();};
     const sdn=document.getElementById('acaSdn');if(sdn)sdn.onclick=()=>{accaDraft.stake=Math.max(MIN_WAGER,accaDraft.stake-STAKE_STEP*5);renderSidebets();};
     const pl=document.getElementById('acaPlace');if(pl)pl.onclick=()=>{const legs=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id));if(legs.length<2){flash('Pick 2+ legs');return;}if(accaDraft.stake>bankOf(me).free){flash('Not enough free cash');return;}
-      const a={id:me+'-'+Date.now(),legs:legs.slice(),stake:accaDraft.stake};(state.accas[me]=state.accas[me]||[]).push(a);if(SB_ENABLED){sbSaveAcca(a);sbEmit(me,'acca',me+' placed a '+legs.length+'-leg acca ('+fmtMoney(a.stake)+')');}accaDraft={legs:[],stake:100};flash('Acca placed ‚Äî good luck!');renderSidebets();renderLeaderboard();updateLeagueBar();};
+      const a={id:me+'-'+Date.now(),legs:legs.slice(),stake:accaDraft.stake};(state.accas[me]=state.accas[me]||[]).push(a);if(SB_ENABLED){sbSaveAcca(a);sbEmit(me,'acca',me+' placed a '+legs.length+'-leg acca ('+fmtMoney(a.stake)+')');}accaDraft={legs:[],stake:100};flash('Acca placed — good luck!');renderSidebets();renderLeaderboard();updateLeagueBar();};
     aw.querySelectorAll('.acadel').forEach(b=>b.onclick=()=>{const id=b.dataset.acadel;state.accas[me]=(state.accas[me]||[]).filter(a=>a.id!==id);if(SB_ENABLED)sbDelAcca(id);renderSidebets();renderLeaderboard();updateLeagueBar();});}
   // HEAD-TO-HEAD DUELS
   const dw=document.getElementById('duelWrap');
   if(dw){
-    if(!me){dw.innerHTML='<h3 style="margin-bottom:6px">‚öîÔ∏è Head-to-head duels</h3><p class="sub">Join the league to challenge a rival.</p>';}
+    if(!me){dw.innerHTML='<h3 style="margin-bottom:6px">⚔️ Head-to-head duels</h3><p class="sub">Join the league to challenge a rival.</p>';}
     else{const free=bankOf(me).free;const others=state.players.filter(p=>p!==me);
       const upcoming=ALL.filter(m=>!kickedOff(m)).sort((a,b)=>new Date(a.dt)-new Date(b.dt));
       const mine=(state.duels||[]).filter(d=>d.challenger===me||d.opponent===me);
       const ptsOn=(p,m)=>points((state.preds[p]||{})[m.id],m)||0;
-      let dh=`<h3 style="margin-bottom:6px">‚öîÔ∏è Head-to-head duels</h3><p class="sub" style="margin-bottom:12px">Challenge a rival on one match ‚Äî whoever's pick scores more takes the pot. Settles when the match ends; a tie is a push. Free to stake: <b>${fmtMoney(free)}</b>.</p>`;
+      let dh=`<h3 style="margin-bottom:6px">⚔️ Head-to-head duels</h3><p class="sub" style="margin-bottom:12px">Challenge a rival on one match — whoever's pick scores more takes the pot. Settles when the match ends; a tie is a push. Free to stake: <b>${fmtMoney(free)}</b>.</p>`;
       const incoming=mine.filter(d=>d.opponent===me&&d.status==='pending');
-      incoming.forEach(d=>{const m=findMatch(d.match_id);dh+=`<div class="duelcard pend"><div class="dmeta"><b>${d.challenger}</b> challenges you ¬∑ ${fmtMoney(d.amount)}<div class="sub">${m?badge(m.t1)+' v '+badge(m.t2):d.match_id}</div></div><div class="duelbtns"><button class="btn sm" data-dacc="${d.id}">Accept</button><button class="iconbtn" data-ddec="${d.id}">Decline</button></div></div>`;});
+      incoming.forEach(d=>{const m=findMatch(d.match_id);dh+=`<div class="duelcard pend"><div class="dmeta"><b>${d.challenger}</b> challenges you · ${fmtMoney(d.amount)}<div class="sub">${m?badge(m.t1)+' v '+badge(m.t2):d.match_id}</div></div><div class="duelbtns"><button class="btn sm" data-dacc="${d.id}">Accept</button><button class="iconbtn" data-ddec="${d.id}">Decline</button></div></div>`;});
       mine.filter(d=>!(d.opponent===me&&d.status==='pending')).forEach(d=>{const m=findMatch(d.match_id);const ft=m&&isFT(m);const other=d.challenger===me?d.opponent:d.challenger;let res='';
-        if(d.status==='accepted'&&ft){const a=ptsOn(me,m),b=ptsOn(other,m);res=a>b?'<span class="bnet win">‚úì won '+fmtMoney(d.amount)+'</span>':a<b?'<span class="bnet loss">‚úó lost '+fmtMoney(d.amount)+'</span>':'<span class="sub">push</span>';}
-        else if(d.status==='accepted')res='<span class="acastat">live ¬∑ '+fmtMoney(d.amount)+'</span>';
+        if(d.status==='accepted'&&ft){const a=ptsOn(me,m),b=ptsOn(other,m);res=a>b?'<span class="bnet win">✓ won '+fmtMoney(d.amount)+'</span>':a<b?'<span class="bnet loss">✗ lost '+fmtMoney(d.amount)+'</span>':'<span class="sub">push</span>';}
+        else if(d.status==='accepted')res='<span class="acastat">live · '+fmtMoney(d.amount)+'</span>';
         else if(d.status==='pending')res='<span class="sub">awaiting '+other+'</span>';
         else res='<span class="sub">'+d.status+'</span>';
         const cls=d.status==='accepted'?(ft?(ptsOn(me,m)>ptsOn(other,m)?'win':ptsOn(me,m)<ptsOn(other,m)?'loss':'live'):'live'):'';
-        dh+=`<div class="duelcard ${cls}"><div class="dmeta"><b>vs ${other}</b><div class="sub">${m?badge(m.t1)+' v '+badge(m.t2):''}</div></div><div class="duelbtns">${res}${(d.status==='pending'&&d.challenger===me)?`<button class="iconbtn" data-dcancel="${d.id}">‚úï</button>`:''}</div></div>`;});
+        dh+=`<div class="duelcard ${cls}"><div class="dmeta"><b>vs ${other}</b><div class="sub">${m?badge(m.t1)+' v '+badge(m.t2):''}</div></div><div class="duelbtns">${res}${(d.status==='pending'&&d.challenger===me)?`<button class="iconbtn" data-dcancel="${d.id}">✕</button>`:''}</div></div>`;});
       if(others.length&&upcoming.length){
         dh+=`<div class="wlabel" style="margin:14px 0 7px">New duel</div>
-          <select id="duelOpp" class="duelsel"><option value="">‚Äî choose a rival ‚Äî</option>${others.map(p=>`<option value="${p}" ${duelDraft.opp===p?'selected':''}>${p}</option>`).join('')}</select>
-          <select id="duelMatch" class="duelsel"><option value="">‚Äî choose a match ‚Äî</option>${upcoming.slice(0,40).map(m=>`<option value="${m.id}" ${duelDraft.match===m.id?'selected':''}>${m.t1} v ${m.t2}</option>`).join('')}</select>
-          <div class="wstrip ou"><span class="wlabel">Stake</span><div class="wctrl"><button class="wbtn" id="duelDn">‚àí</button><span class="wval">${fmtMoney(duelDraft.amount)}</span><button class="wbtn" id="duelUp">+</button></div></div>
+          <select id="duelOpp" class="duelsel"><option value="">— choose a rival —</option>${others.map(p=>`<option value="${p}" ${duelDraft.opp===p?'selected':''}>${p}</option>`).join('')}</select>
+          <select id="duelMatch" class="duelsel"><option value="">— choose a match —</option>${upcoming.slice(0,40).map(m=>`<option value="${m.id}" ${duelDraft.match===m.id?'selected':''}>${m.t1} v ${m.t2}</option>`).join('')}</select>
+          <div class="wstrip ou"><span class="wlabel">Stake</span><div class="wctrl"><button class="wbtn" id="duelDn">−</button><span class="wval">${fmtMoney(duelDraft.amount)}</span><button class="wbtn" id="duelUp">+</button></div></div>
           <button class="btn" id="duelSend" style="width:100%" ${(!duelDraft.opp||!duelDraft.match||duelDraft.amount>free)?'disabled':''}>${duelDraft.amount>free?'Not enough free cash':'Send challenge'}</button>`;
       }else{dh+=`<p class="sub">Need another player and an upcoming match to start a duel.</p>`;}
       dw.innerHTML=dh;
@@ -1690,20 +1690,20 @@ function renderSidebets(){
   const answered=QUIZ.filter(q=>qa[q.id]!=null).length;
   const available=Math.max(0,unlocked-answered);
   // notify once when a fresh comeback quiz unlocks (a wager just went against you)
-  if(me&&unlocked>quizSeen){if(quizSeen>0||answered<unlocked)flash('Tough break ‚Äî a comeback quiz unlocked!');quizSeen=unlocked;try{localStorage.setItem('wc2026-quizseen',unlocked);}catch(e){}}
+  if(me&&unlocked>quizSeen){if(quizSeen>0||answered<unlocked)flash('Tough break — a comeback quiz unlocked!');quizSeen=unlocked;try{localStorage.setItem('wc2026-quizseen',unlocked);}catch(e){}}
   const tab=document.querySelector('#tabs .tab[data-tab="sidebets"]');if(tab)tab.classList.toggle('notify',available>0);
   let q='<h3 style="margin-bottom:6px">Comeback quizzes</h3><p class="sub" style="margin-bottom:12px">';
-  q+=available>0?`You've got <b>${available}</b> question${available===1?'':'s'} to play ‚Äî win cash straight into your bank.`:(unlocked>=QUIZ.length?'All quizzes played.':'Quizzes unlock when a tournament round wraps up ‚Äî or the moment your bank drops below $200.');
+  q+=available>0?`You've got <b>${available}</b> question${available===1?'':'s'} to play — win cash straight into your bank.`:(unlocked>=QUIZ.length?'All quizzes played.':'Quizzes unlock when a tournament round wraps up — or the moment your bank drops below $200.');
   q+='</p>';
   q+=QUIZ.map((qz,i)=>{const ans=qa[qz.id];const done=ans!=null;const correct=ans===qz.a;const open=i<unlocked;
-    if(!done&&!open)return `<div class="quizc locked"><div class="qq">üîí Locked question <span class="qr">${fmtMoney(qz.reward)}</span></div><div class="qres" style="color:var(--mut);font-weight:600">Unlocks after the next round ‚Äî or if your bank dips below $200.</div></div>`;
+    if(!done&&!open)return `<div class="quizc locked"><div class="qq">🔒 Locked question <span class="qr">${fmtMoney(qz.reward)}</span></div><div class="qres" style="color:var(--mut);font-weight:600">Unlocks after the next round — or if your bank dips below $200.</div></div>`;
     return `<div class="quizc ${done?(correct?'correct':'wrong'):''}"><div class="qq">${qz.q} <span class="qr">${fmtMoney(qz.reward)}</span></div>
       <div class="qopts">${qz.opts.map(o=>`<button class="qopt ${ans===o?'sel':''}" data-q="${qz.id}" data-o="${o}" ${done?'disabled':''}>${o}</button>`).join('')}</div>
-      ${done?`<div class="qres ${correct?'win':'loss'}">${correct?'Correct ‚Äî won '+fmtMoney(qz.reward):'Not quite ‚Äî answer was '+qz.a}</div>`:''}</div>`;}).join('');
+      ${done?`<div class="qres ${correct?'win':'loss'}">${correct?'Correct — won '+fmtMoney(qz.reward):'Not quite — answer was '+qz.a}</div>`:''}</div>`;}).join('');
   qw.innerHTML=q;
   if(me)qw.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>{const qid=b.dataset.q,o=b.dataset.o;state.quiz[me]=state.quiz[me]||{};state.quiz[me][qid]=o;
     if(SB_ENABLED)sbSetQuiz(me,qid,o);const qz=QUIZ.find(x=>x.id===qid);
-    flash(o===qz.a?('Correct! +'+fmtMoney(qz.reward)+' ‚Äî bank now '+fmtMoney(bankOf(me).bal)):'Wrong ‚Äî that one\'s gone');
+    flash(o===qz.a?('Correct! +'+fmtMoney(qz.reward)+' — bank now '+fmtMoney(bankOf(me).bal)):'Wrong — that one\'s gone');
     renderSidebets();renderLeaderboard();updateLeagueBar();});
 }
 // ================= SAVE / LOAD (file backup) =================
@@ -1718,7 +1718,7 @@ document.getElementById('fileInput').onchange=e=>{const f=e.target.files[0];if(!
 // ================= STATUS / TABS / TZ =================
 function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status==='FT').length;
   const next=ALL.filter(m=>m.status!=='FT'&&new Date(m.dt).getTime()>now).sort((a,b)=>new Date(a.dt)-new Date(b.dt))[0];
-  let s=`${done} group matches played`;if(next)s+=` ¬∑ next: ${next.t1} v ${next.t2}`;
+  let s=`${done} group matches played`;if(next)s+=` · next: ${next.t1} v ${next.t2}`;
   document.getElementById('statusline').textContent=s;
   document.getElementById('foot').innerHTML='Times in Adelaide (ACST, UTC+9:30) &amp; Sydney (AEST, UTC+10), converted live. Everyone on the shared link plays one league, synced in real time. Predictions lock at kickoff and reveal to everyone then.';}
 document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');moOnce(b,'mo-pop',320);moStaggerSection(b.dataset.tab);if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}});
@@ -1727,15 +1727,15 @@ document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.query
 function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)return 'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
 function renderTicker(){const el=document.getElementById('tickerWrap');if(!el)return;const ev=state.events||[];
   if(!SB_ENABLED||!ev.length){el.innerHTML='';return;}
-  el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">‚öΩ</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
+  el.innerHTML=`<div class="ticker"><span class="tklabel"><span class="livedot"></span>LIVE</span><div class="tkitems">`+ev.slice(0,14).map(e=>`<span class="tkitem">${(e.actor&&e.actor!=='Results')?avatar(e.actor):'<span class="tkball">⚽</span>'}<span class="tktxt">${e.txt||''}</span><span class="tkago">${relTime(e.ts)}</span></span>`).join('')+`</div></div>`;}
 let chatSeen=0;
 function renderChat(){const box=document.getElementById('chatBox');if(!box)return;
   const msgs=state.chat||[];
   const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;  // keep position unless already at bottom
   if(!SB_ENABLED){box.innerHTML='<div class="empty">Chat needs the live link version.</div>';return;}
-  if(!msgs.length){box.innerHTML='<div class="empty">No messages yet ‚Äî say hi üëã</div>';}
+  if(!msgs.length){box.innerHTML='<div class="empty">No messages yet — say hi 👋</div>';}
   else box.innerHTML=msgs.map(m=>{const mine=m.name===me;
-    return `<div class="cmsg ${mine?'me':''}">${mine?'':avatar(m.name)}<div class="cbub"><div class="cmeta">${mine?'You':escHtml(m.name)} ¬∑ <span class="cago">${relTime(m.ts)}</span></div><div class="ctxt">${escHtml(m.txt)}</div></div></div>`;}).join('');
+    return `<div class="cmsg ${mine?'me':''}">${mine?'':avatar(m.name)}<div class="cbub"><div class="cmeta">${mine?'You':escHtml(m.name)} · <span class="cago">${relTime(m.ts)}</span></div><div class="ctxt">${escHtml(m.txt)}</div></div></div>`;}).join('');
   if(atBottom||msgs.length>chatSeen)box.scrollTop=box.scrollHeight;chatSeen=msgs.length;
   // notify dot on the chat tab when new messages arrive and you're not on the tab
   const ct=document.querySelector('#tabs .tab[data-tab="chat"]');const onChat=document.getElementById('chat')&&document.getElementById('chat').classList.contains('on');
@@ -1747,7 +1747,7 @@ function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();r
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
-try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){setSaveTag('This browser is not saving ‚Äî open the file normally (not Private mode)',true);}
+try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){setSaveTag('This browser is not saving — open the file normally (not Private mode)',true);}
 if(SB_ENABLED){
   const jg=document.getElementById('joinGo');if(jg)jg.onclick=()=>claim(document.getElementById('joinName').value);
   const jn=document.getElementById('joinName');if(jn)jn.addEventListener('keydown',e=>{if(e.key==='Enter')claim(e.target.value);});
@@ -1761,18 +1761,18 @@ if(SB_ENABLED){
   const jmask=document.getElementById('joinMask');
   if(jmask)jmask.addEventListener('click',e=>{if(e.target===jmask){jmask.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('joinMask');if(m&&m.style.display!=='none'){m.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();}}});
-  setSaveTag('Connecting‚Ä¶');sbSubscribe();
+  setSaveTag('Connecting…');sbSubscribe();
   sbLoadAll().then(()=>{if(!me)showJoin();else showRecap();});
 }else if(state.players&&state.players.length){setSaveTag('Saved picks restored ('+state.players.length+' player'+(state.players.length===1?'':'s')+')');}
 setInterval(renderNext,60000);
-async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version ‚Äî updating‚Ä¶');setTimeout(()=>location.reload(),1500);}}catch(e){}}
+async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
 setInterval(checkUpdate,180000);
 
 // CLIENT-SIDE AUTO-SCORE-PULL: anyone with the app open keeps results live. Source: TheSportsDB v1 free public key.
 // Safety: never overwrites an existing FT score; only fills missing matches / missing scorers.
 // Throttled across tabs/devices via localStorage so we don't spam the API.
 const PULL_KEY='wc2026-pull-lock', PULL_EVERY=300000;  // 5 min
-const TSDB_TEAM={'United States':'USA','Bosnia & Herzegovina':'Bosnia-Herzegovina','Cura√ßao':'Curacao'};
+const TSDB_TEAM={'United States':'USA','Bosnia & Herzegovina':'Bosnia-Herzegovina','Curaçao':'Curacao'};
 const tsdbTeam=t=>TSDB_TEAM[t]||t;
 const sleep2=ms=>new Promise(r=>setTimeout(r,ms));
 async function pullLiveScores(){
@@ -1803,7 +1803,7 @@ async function pullLiveScores(){
         // for a match already FT, only write if the new timeline ADDS scorers (never shrink a fuller/manual list)
         if(h&&h.status==='FT'&&goals.length<=scCount(h.sc)){await sleep2(600);continue;}
         const up=await sb.from('results').upsert({match_id:m.id,s1,s2,status:'FT',scorers},{onConflict:'match_id'});
-        if(!up.error){wrote++;if(SB_ENABLED&&!h)sbEmit('Results','ft',m.t1+' '+s1+'‚Äì'+s2+' '+m.t2+' (FT)');}  // ticker only for brand-new results
+        if(!up.error){wrote++;if(SB_ENABLED&&!h)sbEmit('Results','ft',m.t1+' '+s1+'–'+s2+' '+m.t2+' (FT)');}  // ticker only for brand-new results
         await sleep2(600);
       }catch(e){}
     }
@@ -1812,13 +1812,13 @@ async function pullLiveScores(){
 }
 // initial pull a few seconds after boot (let the page settle) + every 5 min while open
 setTimeout(pullLiveScores,4000); setInterval(pullLiveScores,PULL_EVERY);
-// When the tab comes back to the foreground (e.g. after a phone call), timers were paused ‚Äî force a fresh sync so
+// When the tab comes back to the foreground (e.g. after a phone call), timers were paused — force a fresh sync so
 // finished matches lock and stale in-progress edits on already-played games are discarded.
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SB_ENABLED&&sb){sbLoadAll().then(()=>renderAll()).catch(()=>{});try{localStorage.removeItem(PULL_KEY);}catch(e){}pullLiveScores();}});
 window.addEventListener('focus',()=>{if(SB_ENABLED&&sb){sbLoadAll().then(()=>renderAll()).catch(()=>{});refreshLive();}});
 
 // ===== NEAR-LIVE MATCH STATS (read-only): live score, clock & shot attempts for in-play matches =====
-// Free TheSportsDB feed gives score+status+shots (not possession/corners) and trails the TV by ~1-3 min ‚Äî badged "near-live".
+// Free TheSportsDB feed gives score+status+shots (not possession/corners) and trails the TV by ~1-3 min — badged "near-live".
 const liveData={};                         // match_id -> {status,prog,s1,s2,shots,ts}
 const htSnap={};                           // match_id -> {h,a,seen} : the HALF-TIME score, frozen once (settles 2nd-half props)
 const htDraft={};                          // match_id -> stake the player is dialling in for a half-time prop
@@ -1842,23 +1842,23 @@ async function placeHt(mid,mk,pk){
   const snap=htSnap[mid];if(!snap){flash('No half-time score yet');return;}
   const bet={mk,pk,st,ht1:snap.h,ht2:snap.a,od:HT_ODDS[mk][pk]};
   state.htbets[me]=state.htbets[me]||{};const arr=(state.htbets[me][mid]=state.htbets[me][mid]||[]);arr.push(bet);markHtPending(mid);
-  if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name:me,match_id:'HT|'+mid,scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});sbEmit(me,'htbet',me+' bet '+fmtMoney(st)+' ¬∑ '+htDesc(mk,pk)+' @'+bet.od+'x ('+m.t1+' v '+m.t2+')');}catch(e){flash('Could not place bet');}}
+  if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name:me,match_id:'HT|'+mid,scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});sbEmit(me,'htbet',me+' bet '+fmtMoney(st)+' · '+htDesc(mk,pk)+' @'+bet.od+'x ('+m.t1+' v '+m.t2+')');}catch(e){flash('Could not place bet');}}
   flash('Bet on! '+htDesc(mk,pk)+' @'+bet.od+'x');confetti();renderAll();}
 function htPanelHtml(m){
   const mine=(state.htbets[me]||{})[m.id]||[],open=htOpen(m);
-  if(!me||!state.players.includes(me))return htIsHT(m)?'<div class="htbox"><div class="hthd">‚è± Half-time props are live ‚Äî join the league to bet the 2nd half</div></div>':'';
+  if(!me||!state.players.includes(me))return htIsHT(m)?'<div class="htbox"><div class="hthd">⏱ Half-time props are live — join the league to bet the 2nd half</div></div>':'';
   if(!htIsHT(m)&&!mine.length)return '';
   let rows='';
   HT_MKT.forEach(mk=>{const placed=mine.find(b=>b.mk===mk.k);
     if(placed){const r=htSettle(placed,m),lbl=mk.ot[mk.o.indexOf(placed.pk)];
-      const tag=r==='open'?'<span class="htlive">live ‚è≥</span>':r==='won'?'<span class="htwon">‚úì won '+fmtMoney(placed.st*(placed.od-1))+'</span>':r==='void'?'<span class="htvoid">void ¬∑ refunded</span>':'<span class="htlost">‚úó lost '+fmtMoney(placed.st)+'</span>';
-      rows+=`<div class="htrow done"><span class="htlbl">${mk.lbl} ¬∑ <b>${lbl}</b> ${fmtMoney(placed.st)} @${placed.od}x</span>${tag}</div>`;return;}
+      const tag=r==='open'?'<span class="htlive">live ⏳</span>':r==='won'?'<span class="htwon">✓ won '+fmtMoney(placed.st*(placed.od-1))+'</span>':r==='void'?'<span class="htvoid">void · refunded</span>':'<span class="htlost">✗ lost '+fmtMoney(placed.st)+'</span>';
+      rows+=`<div class="htrow done"><span class="htlbl">${mk.lbl} · <b>${lbl}</b> ${fmtMoney(placed.st)} @${placed.od}x</span>${tag}</div>`;return;}
     if(!open)return;
     const btns=mk.o.map((pk,i)=>`<button class="htbtn" data-htbet="${m.id}" data-mk="${mk.k}" data-pk="${pk}">${mk.ot[i]} <b>${HT_ODDS[mk.k][pk]}x</b></button>`).join('');
     rows+=`<div class="htrow"><span class="htlbl">${mk.lbl}</span><div class="htbtns">${btns}</div></div>`;});
   if(!rows)return '';
-  const chip=open?`<div class="htstake">Stake <button class="htsd" data-htm="${m.id}" data-d="-1">‚àí</button><b>${fmtMoney(htStake(m.id))}</b><button class="htsd" data-htm="${m.id}" data-d="1">+</button> <span class="sub">cap ${fmtMoney(htCap(me))} ¬∑ locks when the 2nd half kicks off</span></div>`:'';
-  const hd=open?'‚è± HALF-TIME PROPS ¬∑ bet the 2nd half':'‚è± Your half-time bets';
+  const chip=open?`<div class="htstake">Stake <button class="htsd" data-htm="${m.id}" data-d="-1">−</button><b>${fmtMoney(htStake(m.id))}</b><button class="htsd" data-htm="${m.id}" data-d="1">+</button> <span class="sub">cap ${fmtMoney(htCap(me))} · locks when the 2nd half kicks off</span></div>`:'';
+  const hd=open?'⏱ HALF-TIME PROPS · bet the 2nd half':'⏱ Your half-time bets';
   return `<div class="htbox"><div class="hthd">${hd}</div>${rows}${chip}</div>`;}
 async function fetchLiveOne(m){
   const T='https://www.thesportsdb.com/api/v1/json/3';let id=liveIdCache[m.id];
@@ -1881,11 +1881,11 @@ function renderLive(){
   const el=document.getElementById('liveWrap');if(!el)return;
   const live=ALL.filter(isLiveMatch).filter(m=>liveData[m.id]&&!ftLike(liveData[m.id].status));
   if(!live.length){el.innerHTML='';return;}
-  const bar=(lbl,v)=>v&&(v.h||v.a)?`<div class="lstat"><span class="lslbl">${lbl}</span><div class="lsbar"><span class="lsh" style="width:${lpct(v.h,v.a)}%"></span></div><span class="lsv">${v.h} ¬∑ ${v.a}</span></div>`:'';
-  el.innerHTML=`<div class="liveband"><span class="livedot"></span>NEAR-LIVE ¬∑ may trail your TV by a minute or two</div>`+live.map(m=>{const d=liveData[m.id];const sh=d.shots||{};
-    const sc=(d.s1!=null?d.s1:'‚Äì')+'  '+(d.s2!=null?d.s2:'‚Äì');const clk=d.prog?d.prog+"'":(d.status||'LIVE');
-    const stats=(sh.onTarget||sh.total||sh.inBox)?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Shots in box',sh.inBox)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">shot stats loading‚Ä¶</div>';
-    return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">‚óè ${clk}</span></div>${stats}${htPanelHtml(m)}</div>`;}).join('');
+  const bar=(lbl,v)=>v&&(v.h||v.a)?`<div class="lstat"><span class="lslbl">${lbl}</span><div class="lsbar"><span class="lsh" style="width:${lpct(v.h,v.a)}%"></span></div><span class="lsv">${v.h} · ${v.a}</span></div>`:'';
+  el.innerHTML=`<div class="liveband"><span class="livedot"></span>NEAR-LIVE · may trail your TV by a minute or two</div>`+live.map(m=>{const d=liveData[m.id];const sh=d.shots||{};
+    const sc=(d.s1!=null?d.s1:'–')+'  '+(d.s2!=null?d.s2:'–');const clk=d.prog?d.prog+"'":(d.status||'LIVE');
+    const stats=(sh.onTarget||sh.total||sh.inBox)?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Shots in box',sh.inBox)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">shot stats loading…</div>';
+    return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">● ${clk}</span></div>${stats}${htPanelHtml(m)}</div>`;}).join('');
   el.querySelectorAll('[data-htbet]').forEach(b=>b.onclick=()=>placeHt(b.dataset.htbet,b.dataset.mk,b.dataset.pk));
   el.querySelectorAll('[data-htm]').forEach(b=>b.onclick=()=>{const mid=b.dataset.htm,cap=htCap(me);htDraft[mid]=Math.max(MIN_WAGER,Math.min(cap,htStake(mid)+(+b.dataset.d)*STAKE_STEP));renderLive();});
 }
