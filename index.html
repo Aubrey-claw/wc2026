@@ -564,6 +564,36 @@
   .mktstk{display:flex;align-items:center;gap:7px;flex-basis:100%;margin-top:3px}
   .mktstk .wval{min-width:50px;text-align:center;font-weight:800}
   .mktcs{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;max-width:260px}
+  /* Survivor */
+  .survintro{background:linear-gradient(90deg,rgba(255,210,77,.10),transparent);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.55;margin-bottom:12px}
+  .survladder{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .survrung{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:7px 13px;min-width:54px}
+  .survrung.jack{background:linear-gradient(180deg,rgba(255,210,77,.18),rgba(255,210,77,.04));border-color:var(--gold)}
+  .survrung .srk{font-size:11px;color:var(--mut);font-weight:800;letter-spacing:.4px}
+  .survrung .srv{font-size:13px;font-weight:800;color:var(--gold)}
+  .survpick{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+  .survpick.survstatus{font-size:14px;line-height:1.55}
+  .survpick.survstatus.alive{border-color:var(--acc)}
+  .survpick.survstatus.out{border-color:var(--live);opacity:.9}
+  .survopts{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:8px}
+  .survteam{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:9px 11px;color:var(--txt);font-weight:700;font-size:13px;cursor:pointer;text-align:left;font-family:inherit;transition:transform .08s,border-color .12s}
+  .survteam .stnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .survteam .stvs{color:var(--mut);font-weight:600;font-size:10px;white-space:nowrap}
+  .survteam:hover:not(.dis){border-color:var(--acc);transform:translateY(-1px)}
+  .survteam.sel{border-color:var(--gold);background:rgba(255,210,77,.12);box-shadow:0 0 0 1px var(--gold)}
+  .survteam.dis{opacity:.4;cursor:not-allowed}
+  .survrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(38,50,79,.4);font-size:13px;flex-wrap:wrap}
+  .survrow.dead{opacity:.62}
+  .survrow .bpl{display:flex;align-items:center;gap:8px;font-weight:600;min-width:120px}
+  .survmid{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:110px}
+  .strail{font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--bg2);color:var(--mut)}
+  .strail.ok{color:var(--acc);background:rgba(25,227,166,.13)}
+  .strail.no{color:var(--live);background:rgba(255,93,119,.13)}
+  .strail.cur{color:var(--gold);background:rgba(255,210,77,.13)}
+  .schip{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .schip.alive{color:var(--acc);background:rgba(25,227,166,.12)}
+  .schip.out{color:var(--live);background:rgba(255,93,119,.12)}
+  .schip.champ{color:var(--gold);background:rgba(255,210,77,.15)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -598,6 +628,7 @@
   <button class="tab" data-tab="fixtures">Fixtures</button>
   <button class="tab" data-tab="scorers">Scorers</button>
   <button class="tab" data-tab="glove">🧤 Golden Glove</button>
+  <button class="tab" data-tab="survivor">🏆 Survivor</button>
   <span class="tabdiv"></span>
   <span class="tablabel">Prediction League — play with mates</span>
   <button class="tab league" data-tab="predict">Predict &amp; wager</button>
@@ -638,6 +669,11 @@
 <section id="glove">
   <h2>🧤 Golden Glove race <span class="sub" style="font-weight:400">— the tournament's meanest defences</span></h2>
   <div id="gloveList"></div>
+</section>
+
+<section id="survivor">
+  <h2>🏆 Survivor <span class="sub" style="font-weight:400">— last one standing wins the pot</span></h2>
+  <div id="survList"></div>
 </section>
 
 <section id="predict">
@@ -914,7 +950,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[]};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[],survivor:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -934,11 +970,11 @@ function moCountUp(el,from,to,fmt,ms){ms=ms||650;if(!el)return;fmt=fmt||(n=>Math
 function moStagger(container,cap){cap=cap||18;if(!container||MO_REDUCED)return;
   const kids=container.children;for(let i=0;i<kids.length;i++){if(i<cap)kids[i].style.setProperty('--mo-i',i);else kids[i].style.removeProperty('--mo-i');}
   container.classList.remove('mo-stagger');void container.offsetWidth;container.classList.add('mo-stagger');}
-function moStaggerSection(tab){const map={predict:'predList',board:'boardList',next:'nextGrid',scorers:'scorerList',standings:'groups',glove:'gloveList'};const id=map[tab];if(!id)return;moStagger(document.getElementById(id),20);}
+function moStaggerSection(tab){const map={predict:'predList',board:'boardList',next:'nextGrid',scorers:'scorerList',standings:'groups',glove:'gloveList',survivor:'survList'};const id=map[tab];if(!id)return;moStagger(document.getElementById(id),20);}
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-ac';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-22-ad';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -959,6 +995,8 @@ const mktPending={};const mktPendingT={};  // keep just-placed market bets throu
 function markMktPending(id){const v=(state.mktbets[me]||{})[id];if(!v)return;mktPending[id]=JSON.parse(JSON.stringify(v));clearTimeout(mktPendingT[id]);mktPendingT[id]=setTimeout(()=>{delete mktPending[id];},6000);}
 const pendingQual={};const pendingQualT={};
 function markPendingQual(g){const v=(state.groupquals[me]||{})[g];if(!v)return;pendingQual[g]=v.slice();clearTimeout(pendingQualT[g]);pendingQualT[g]=setTimeout(()=>{delete pendingQual[g];},6000);}
+let pendingSurv=null,pendingSurvT=null;
+function markPendingSurv(){if(!me)return;pendingSurv={...(state.survivor[me]||{})};clearTimeout(pendingSurvT);pendingSurvT=setTimeout(()=>{pendingSurv=null;},6000);}
 
 function findMatch(id){return ALL.find(m=>m.id===id);}
 function applyResults(rows){(rows||[]).forEach(r=>{const m=findMatch(r.match_id);if(!m)return;
@@ -987,14 +1025,16 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
       if(typeof r.match_id==='string'&&r.match_id.slice(0,3)==='HT|'){if(scb.length)(state.htbets[r.name]=state.htbets[r.name]||{})[r.match_id.slice(3)]=scb;return;}  // half-time live props stored under HT| namespace
       if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='MKT|'){if(scb.length)(state.mktbets[r.name]=state.mktbets[r.name]||{})[r.match_id.slice(4)]=scb;return;}  // extra fixed-odds markets stored under MKT| namespace
       if(r.match_id==='GG'){if(scb.length&&scb[0].gg)state.glovePick[r.name]=scb[0].gg;return;}  // Golden Glove tournament pick (team) stored under the GG row
+      if(r.match_id==='SURV'){const mm={};scb.forEach(x=>{if(x&&x.r&&x.t)mm[x.r]=x.t;});if(Object.keys(mm).length)state.survivor[r.name]=mm;return;}  // Survivor last-man-standing picks {round:team} under the SURV row
       if(r.ou||r.btts||r.scorer||scb.length)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer,ouStake:r.ou_stake||0,bttsStake:r.btts_stake||0,scbets:scb};});
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     if(me){state.htbets[me]=state.htbets[me]||{};for(const id in htPending)state.htbets[me][id]=JSON.parse(JSON.stringify(htPending[id]));} // keep my in-flight half-time bets
     if(me){state.mktbets[me]=state.mktbets[me]||{};for(const id in mktPending)state.mktbets[me][id]=JSON.parse(JSON.stringify(mktPending[id]));} // keep my in-flight market bets
+    if(me&&pendingSurv)state.survivor[me]={...(state.survivor[me]||{}),...pendingSurv}; // keep my in-flight survivor pick
     state.groupquals={};if(!gq.error)(gq.data||[]).forEach(r=>{(state.groupquals[r.name]=state.groupquals[r.name]||{})[r.grp]=[r.team1,r.team2].filter(Boolean);});
     state.events=(!ev.error&&ev.data)?ev.data:[];
     state.accas={};if(!ac.error)(ac.data||[]).forEach(r=>{(state.accas[r.name]=state.accas[r.name]||[]).push({id:r.id,legs:(r.legs||'').split(',').filter(Boolean),stake:r.stake||0});});
@@ -1034,6 +1074,7 @@ async function sbSetQuiz(name,qid,choice){if(!sb)return;try{await sb.from('quiz'
 async function sbSetSide(name,id){if(!sb)return;const v=(state.sidepicks[name]||{})[id]||{};try{await sb.from('sidepicks').upsert({name,match_id:id,ou:v.ou||null,btts:v.btts||null,scorer:v.scorer||null,ou_stake:v.ouStake||null,btts_stake:v.bttsStake||null,scbets:v.scbets||[],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetTopScorer(name,player){if(!sb)return;try{await sb.from('players').upsert({name,topscorer:player},{onConflict:'name'});}catch(e){flash('Could not save pick');}}
 async function sbSetGlove(name,team){if(!sb)return;try{await sb.from('sidepicks').upsert({name,match_id:'GG',scbets:team?[{gg:team}]:[],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
+async function sbSetSurv(name){if(!sb)return;const mm=state.survivor[name]||{};const arr=Object.keys(mm).filter(r=>mm[r]).map(r=>({r,t:mm[r]}));try{await sb.from('sidepicks').upsert({name,match_id:'SURV',scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save pick');}}
 async function sbSetQual(name,g){if(!sb)return;const v=(state.groupquals[name]||{})[g]||[];try{await sb.from('groupquals').upsert({name,grp:g,team1:v[0]||null,team2:v[1]||null,updated_at:new Date().toISOString()},{onConflict:'name,grp'});}catch(e){flash('Could not save pick');}}
 async function sbEmit(actor,kind,txt){if(!sb)return;try{await sb.from('events').insert({actor,kind,txt});}catch(e){}}
 async function sbSaveAcca(a){if(!sb)return;try{await sb.from('accas').upsert({id:a.id,name:me,legs:a.legs.join(','),stake:a.stake});}catch(e){flash('Could not place acca');}}
@@ -1147,6 +1188,11 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
 const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200, GLOVE_BONUS=400;
+// SURVIVOR (last-man-standing knockout side-game): each KO round, back one team to advance; wrong = out; no team reuse.
+const SURV_ROUNDS=['Round of 32','Round of 16','Quarter-finals','Semi-finals','FINAL'];
+const SURV_LABEL={'Round of 32':'R32','Round of 16':'R16','Quarter-finals':'QF','Semi-finals':'SF','FINAL':'Final'};
+const SURV_REWARD={'Round of 32':50,'Round of 16':75,'Quarter-finals':125,'Semi-finals':200,'FINAL':300}; // banked per round survived
+const SURV_JACKPOT=750; // last one standing (or deepest run, if all fall) splits this at the final
 // staked side-bet fixed odds (board-set): O/U + BTTS Under/No are the WC favourites so pay less; scorer tiered by squad slot
 const OU_ODDS={O:2.1,U:1.75}, BTTS_ODDS={Y:2.1,N:1.75};
 // HALF-TIME live props — bet the 2nd half, settled from (final score − HT score) so they never depend on the flaky goal timeline.
@@ -1368,8 +1414,8 @@ function bankOf(p){
   // fold chronologically; floor on the running balance
   ev.sort((a,b)=>a.dt-b.dt);let bal=START_BAL,won=0,lost=0;
   ev.forEach(e=>{const before=bal;bal=Math.max(FLOOR,bal+e.net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p);
-  const bonus=qw+cw+ow+tw+sw+gqw+ggw;bal+=bonus;won+=bonus;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p);
+  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv;bal+=bonus;won+=bonus;
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -1662,6 +1708,83 @@ function renderGlove(){const el=document.getElementById('gloveList');if(!el)retu
     +(anySaves?`<div class="sub gnote">* Saves &amp; save% are a free-feed estimate (opponent shots on target − goals conceded), only for matches whose live stats loaded this session. Clean sheets &amp; goals conceded are exact from the score.</div>`:`<div class="sub gnote">Ranked by clean sheets, then fewest goals conceded. Live save estimates appear here for in-play / recently-watched matches.</div>`);
   el.innerHTML=html;
   const gs=document.getElementById('gloveSel');if(gs)gs.onchange=()=>{state.glovePick[me]=gs.value;if(SB_ENABLED)sbSetGlove(me,gs.value);flash(gs.value?'Golden Glove pick: '+gs.value:'Pick cleared');renderGlove();renderLeaderboard();updateLeagueBar();};}
+// ================= SURVIVOR (last-man-standing knockout game) =================
+const survMatchesOf=rd=>knockout.filter(k=>k.round===rd);
+function survTeamsOf(rd){const ts=[];survMatchesOf(rd).forEach(k=>{if(!isPH(k.t1))ts.push(k.t1);if(!isPH(k.t2))ts.push(k.t2);});return ts;}
+const survMatchFor=(rd,t)=>survMatchesOf(rd).find(k=>k.t1===t||k.t2===t);
+// a team's fate in a round: 'won' | 'lost' | 'pending' (undecided/draw-pens) | 'absent'
+function survResult(rd,t){const k=survMatchFor(rd,t);if(!k)return 'absent';if(!isFT(k))return 'pending';const w=k.s1>k.s2?k.t1:k.s2>k.s1?k.t2:null;if(w==null)return 'pending';return w===t?'won':'lost';}
+function survRoundComplete(rd){const ms=survMatchesOf(rd);return ms.length>0&&ms.every(isFT)&&ms.every(k=>k.s1!==k.s2);}
+// walk the rounds in order; stop at elimination or the first unresolved round
+function survState(p){
+  const picks=state.survivor[p]||{};
+  let alive=true,outRound=null,survived=0,cur=null,curStatus=null;const trail=[];
+  for(const rd of SURV_ROUNDS){
+    if(!survTeamsOf(rd).length){cur=rd;curStatus='waiting';break;}            // bracket not seeded yet
+    const pick=picks[rd];
+    if(!pick){if(survRoundComplete(rd)){alive=false;outRound=rd;cur=rd;curStatus='missed';break;}cur=rd;curStatus='needpick';break;}
+    const res=survResult(rd,pick);
+    if(res==='won'){survived++;trail.push({rd,t:pick,ok:true});if(rd==='FINAL'){cur=null;curStatus='champion';}continue;}
+    if(res==='lost'){alive=false;outRound=rd;trail.push({rd,t:pick,ok:false});cur=rd;curStatus='out';break;}
+    const k=survMatchFor(rd,pick);cur=rd;curStatus=(k&&kickedOff(k))?'locked':'picked';break;  // pending: locked if kicked off, else still switchable
+  }
+  return {alive,outRound,survived,cur,curStatus,picks,trail};
+}
+const survUsedTeams=p=>new Set(Object.values(state.survivor[p]||{}));
+function survGameOver(){const f=knockout.find(k=>k.round==='FINAL');if(f&&isFT(f)&&f.s1!==f.s2)return true;const ps=state.players;return ps.length>0&&ps.every(p=>!survState(p).alive);}
+function survJackpotWinners(){if(!survGameOver())return [];const ps=state.players;const alive=ps.filter(p=>survState(p).alive);if(alive.length)return alive;
+  let max=-1;ps.forEach(p=>{const s=survState(p).survived;if(s>max)max=s;});return max<=0?[]:ps.filter(p=>survState(p).survived===max);}  // all fell → deepest run(s) take the pot
+function survWon(p){try{const s=survState(p);let t=0;s.trail.forEach(x=>{if(x.ok===true)t+=(SURV_REWARD[x.rd]||0);});
+  const jw=survJackpotWinners();if(jw.includes(p))t+=Math.round(SURV_JACKPOT/Math.max(1,jw.length));return t;}catch(e){return 0;}}
+function renderSurvivor(){const el=document.getElementById('survList');if(!el)return;
+  const koStarted=SURV_ROUNDS.some(rd=>survTeamsOf(rd).length>0),over=survGameOver(),jack=survJackpotWinners();
+  let html=`<div class="survintro"><b>🏆 Survivor — last one standing.</b> Each knockout round, back <b>one team to advance</b>. Right call → you survive and bank a bonus; wrong call → you're knocked out. You <b>can't pick the same team twice</b>. The last survivor (or whoever lasts longest) splits the <b>${fmtMoney(SURV_JACKPOT)}</b> pot at the final.</div>`;
+  html+=`<div class="survladder">${SURV_ROUNDS.map(rd=>`<span class="survrung"><span class="srk">${SURV_LABEL[rd]}</span><span class="srv">+${fmtMoney(SURV_REWARD[rd])}</span></span>`).join('')}<span class="survrung jack"><span class="srk">👑 Pot</span><span class="srv">${fmtMoney(SURV_JACKPOT)}</span></span></div>`;
+  if(!koStarted){
+    html+=`<div class="empty">Survivor unlocks when the knockouts begin — the bracket is still filling in from the group stage. Everyone in the league is automatically entered; come back once the Round of 32 teams are set.</div>`;
+    if(state.players.length)html+=`<div class="wlabel" style="margin:14px 0 7px">In the running (${state.players.length})</div>`+state.players.map(pl=>`<div class="survrow"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><div class="survmid"><span class="sub" style="font-size:11px">ready</span></div><span class="schip alive">✅ in</span></div>`).join('');
+    el.innerHTML=html;survNotify();return;
+  }
+  if(me){
+    const ms=survState(me),used=survUsedTeams(me),canPick=ms.cur&&(ms.curStatus==='needpick'||ms.curStatus==='picked');
+    if(canPick){
+      const rd=ms.cur,teams=survTeamsOf(rd),myPick=ms.picks[rd]||null;
+      const opts=teams.map(t=>{const k=survMatchFor(rd,t);return {t,k,ko:!!(k&&kickedOff(k)),reused:used.has(t)&&myPick!==t};});
+      const enabled=opts.filter(o=>!o.ko&&!o.reused);
+      html+=`<div class="survpick"><h3 style="margin-bottom:4px">Your ${SURV_LABEL[rd]} pick · ${rd}</h3><p class="sub" style="margin-bottom:10px">${myPick?'On <b>'+myPick+'</b> — switch any time before kickoff.':'Back one team to advance. Locks at that team’s kickoff.'}</p>`;
+      if(enabled.length||myPick){
+        html+=`<div class="survopts">`+opts.map(o=>{const dis=(o.ko||o.reused)&&myPick!==o.t,sel=myPick===o.t,oppo=o.k?(o.k.t1===o.t?o.k.t2:o.k.t1):'';
+          return `<button class="survteam${sel?' sel':''}${dis?' dis':''}" data-st="${o.t}"${dis?' disabled':''}>${badge(o.t)} <span class="stnm">${o.t}</span><small class="stvs">v ${oppo}${o.ko?' · started':o.reused?' · used':''}</small></button>`;}).join('')+`</div>`;
+      } else html+=`<div class="empty" style="padding:18px">All ${SURV_LABEL[rd]} ties have kicked off — no pick available. You’ll be out when the round completes.</div>`;
+      html+=`</div>`;
+    } else {
+      const surv=ms.survived,sR=surv===1?'':'s';
+      const lbl=ms.curStatus==='champion'?`👑 <b>You’re the Survivor champion!</b> You called all ${surv} rounds — the pot is yours${jack.length>1?' (shared)':''}.`:
+        ms.curStatus==='out'?`☠️ <b>You’re out</b> — ${ms.picks[ms.outRound]} fell in the ${ms.outRound}. You survived ${surv} round${sR}.`:
+        ms.curStatus==='missed'?`☠️ <b>You’re out</b> — no pick made for the ${ms.outRound}. You survived ${surv} round${sR}.`:
+        ms.curStatus==='locked'?`✅ <b>Still alive</b> — locked on <b>${ms.picks[ms.cur]}</b> for the ${ms.cur}. ${surv} round${sR} survived.`:
+        ms.curStatus==='waiting'?`✅ <b>Still alive</b> — ${surv} round${sR} survived. Your next pick opens when the ${ms.cur} teams are set.`:
+        `${surv} round${sR} survived.`;
+      html+=`<div class="survpick survstatus ${ms.alive?'alive':'out'}">${lbl}</div>`;
+    }
+  } else html+=`<p class="sub">Join the league to enter Survivor.</p>`;
+  html+=`<div class="wlabel" style="margin:16px 0 8px">The survivors${over?' — final standings':''}</div>`;
+  const rows=state.players.map(pl=>({pl,s:survState(pl)})).sort((a,b)=>(b.s.alive-a.s.alive)||(b.s.survived-a.s.survived)||a.pl.localeCompare(b.pl));
+  html+=rows.map(({pl,s})=>{const isMe=pl===me;
+    const chip=s.curStatus==='champion'?'<span class="schip champ">👑 Champion</span>':s.alive?`<span class="schip alive">✅ ${s.survived}R</span>`:`<span class="schip out">☠️ out · ${s.survived}R</span>`;
+    const tr=s.trail.map(x=>`<span class="strail ${x.ok?'ok':'no'}">${SURV_LABEL[x.rd]} ${x.ok?'✓':'✗'}</span>`).join('');
+    let curp='';if(s.curStatus==='picked'||s.curStatus==='locked'){const t=s.picks[s.cur],k=survMatchFor(s.cur,t),reveal=isMe||(k&&kickedOff(k));curp=`<span class="strail cur">${SURV_LABEL[s.cur]}: ${reveal?t:'🔒'}</span>`;}
+    const jackTag=over&&jack.includes(pl)?`<span class="bnet win">+${fmtMoney(Math.round(SURV_JACKPOT/Math.max(1,jack.length)))}</span>`:'';
+    return `<div class="survrow${s.alive?'':' dead'}"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${isMe?' (you)':''}</span></span><div class="survmid">${tr}${curp||(tr?'':'<span class="sub" style="font-size:11px">—</span>')}</div>${chip}${jackTag}</div>`;}).join('');
+  el.innerHTML=html;
+  el.querySelectorAll('.survteam:not(.dis)').forEach(b=>b.onclick=()=>{const t=b.dataset.st,ms=survState(me),rd=ms.cur;if(!rd)return;
+    state.survivor[me]=state.survivor[me]||{};state.survivor[me][rd]=t;markPendingSurv();if(SB_ENABLED)sbSetSurv(me);
+    flash('Survivor: backing '+t+' to advance');moOnce(b,'mo-pop',320);renderSurvivor();renderLeaderboard();updateLeagueBar();});
+  survNotify();
+}
+function survNotify(){const tab=document.querySelector('#tabs .tab[data-tab="survivor"]');if(!tab)return;let need=false;
+  try{if(me){const ms=survState(me);if(ms.curStatus==='needpick'&&ms.cur){need=survTeamsOf(ms.cur).some(t=>{const k=survMatchFor(ms.cur,t);return !(k&&kickedOff(k))&&!survUsedTeams(me).has(t);});}}}catch(e){}
+  tab.classList.toggle('notify',need);}
 function rr(c,x0,y0,w,h,r){c.beginPath();c.moveTo(x0+r,y0);c.arcTo(x0+w,y0,x0+w,y0+h,r);c.arcTo(x0+w,y0+h,x0,y0+h,r);c.arcTo(x0,y0+h,x0,y0,r);c.arcTo(x0,y0,x0+w,y0,r);c.closePath();}
 function shareCard(){
   if(!me){flash('Join the league first');return;}
@@ -1893,7 +2016,7 @@ function renderChat(){const box=document.getElementById('chatBox');if(!box)retur
   if(ct)ct.classList.toggle('notify',msgs.length>seen&&!onChat);
   if(onChat){try{localStorage.setItem('wc2026-chatseen',msgs.length);}catch(e){}if(ct)ct.classList.remove('notify');}
 }
-function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();try{renderGlove();}catch(e){}renderChat();statusLine();updateLeagueBar();}
+function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();try{renderGlove();}catch(e){}renderChat();try{renderSurvivor();}catch(e){}statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
