@@ -937,7 +937,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-y';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-z';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1696,7 +1696,12 @@ function renderBoard(){
         :(s.scorer?`<span class="oubadge ${ft?(scoredP(s.scorer)?'win':'loss'):''}">${gx(scoredP(s.scorer))}⚽ ${s.scorer}</span>`:'');
       return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
     const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
-    return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}</div>`;}).join('');
+    const mkp=revealed?state.players.map(pl=>{const arr=(state.mktbets[pl]||{})[m.id]||[];if(!arr.length)return '';
+      const badges=arr.map(b=>{const r=mktSettle(b,m),cls=ft?(r==='won'?'win':r==='void'?'':'loss'):'',gx=ft?(r==='won'?'✓ ':r==='void'?'':'✗ '):'';
+        return `<span class="oubadge ${cls}">${gx}${mktDesc(b,m)} <b>${b.od}x</b> ${fmtMoney(b.st)}</span>`;}).join('');
+      return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${badges}</div>`;}).filter(Boolean).join(''):'';
+    const mktSec=mkp?`<div class="bou"><span class="boulabel">Markets${revealed&&!ft?' · live':''}</span><div class="bpicks">${mkp}</div></div>`:'';
+    return `<div class="card bcard">${head}${teams}<div class="bpicks">${body}</div>${ouSec}${mktSec}</div>`;}).join('');
 }
 // ================= SIDE BETS (champion pick + quizzes) =================
 function renderSidebets(){
