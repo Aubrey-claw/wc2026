@@ -641,7 +641,7 @@
 </section>
 
 <section id="predict">
-  <div class="card" id="leagueCard" style="margin-bottom:14px"></div>
+  <div class="card" id="leagueCard" style="margin-bottom:14px" aria-live="polite"></div>
   <div class="card rail" style="margin-bottom:14px">
     <div class="lab">Players</div>
     <div class="prail" id="prail"></div>
@@ -725,7 +725,7 @@
     <div class="joinmanage" id="joinManage"></div>
   </div>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <footer id="foot"></footer>
 
 <script>
@@ -938,7 +938,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-ab';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-ac';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1477,9 +1477,9 @@ function renderBanner(){const w=document.getElementById('bannerWrap');if(!state.
   const budget=`<div class="budgetbar"><div class="bgcol bgfree${low?' low':''}"><span class="bglbl">💰 Free to wager</span><span class="bgval" id="bgFree">${fmtMoney(b.free)}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">On the line</span><span class="bgval inplayv">${b.inPlay>0?fmtMoney(b.inPlay):'—'}</span></div><div class="bgsep"></div><div class="bgcol"><span class="bglbl">Bank</span><span class="bgval">${fmtMoney(b.bal)}</span></div></div>${low?'<div class="sub bgnote">You’ve committed nearly everything — settle a bet or trim a wager to free up cash.</div>':''}`;
   w.innerHTML=`<div class="banner">${avatar(p)}<div class="info"><div class="who">Predicting as ${p}</div><div class="sub">${done} of ${open.length} open matches picked</div><div class="progress"><i style="width:${pct}%"></i></div></div></div>${budget}`;
   const fe=document.getElementById('bgFree');if(fe){moCountUp(fe,moPrev['free:'+p],b.free,fmtMoney,600);moPrev['free:'+p]=b.free;}}
-function stepper(id,s,val){const set=val!=null;return `<div class="vstep"><button data-id="${id}" data-s="${s}" data-d="1">▲</button><input class="sv svin ${set?'set':''}" inputmode="numeric" maxlength="2" data-svin="${id}" data-s="${s}" value="${set?val:''}" placeholder="–"><button data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
+function stepper(id,s,val){const set=val!=null,sd=s==0?'home':'away';return `<div class="vstep"><button aria-label="Increase ${sd} score" data-id="${id}" data-s="${s}" data-d="1">▲</button><input class="sv svin ${set?'set':''}" inputmode="numeric" maxlength="2" aria-label="${s==0?'Home':'Away'} score" data-svin="${id}" data-s="${s}" value="${set?val:''}" placeholder="–"><button aria-label="Decrease ${sd} score" data-id="${id}" data-s="${s}" data-d="-1">▼</button></div>`;}
 function wagerCtrl(id,stake,rm){rm=rm||1;return `<div class="wstrip edit"><span class="wlabel">Wager${rm>1?` <span class="jchip">KO ×${rm}</span>`:''}</span>
-  <div class="wctrl"><button class="wbtn" data-w="${id}" data-d="-1">−</button><span class="wval">${fmtMoney(stake)}</span><button class="wbtn" data-w="${id}" data-d="1">+</button></div>
+  <div class="wctrl"><button class="wbtn" aria-label="Decrease wager" data-w="${id}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(stake)}</span><button class="wbtn" aria-label="Increase wager" data-w="${id}" data-d="1">+</button></div>
   <span class="wreturn" title="exact / right result+GD / right result">${fmtMoney(stake*4*rm)} · ${fmtMoney(stake*2.5*rm)} · ${fmtMoney(stake*1.5*rm)}</span></div>`;}
 function mktPanelHtml(m,p,canEdit,locked){
   if(isPH(m.t1)||isPH(m.t2))return '';                 // need real teams to price odds
@@ -1487,7 +1487,7 @@ function mktPanelHtml(m,p,canEdit,locked){
   if(canEdit&&!locked){
     const wo=winOdds(m),dc=dcOdds(m),cs=csOdds(m),wt=wtnOdds(m),mg=mgnOdds(m);
     const opt=(mk,pk,lbl,od)=>`<button class="mktbtn ${mktPickOf(m,mk)===pk?'on':''}" data-mid="${m.id}" data-mkt="${mk}" data-mp="${pk}">${lbl} <b>${od}x</b></button>`;
-    const stk=mk=>{const b=mktBetOf(m,mk);return b?`<div class="mktstk"><button class="wbtn sm" data-mstk="${mk}" data-mid="${m.id}" data-d="-1">−</button><span class="wval">${fmtMoney(b.st)}</span><button class="wbtn sm" data-mstk="${mk}" data-mid="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(b.st*b.od))} @${b.od}x</span></div>`:'';};
+    const stk=mk=>{const b=mktBetOf(m,mk);return b?`<div class="mktstk"><button class="wbtn sm" aria-label="Decrease stake" data-mstk="${mk}" data-mid="${m.id}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(b.st)}</span><button class="wbtn sm" aria-label="Increase stake" data-mstk="${mk}" data-mid="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(b.st*b.od))} @${b.od}x</span></div>`:'';};
     const csB=mktBetOf(m,'cscore');
     const csSel=`<select class="mktcs" data-mid="${m.id}"><option value="">Correct score…</option>${CS_SCORES.map(s=>`<option value="${s}"${csB&&csB.pk===s?' selected':''}>${s.replace('-','–')} (${csScoreOdds(m,s)}x)</option>`).join('')}</select>${csB?stk('cscore'):''}`;
     return `<details class="mktwrap"${bets.length?' open':''}><summary>＋ More markets <span class="sub">— to win · double chance · clean sheet · win-to-nil · margin · correct score</span></summary>
@@ -1529,7 +1529,7 @@ function renderPredict(){
         strip+=`<div class="wstrip ou"><span class="wlabel">★ Joker (2×)</span><div class="outog"><button class="jokerbtn ${here?'on':''}" data-jk="${m.id}">${here?'ARMED 2×':(aj?'Move here':'Arm Joker')}</button></div><span class="wreturn">double pts &amp; money</span></div>`;}}
     const spick=sidep.scorer,scbets=sidep.scbets||[],haveT1=!!SQUAD[m.t1],haveT2=!!SQUAD[m.t2];
     const ouSt=sidep.ouStake||0,btSt=sidep.bttsStake||0;
-    const stepHTML=(kind,st,odds)=>`<div class="sidestake"><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="-1">−</button><span class="wval">${fmtMoney(st)}</span><button class="wbtn sm" data-ss="${kind}" data-id="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(st*odds))}</span></div>`;
+    const stepHTML=(kind,st,odds)=>`<div class="sidestake"><button class="wbtn sm" aria-label="Decrease stake" data-ss="${kind}" data-id="${m.id}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(st)}</span><button class="wbtn sm" aria-label="Increase stake" data-ss="${kind}" data-id="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(st*odds))}</span></div>`;
     const addedKeys=new Set(scbets.map(b=>normName(b.p)));
     const scTeamOpts=(team)=>(SQUAD[team]||[]).filter(pn=>!addedKeys.has(normName(pn))).sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0))
       .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' · '+g+'⚽':''}</option>`;}).join('');
@@ -1538,7 +1538,7 @@ function renderPredict(){
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
       if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
         oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
-          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval">${fmtMoney(b.st)}</span><button class="wbtn sm" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
+          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" aria-label="Decrease ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(b.st)}</span><button class="wbtn sm" aria-label="Increase ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" aria-label="Remove ${b.p}" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
           +`<select class="scadd" data-sc="${m.id}"><option value="">+ add a scorer…</option>${haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:''}${haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:''}</select></div>`;}
       else if(m.ko)oustrip+=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided</span></div>`;
     }else{
