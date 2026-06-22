@@ -937,7 +937,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-21-z';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-21-aa';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1309,7 +1309,8 @@ function mktToggle(mid,mk,pk){
   else{if(free<MIN_WAGER){flash('Not enough free cash to bet');return;}arr.push({mk,pk,st:defSt,od});}
   saveMkt(mid);
   const el=document.querySelector('.mktbtn.on[data-mkt="'+mk+'"][data-mp="'+pk+'"][data-mid="'+mid+'"]');moOnce(el,'mo-pick-pop',440);}
-function mktStakeStep(mid,mk,d){const arr=(state.mktbets[me]||{})[mid]||[],b=arr.find(x=>x.mk===mk);if(!b)return;
+function mktStakeStep(mid,mk,d){const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
+  const arr=(state.mktbets[me]||{})[mid]||[],b=arr.find(x=>x.mk===mk);if(!b)return;
   const free=bankOf(me).free,cap=Math.min(sideCap(me),free+(b.st||0));b.st=Math.max(MIN_WAGER,Math.min(cap,(b.st||0)+d*STAKE_STEP));saveMkt(mid);}
 function champProgress(){return ALL.filter(isFT).length/ALL.length;}
 function champOdds(team,progOverride){if(!team)return 1.5;
@@ -1324,41 +1325,44 @@ function champPay(p){return Math.round(CHAMP_BASE*champOddsOf(p));}
 function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?champPay(p):0;}
 function bankOf(p){
   const preds=state.preds[p]||{};
-  const settled=ALL.filter(m=>isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)
-    .sort((a,b)=>new Date(a.dt)-new Date(b.dt));
-  let bal=START_BAL, won=0, lost=0;
-  settled.forEach(m=>{const pr=preds[m.id],stake=pr[2]||0,pay=stake*multFor(points(pr,m));const jk=isJoker(p,m)?2:1;const raw=(pay-stake)*jk;
-    const net=raw>0?raw*roundMult(m):raw;const before=bal;bal=Math.max(FLOOR,bal+net);const realized=bal-before;
-    if(realized>=0)won+=realized; else lost+=-realized;});
-  // accumulators (parlays): all legs must land (right result); payout = stake * product of leg multipliers
-  let accaPlay=0;(state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return;
-    if(!legs.every(isFT)){accaPlay+=a.stake;return;}
+  // Collect EVERY settled bet across all categories into one timeline, then fold chronologically with the floor —
+  // so a player's balance never depends on category order and the $10 floor tracks real-world timing.
+  const ev=[];let inPlay=0,settledN=0;const dtOf=m=>new Date(m.dt).getTime();
+  // predictions (wager) — joker doubles, knockout round multiplier on wins
+  ALL.forEach(m=>{const pr=preds[m.id];if(!hasPick(pr)||!((pr[2]||0)>0))return;const jk=isJoker(p,m)?2:1;
+    if(!isFT(m)){inPlay+=pr[2]*jk;return;}
+    const stake=pr[2],raw=(stake*multFor(points(pr,m))-stake)*jk;ev.push({dt:dtOf(m),net:raw>0?raw*roundMult(m):raw});settledN++;});
+  // accumulators (parlays) — all legs must land; settle on the last leg's kickoff
+  (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return;
+    if(!legs.every(isFT)){inPlay+=a.stake;return;}
     const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});
-    const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;
-    const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  // head-to-head duels: accepted duels pay the pot to whoever's pick scored more on that match
-  let duelPlay=0;(state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m)return;
-    if(!isFT(m)){duelPlay+=d.amount;return;}
+    ev.push({dt:Math.max.apply(null,legs.map(dtOf)),net:allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake});});
+  // head-to-head duels
+  (state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m)return;
+    if(!isFT(m)){inPlay+=d.amount;return;}
     const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;
-    if(mine===his)return;const net=mine>his?d.amount:-d.amount;const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  // STAKED side bets (O/U, BTTS, anytime scorer) — fixed odds; stake-less legacy picks still pay flat via ouWon/scorerWon
-  let sidePlay=0;const book=(net)=>{const before=bal;bal=Math.max(FLOOR,bal+net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;};
-  ALL.forEach(m=>{const s=(state.sidepicks[p]||{})[m.id];if(!s)return;const ft=isFT(m);
-    if(s.ou&&(s.ouStake||0)>0){if(!ft)sidePlay+=s.ouStake;else book(s.ou===ouResult(m)?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake);}
-    if(s.btts&&(s.bttsStake||0)>0){if(!ft)sidePlay+=s.bttsStake;else book(s.btts===bttsResult(m)?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake);}
-    (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;if(!ft){sidePlay+=st;return;}
-      if((m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p)))book(st*(scorerOdds(b.p)-1));
-      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))book(-st);/* else feed incomplete → void/refund */}});});
-  // HALF-TIME live props — settled deterministically from each bet's stored HT snapshot vs the final score (no timeline dependency). Void = refund (no book).
-  let htPlay=0;const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;
-    (myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open'){htPlay+=st;return;}if(r==='void')return;book(r==='won'?st*((HT_ODDS[b.mk]&&HT_ODDS[b.mk][b.pk]||1)-1):-st);});}
-  // EXTRA MARKETS (to-win / double-chance / clean-sheet / win-to-nil / margin / correct-score) — settle from final score at each bet's locked odds
-  let mktPlay=0;const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;
-    (mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open'){mktPlay+=st;return;}if(r==='void')return;book(r==='won'?st*((b.od||1)-1):-st);});}
+    if(mine===his)return;ev.push({dt:dtOf(m),net:mine>his?d.amount:-d.amount});});
+  // STAKED side bets (O/U, BTTS, anytime scorer)
+  ALL.forEach(m=>{const s=(state.sidepicks[p]||{})[m.id];if(!s)return;const ft=isFT(m),dt=dtOf(m);
+    if(s.ou&&(s.ouStake||0)>0){if(!ft)inPlay+=s.ouStake;else ev.push({dt,net:s.ou===ouResult(m)?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake});}
+    if(s.btts&&(s.bttsStake||0)>0){if(!ft)inPlay+=s.bttsStake;else ev.push({dt,net:s.btts===bttsResult(m)?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake});}
+    (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;if(!ft){inPlay+=st;return;}
+      if((m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p)))ev.push({dt,net:st*(scorerOdds(b.p)-1)});
+      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))ev.push({dt,net:-st});/* else feed incomplete → void/refund */}});});
+  // HALF-TIME props — settle from the bet's LOCKED odds (b.od), not the live const table
+  const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;const dt=dtOf(m);
+    (myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open'){inPlay+=st;return;}if(r==='void')return;
+      ev.push({dt,net:r==='won'?st*((b.od||(HT_ODDS[b.mk]&&HT_ODDS[b.mk][b.pk])||1)-1):-st});});}
+  // EXTRA MARKETS — settle from final score at each bet's locked odds
+  const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;const dt=dtOf(m);
+    (mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open'){inPlay+=st;return;}if(r==='void')return;
+      ev.push({dt,net:r==='won'?st*((b.od||1)-1):-st});});}
+  // fold chronologically; floor on the running balance
+  ev.sort((a,b)=>a.dt-b.dt);let bal=START_BAL,won=0,lost=0;
+  ev.forEach(e=>{const before=bal;bal=Math.max(FLOOR,bal+e.net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
   const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p);
   const bonus=qw+cw+ow+tw+sw+gqw;bal+=bonus;won+=bonus;
-  let inPlay=accaPlay+duelPlay+sidePlay+htPlay+mktPlay; ALL.forEach(m=>{if(!isFT(m)&&hasPick(preds[m.id])&&(preds[m.id][2]||0)>0)inPlay+=preds[m.id][2]*(isJoker(p,m)?2:1);});
-  return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN:settled.length,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
+  return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
 const AVCOL=['#19e3a6','#4d8bff','#ffd24d','#ff5d77','#b78bff','#ff9d3d','#46d3ff','#9be15d'];
@@ -1917,7 +1921,7 @@ async function pullLiveScores(){
         const q=encodeURIComponent(tsdbTeam(m.t1)+'_vs_'+tsdbTeam(m.t2));
         const j=await fetch(TSDB+'/searchevents.php?e='+q+'&s=2026').then(r=>r.json()).catch(()=>null);
         const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
-        if(!ev||ev.strStatus!=='FT'||ev.intHomeScore==null||ev.intAwayScore==null){await sleep2(600);continue;}
+        if(!ev||!ftLike(ev.strStatus)||ev.intHomeScore==null||ev.intAwayScore==null){await sleep2(600);continue;}  // accept FT/AET/PEN so extra-time & penalty knockouts also record (else those bets stay locked forever)
         const s1=parseInt(ev.intHomeScore,10),s2=parseInt(ev.intAwayScore,10);
         if(h&&h.status==='FT'&&(h.s1!==s1||h.s2!==s2)){await sleep2(600);continue;}  // never change a confirmed score
         const tl=await fetch(TSDB+'/lookuptimeline.php?id='+ev.idEvent).then(r=>r.json()).catch(()=>null);
@@ -1954,7 +1958,7 @@ function applyLiveEv(m,ev){liveData[m.id]={status:ev.strStatus||'',prog:ev.strPr
   const d=liveData[m.id];if(/^(HT|Half)/i.test(d.status||'')&&d.s1!=null&&d.s2!=null&&!htSnap[m.id])htSnap[m.id]={h:d.s1,a:d.s2,seen:Date.now()};}  // freeze the HT score the first time we see half-time
 // ---- half-time prop helpers ----
 const htIsHT=m=>/^(HT|Half)/i.test((liveData[m.id]||{}).status||'');
-const htOpen=m=>{const s=htSnap[m.id];return !!(me&&state.players.includes(me)&&s&&htIsHT(m)&&Date.now()-s.seen<8*60000);};  // bettable only during the HT break (+8min client grace)
+const htOpen=m=>{const s=htSnap[m.id],d=liveData[m.id];return !!(me&&state.players.includes(me)&&s&&htIsHT(m)&&d&&d.s1===s.h&&d.s2===s.a&&Date.now()-s.seen<6*60000);};  // bettable only while the feed still shows the frozen HT score (closes the instant a 2nd-half goal appears) + 6min backstop
 const htHas=(m,mk)=>((state.htbets[me]||{})[m.id]||[]).some(b=>b.mk===mk);
 function htStake(mid){const cap=htCap(me);const d=(htDraft[mid]!=null?htDraft[mid]:Math.min(cap,((state.preds[me]||{})[mid]||[])[2]||30));return Math.max(MIN_WAGER,Math.min(cap,d));}
 async function placeHt(mid,mk,pk){
