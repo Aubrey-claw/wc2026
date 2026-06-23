@@ -1022,7 +1022,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-ah';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-ai';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1612,8 +1612,28 @@ function renderPredict(){
   if(!list.length){wrap.innerHTML='<div class="empty">No matches in this view.</div>';return;}
   const canEdit=(!SB_ENABLED)||p===me;
   const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});  // goals scored so far, for the scorer picker
-  wrap.innerHTML=list.map(m=>mcardHTML(m,p,canEdit,goalsBy)).join('');
+  const htmls=list.map(m=>mcardHTML(m,p,canEdit,goalsBy));
+  wrap.innerHTML=htmls.join('');
+  [...wrap.querySelectorAll('.mcard')].forEach((el,i)=>{el._sig=htmls[i];});  // signature → lets syncPredict skip unchanged cards
   bindPredict(wrap,p,canEdit);
+}
+// reconcile in place (used by renderAll on realtime/interval) — only swap cards whose content changed, so the list doesn't flicker
+function syncPredict(){
+  const wrap=document.getElementById('predList');if(!wrap)return;
+  if(!state.active){renderPredict();return;}                    // empty-state / no player → full render handles it
+  const p=state.active;state.preds[p]=state.preds[p]||{};
+  const list=filtered().sort((a,b)=>new Date(a.dt)-new Date(b.dt));
+  const cards=[...wrap.querySelectorAll('.mcard')];
+  if(cards.length!==list.length||cards.some((el,i)=>el.dataset.mid!==list[i].id)){renderPredict();return;}  // set/order changed → full
+  const canEdit=(!SB_ENABLED)||p===me;
+  const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});
+  renderBanner();updateLeagueBar();
+  list.forEach((m,i)=>{const el=cards[i];const html=mcardHTML(m,p,canEdit,goalsBy);
+    if(el._sig===html)return;                                   // unchanged → leave the DOM alone (no flicker)
+    const od=el.querySelector('.mktwrap'),wasOpen=od&&od.open;
+    const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.firstElementChild;if(!fresh)return;
+    fresh._sig=html;el.replaceWith(fresh);if(wasOpen){const nd=fresh.querySelector('.mktwrap');if(nd)nd.open=true;}
+    bindPredict(fresh,p,canEdit);});
 }
 function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
@@ -1704,9 +1724,9 @@ function refreshCard(id){const p=state.active;if(!p)return;const wrap=document.g
   if(!el||!m){renderPredict();return;}
   const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});
   const od=el.querySelector('.mktwrap');const wasOpen=od&&od.open;  // keep "More markets" expanded across the refresh
-  const tmp=document.createElement('div');tmp.innerHTML=mcardHTML(m,p,canEdit,goalsBy);const fresh=tmp.firstElementChild;
+  const html=mcardHTML(m,p,canEdit,goalsBy);const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.firstElementChild;
   if(!fresh){renderPredict();return;}
-  el.replaceWith(fresh);
+  fresh._sig=html;el.replaceWith(fresh);
   if(wasOpen){const nd=fresh.querySelector('.mktwrap');if(nd)nd.open=true;}
   bindPredict(fresh,p,canEdit);}
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();moStaggerSection('predict');});
@@ -2177,7 +2197,7 @@ function renderChat(){const box=document.getElementById('chatBox');if(!box)retur
   if(ct)ct.classList.toggle('notify',msgs.length>seen&&!onChat);
   if(onChat){try{localStorage.setItem('wc2026-chatseen',msgs.length);}catch(e){}if(ct)ct.classList.remove('notify');}
 }
-function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();renderPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();try{renderGlove();}catch(e){}renderChat();try{renderSurvivor();}catch(e){}try{renderHistory();}catch(e){}statusLine();updateLeagueBar();}
+function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();syncPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();try{renderGlove();}catch(e){}renderChat();try{renderSurvivor();}catch(e){}try{renderHistory();}catch(e){}statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
 renderAll();
