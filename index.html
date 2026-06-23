@@ -614,7 +614,8 @@
   .htright{text-align:right;white-space:nowrap}
   .htnet{font-weight:800;font-size:14px}
   .htnet.pos{color:var(--acc)} .htnet.neg{color:var(--live)} .htnet.void{color:var(--mut);font-weight:700;font-size:12px}
-  .htbal{font-size:10.5px;color:var(--mut);margin-top:1px}
+  .htbreak{font-size:10.5px;color:var(--mut);margin-top:1px}
+  .htbal{font-size:10.5px;color:var(--mut);margin-top:1px;font-weight:700}
   .htstart{text-align:center;color:var(--mut);font-size:11px;font-style:italic;padding:12px 0}
   .hres{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid rgba(38,50,79,.4);font-size:13px}
   .hrtag{font-size:9.5px;font-weight:800;color:var(--mut);background:var(--bg2);border-radius:5px;padding:3px 6px;min-width:46px;text-align:center}
@@ -1021,7 +1022,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-af';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-ag';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1851,23 +1852,23 @@ function historyOf(p){
       const stake=pr[2]||0,jk=isJoker(p,m)?2:1,pts=points(pr,m),mult=multFor(pts);
       let net=0;if(stake>0){const raw=(stake*mult-stake)*jk;net=raw>0?raw*roundMult(m):raw;}
       const oc=pts===5?'Exact score ✓✓':pts===3?'Result + GD ✓':pts===2?'Right result ✓':'Missed ✗';
-      out.push({dt:dtOf(m),m,kind:'pred',net,pts:pts*jk,title:`${m.t1} ${m.s1}–${m.s2} ${m.t2}`,
+      out.push({dt:dtOf(m),m,kind:'pred',net,stake,pts:pts*jk,title:`${m.t1} ${m.s1}–${m.s2} ${m.t2}`,
         sub:`You called ${pr[0]}–${pr[1]} · ${oc}${jk>1?' · ★Joker':''}${stake>0?' · stake '+fmtMoney(stake)+(m.ko&&net>0?' · KO×'+roundMult(m):''):' · no wager'}`});
     }
     const s=(state.sidepicks[p]||{})[m.id];
     if(s){
-      if(s.ou&&(s.ouStake||0)>0){const w=s.ou===ouResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake,title:`${m.t1} v ${m.t2}`,sub:`${s.ou==='O'?'Over':'Under'} 2.5 @ ${OU_ODDS[s.ou]}x · ${w?'won':'lost'} · ${fmtMoney(s.ouStake)}`});}
-      if(s.btts&&(s.bttsStake||0)>0){const w=s.btts===bttsResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake,title:`${m.t1} v ${m.t2}`,sub:`BTTS ${s.btts==='Y'?'Yes':'No'} @ ${BTTS_ODDS[s.btts]}x · ${w?'won':'lost'} · ${fmtMoney(s.bttsStake)}`});}
+      if(s.ou&&(s.ouStake||0)>0){const w=s.ou===ouResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake,stake:s.ouStake,title:`${m.t1} v ${m.t2}`,sub:`${s.ou==='O'?'Over':'Under'} 2.5 @ ${OU_ODDS[s.ou]}x · ${w?'won':'lost'}`});}
+      if(s.btts&&(s.bttsStake||0)>0){const w=s.btts===bttsResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake,stake:s.bttsStake,title:`${m.t1} v ${m.t2}`,sub:`BTTS ${s.btts==='Y'?'Yes':'No'} @ ${BTTS_ODDS[s.btts]}x · ${w?'won':'lost'}`});}
       (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;
-        if(hit)out.push({dt:dtOf(m),m,kind:'side',net:st*(scorerOdds(b.p)-1),title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · won · ${fmtMoney(st)} · +${SCORER_PTS} pts`});
-        else if(rec>=(m.s1+m.s2))out.push({dt:dtOf(m),m,kind:'side',net:-st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · lost · ${fmtMoney(st)}`});
-        else out.push({dt:dtOf(m),m,kind:'void',net:0,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} · refunded (feed incomplete) · ${fmtMoney(st)}`});});
+        if(hit)out.push({dt:dtOf(m),m,kind:'side',net:st*(scorerOdds(b.p)-1),stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · won · +${SCORER_PTS} pts`});
+        else if(rec>=(m.s1+m.s2))out.push({dt:dtOf(m),m,kind:'side',net:-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · lost`});
+        else out.push({dt:dtOf(m),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} · refunded (feed incomplete)`});});
     }
   });
-  const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;(myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop · refunded · ${fmtMoney(st)}`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'ht',net:r==='won'?st*(od-1):-st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop @ ${od}x · ${r} · ${fmtMoney(st)}`});});}
-  const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;(mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} · refunded · ${fmtMoney(st)}`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'mkt',net:r==='won'?st*(od-1):-st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} @ ${od}x · ${r} · ${fmtMoney(st)}`});});}
-  (state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m||!isFT(m))return;const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;if(mine===his)return;out.push({dt:dtOf(m),m,kind:'duel',net:mine>his?d.amount:-d.amount,title:`${m.t1} v ${m.t2}`,sub:`Duel vs ${other} · ${mine>his?'won':'lost'} · ${fmtMoney(d.amount)}`});});
-  (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length||!legs.every(isFT))return;const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;out.push({dt:Math.max.apply(null,legs.map(dtOf)),kind:'acca',net,title:`Acca · ${legs.length} legs`,sub:`${allRight?'all legs landed':'busted'} · stake ${fmtMoney(a.stake)}`});});
+  const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;(myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'ht',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop @ ${od}x · ${r}`});});}
+  const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;(mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'mkt',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} @ ${od}x · ${r}`});});}
+  (state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m||!isFT(m))return;const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;if(mine===his)return;out.push({dt:dtOf(m),m,kind:'duel',net:mine>his?d.amount:-d.amount,stake:d.amount,title:`${m.t1} v ${m.t2}`,sub:`Duel vs ${other} · ${mine>his?'won':'lost'}`});});
+  (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length||!legs.every(isFT))return;const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;out.push({dt:Math.max.apply(null,legs.map(dtOf)),kind:'acca',net,stake:a.stake,title:`Acca · ${legs.length} legs`,sub:`${allRight?'all legs landed':'busted'}`});});
   return out;
 }
 function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({amt,label});};
@@ -1899,9 +1900,13 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   let trail='';
   if(bonuses.length)trail+=`<div class="htbon"><b>Bonuses & specials: +${fmtMoney(bonusTot)}</b> <span class="sub">(added on top of your bets)</span><div class="htbonlist">${bonuses.map(b=>`<span class="htbontag">${b.label} <b>+${fmtMoney(b.amt)}</b></span>`).join('')}</div></div>`;
   if(!evs.length)trail+=`<div class="empty">No settled bets yet for ${p}. Once matches finish, every win and loss shows up here with a running bank.</div>`;
-  else trail+=evs.slice().reverse().map(e=>{const cls=e.net>0?'pos':e.net<0?'neg':'void';const sign=e.net>0?'+':e.net<0?'−':'';const amt=e.kind==='void'?'refund':e.net===0?(e.kind==='pred'?(e.pts?e.pts+' pts':'$0'):'$0'):sign+fmtMoney(Math.abs(e.net));
-    return `<div class="htrow"><div class="htmain"><div class="httitle">${e.title}</div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${amt}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
-    +`<div class="htstart">Started with ${fmtMoney(START_BAL)} · bank never drops below ${fmtMoney(FLOOR)}</div>`;
+  else trail+=evs.slice().reverse().map(e=>{const win=e.net>0,loss=e.net<0,voidb=e.kind==='void';let head,brk,cls;
+    if(win){cls='pos';head=fmtMoney((e.stake||0)+e.net)+' back';brk=`${fmtMoney(e.stake||0)} stake + ${fmtMoney(e.net)} winnings`;}
+    else if(loss){cls='neg';head='−'+fmtMoney(-e.net);brk=`${fmtMoney(e.stake||0)} stake lost`;}
+    else if(voidb){cls='void';head='refunded';brk=`${fmtMoney(e.stake||0)} stake back`;}
+    else{cls='void';head=e.pts?e.pts+' pts':'$0';brk='no wager';}
+    return `<div class="htrow"><div class="htmain"><div class="httitle">${e.title}</div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${head}</div><div class="htbreak">${brk}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
+    +`<div class="htstart">Wins show your <b>full return</b> — your stake plus winnings. Your stake is never taken out of your bank, so only the winnings are new money. Started with ${fmtMoney(START_BAL)} · bank never drops below ${fmtMoney(FLOOR)}.</div>`;
   // 2) results archive
   const played=ALL.filter(isFT).sort((a,b)=>new Date(b.dt)-new Date(a.dt));
   const fmtDay=t=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,day:'numeric',month:'short'}).format(new Date(t));
