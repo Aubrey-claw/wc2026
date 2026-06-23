@@ -315,6 +315,8 @@
   .scchip .wval{min-width:38px;text-align:center;font-weight:800;font-size:12px}
   .scchip .scwin{color:var(--acc);font-weight:800;font-size:11.5px}
   .scchip .scx{width:22px;height:22px;border-radius:50%;background:var(--live);color:#fff;border:none;font-size:11px;font-weight:800;cursor:pointer}
+  .scchip .scg{font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:var(--bg);border:1px solid var(--line);color:var(--mut);cursor:pointer;white-space:nowrap}
+  .scchip .scg.on{background:rgba(255,210,77,.16);border-color:var(--gold);color:var(--gold)}
   select.scadd{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600}
   .wstrip.win{background:linear-gradient(90deg,rgba(31,230,171,.10),transparent)}
   .wstrip.loss{background:linear-gradient(90deg,rgba(255,93,119,.10),transparent)}
@@ -1039,7 +1041,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-al';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-am';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1279,11 +1281,16 @@ function htSettle(b,m){if(!m||!isFT(m))return 'open';if(b.ht1==null||b.ht2==null
   return win?'won':'lost';}
 const SCORER_ODDS={};Object.keys(SQUAD).forEach(t=>(SQUAD[t]||[]).forEach((n,i)=>{SCORER_ODDS[normName(n)]=i===0?2.0:i<=2?3.5:6.0;}));
 const scorerOdds=p=>SCORER_ODDS[normName(p)]||6.0;     // star 2.0 / regular 3.5 / longshot 6.0
+// scorer bet helpers — a bet is {p, st, g?}; g>=2 = "2+ goals" (brace) at ~3× the anytime price. Centralised so every site agrees.
+function scGoals(m,p){return (m.scorers||[]).filter(x=>!isOwnGoal(x)&&scEq(x,p)).length;}
+function scBetOdds(b){const o=scorerOdds(b.p);return (b&&b.g>=2)?Math.round(o*30)/10:o;}
+function scBetSettle(m,b){if(!isFT(m))return 'open';if(scGoals(m,b.p)>=((b&&b.g)||1))return 'won';const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;return rec>=(m.s1+m.s2)?'lost':'void';}  // void = feed incomplete & not yet hit
+function scBetName(b){return b.p+((b&&b.g>=2)?' 2+':'');}
 function sideCap(p){return Math.max(MIN_WAGER,Math.min(100,Math.round(bankOf(p).bal*0.25)));}  // single side-bet cap = min($100, 25% of bank)
 function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&!(s.scbets&&s.scbets.length)&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))t+=SCORER_BONUS;});return t;}
 // LEAGUE POINTS for correctly predicting a goalscorer (anytime scorer) — separate from the money market, counts toward the points standings
 function scorerHits(p,m){const s=(state.sidepicks[p]||{})[m.id];if(!s||!isFT(m))return 0;const hits=new Set();
-  (s.scbets||[]).forEach(b=>{if(b&&b.p&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p)))hits.add(normName(b.p));});
+  (s.scbets||[]).forEach(b=>{if(b&&b.p&&scBetSettle(m,b)==='won')hits.add(normName(b.p));});
   if(s.scorer&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))hits.add(normName(s.scorer));
   return hits.size;}
 function scorerPoints(p){let t=0;ALL.forEach(m=>{t+=scorerHits(p,m)*SCORER_PTS;});return t;}
@@ -1479,9 +1486,8 @@ function bankOf(p){
   ALL.forEach(m=>{const s=(state.sidepicks[p]||{})[m.id];if(!s)return;const ft=isFT(m),dt=dtOf(m);
     if(s.ou&&(s.ouStake||0)>0){if(!ft)inPlay+=s.ouStake;else ev.push({dt,net:s.ou===ouResult(m)?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake});}
     if(s.btts&&(s.bttsStake||0)>0){if(!ft)inPlay+=s.bttsStake;else ev.push({dt,net:s.btts===bttsResult(m)?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake});}
-    (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;if(!ft){inPlay+=st;return;}
-      if((m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p)))ev.push({dt,net:st*(scorerOdds(b.p)-1)});
-      else{const recorded=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(recorded>=(m.s1+m.s2))ev.push({dt,net:-st});/* else feed incomplete → void/refund */}});});
+    (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=scBetSettle(m,b);if(r==='open'){inPlay+=st;return;}
+      if(r==='won')ev.push({dt,net:st*(scBetOdds(b)-1)});else if(r==='lost')ev.push({dt,net:-st});/* void → refund */});});
   // HALF-TIME props — settle from the bet's LOCKED odds (b.od), not the live const table
   const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;const dt=dtOf(m);
     (myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open'){inPlay+=st;return;}if(r==='void')return;
@@ -1686,7 +1692,7 @@ function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
       if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
         oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
-          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scorerOdds(b.p)}x</b></span><button class="wbtn sm" aria-label="Decrease ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(b.st)}</span><button class="wbtn sm" aria-label="Increase ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scorerOdds(b.p)))}</span><button class="scx" aria-label="Remove ${b.p}" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
+          +(scbets.length?`<div class="scchips">`+scbets.map((b,i)=>`<span class="scchip"><span class="scn">${b.p} <b>${scBetOdds(b)}x</b></span><button class="scg ${b.g>=2?'on':''}" data-scg="${m.id}" data-i="${i}" title="Anytime scorer, or 2+ goals (a brace) at bigger odds">${b.g>=2?'2+ goals':'anytime'}</button><button class="wbtn sm" aria-label="Decrease ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(b.st)}</span><button class="wbtn sm" aria-label="Increase ${b.p} stake" data-scst="${m.id}" data-i="${i}" data-d="1">+</button><span class="scwin">→${fmtMoney(Math.round(b.st*scBetOdds(b)))}</span><button class="scx" aria-label="Remove ${b.p}" data-scx="${m.id}" data-i="${i}">✕</button></span>`).join('')+`</div>`:'')
           +`<select class="scadd" data-sc="${m.id}"><option value="">+ add a scorer…</option>${haveT1?`<optgroup label="${m.t1}">${scTeamOpts(m.t1)}</optgroup>`:''}${haveT2?`<optgroup label="${m.t2}">${scTeamOpts(m.t2)}</optgroup>`:''}</select></div>`;}
       else if(m.ko)oustrip+=`<div class="wstrip ou locktbd"><span class="wlabel">Anytime scorer</span><span class="wreturn">unlocks once the teams are decided</span></div>`;
     }else{
@@ -1695,8 +1701,8 @@ function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state
         else{const r=isFT(m),ok=r&&oupick===ouResult(m);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Goals: ${oupick==='O'?'Over':'Under'} 2.5</span>${r?`<span class="wout">${ok?'won '+fmtMoney(OU_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}}
       if(bpick){if(btSt>0)oustrip+=settled(bpick===bttsResult(m),btSt,BTTS_ODDS[bpick],'Both score '+(bpick==='Y'?'Yes':'No')+' @'+BTTS_ODDS[bpick]+'x');
         else{const r=isFT(m),ok=r&&bpick===bttsResult(m);oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Both score: ${bpick==='Y'?'Yes':'No'}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(BTTS_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}}
-      scbets.forEach(b=>{const ft=isFT(m),scored=ft&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;const voided=ft&&!scored&&rec<(m.s1+m.s2);const stm=inSquad(m.t1,b.p)?m.t1:inSquad(m.t2,b.p)?m.t2:'';
-        oustrip+=`<div class="wstrip ${ft?(scored?'win':voided?'':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${b.p} @${scorerOdds(b.p)}x</span>${ft?`<span class="wout">${scored?'won '+fmtMoney(Math.round(b.st*(scorerOdds(b.p)-1))):voided?'void — refunded':'lost '+fmtMoney(b.st)}</span>`:'<span class="wreturn">'+fmtMoney(b.st)+' on the line</span>'}</div>`;});
+      scbets.forEach(b=>{const ft=isFT(m),r=scBetSettle(m,b),won=r==='won',voided=r==='void',stm=inSquad(m.t1,b.p)?m.t1:inSquad(m.t2,b.p)?m.t2:'';
+        oustrip+=`<div class="wstrip ${ft?(won?'win':voided?'':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${scBetName(b)} @${scBetOdds(b)}x</span>${ft?`<span class="wout">${won?'won '+fmtMoney(Math.round(b.st*(scBetOdds(b)-1))):voided?'void — refunded':'lost '+fmtMoney(b.st)}</span>`:'<span class="wreturn">'+fmtMoney(b.st)+' on the line</span>'}</div>`;});
       if(spick&&!scbets.length){const r=isFT(m),ok=r&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,spick));const stm=inSquad(m.t1,spick)?m.t1:inSquad(m.t2,spick)?m.t2:'';oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
     const _ms=new Date(m.dt)-Date.now(),_cd=(!locked&&_ms>0)?(_ms<36e5?Math.round(_ms/6e4)+'m':_ms<864e5?Math.round(_ms/36e5)+'h':Math.round(_ms/864e5)+'d'):'';
@@ -1737,8 +1743,9 @@ function bindPredict(root,p,canEdit){
     root.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
       if(!o.scbets.some(x=>normName(x.p)===normName(v)))o.scbets.push({p:v,st:defSt(id)});saveSide(id);});
     root.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));
-      const chip=b.closest('.scchip');if(chip){const wv=chip.querySelector('.wval');if(wv)wv.textContent=fmtMoney(o.scbets[i].st);const w=chip.querySelector('.scwin');if(w)w.textContent='→'+fmtMoney(Math.round(o.scbets[i].st*scorerOdds(o.scbets[i].p)));}
+      const chip=b.closest('.scchip');if(chip){const wv=chip.querySelector('.wval');if(wv)wv.textContent=fmtMoney(o.scbets[i].st);const w=chip.querySelector('.scwin');if(w)w.textContent='→'+fmtMoney(Math.round(o.scbets[i].st*scBetOdds(o.scbets[i])));}
       markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
+    root.querySelectorAll('[data-scg]').forEach(b=>b.onclick=()=>{const id=b.dataset.scg,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].g=(o.scbets[i].g>=2)?1:2;saveSide(id);});
     root.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});
     root.querySelectorAll('.mktbtn').forEach(b=>b.onclick=()=>mktToggle(b.dataset.mid,b.dataset.mkt,b.dataset.mp));
     root.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>{const mid=b.dataset.mid,mk=b.dataset.mstk,d=+b.dataset.d;const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
@@ -1931,10 +1938,10 @@ function historyOf(p){
     if(s){
       if(s.ou&&(s.ouStake||0)>0){const w=s.ou===ouResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake,stake:s.ouStake,title:`${m.t1} v ${m.t2}`,sub:`${s.ou==='O'?'Over':'Under'} 2.5 @ ${OU_ODDS[s.ou]}x · ${w?'won':'lost'}`});}
       if(s.btts&&(s.bttsStake||0)>0){const w=s.btts===bttsResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake,stake:s.bttsStake,title:`${m.t1} v ${m.t2}`,sub:`BTTS ${s.btts==='Y'?'Yes':'No'} @ ${BTTS_ODDS[s.btts]}x · ${w?'won':'lost'}`});}
-      (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;
-        if(hit)out.push({dt:dtOf(m),m,kind:'side',net:st*(scorerOdds(b.p)-1),stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · won · +${SCORER_PTS} pts`});
-        else if(rec>=(m.s1+m.s2))out.push({dt:dtOf(m),m,kind:'side',net:-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · lost`});
-        else out.push({dt:dtOf(m),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} · refunded (feed incomplete)`});});
+      (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=scBetSettle(m,b);
+        if(r==='won')out.push({dt:dtOf(m),m,kind:'side',net:st*(scBetOdds(b)-1),stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${scBetName(b)} @ ${scBetOdds(b)}x · won · +${SCORER_PTS} pts`});
+        else if(r==='lost')out.push({dt:dtOf(m),m,kind:'side',net:-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${scBetName(b)} @ ${scBetOdds(b)}x · lost`});
+        else if(r==='open'){} else out.push({dt:dtOf(m),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${scBetName(b)} · refunded (feed incomplete)`});});
     }
   });
   const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;(myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'ht',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop @ ${od}x · ${r}`});});}
@@ -1954,7 +1961,7 @@ function accuracyOf(p){
     const s=sd[m.id];if(s){
       if(s.ou){ouB++;if(s.ou===ouResult(m))ouH++;}
       if(s.btts){ouB++;if(s.btts===bttsResult(m))ouH++;}
-      (s.scbets||[]).forEach(b=>{if(!b.p)return;const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(hit){scB++;scH++;}else if(rec>=(m.s1+m.s2))scB++;});
+      (s.scbets||[]).forEach(b=>{if(!b.p)return;const r=scBetSettle(m,b);if(r==='won'){scB++;scH++;}else if(r==='lost')scB++;});
       if(s.scorer&&!(s.scbets&&s.scbets.length)){const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(hit){scB++;scH++;}else if(rec>=(m.s1+m.s2))scB++;}
     }});
   const pct=(n,d)=>d?Math.round(n/d*100):0;
@@ -2077,7 +2084,7 @@ function renderBoard(){
       const scoredP=name=>(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,name));
       const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}${amt(s.ouStake)}</span>`:'';
       const bt=s.btts?`<span class="oubadge ${ft?(s.btts===bttsResult(m)?'win':'loss'):''}">${gx(s.btts===bttsResult(m))}BTTS ${s.btts}${amt(s.bttsStake)}</span>`:'';
-      const sc=scb.length?scb.map(b=>`<span class="oubadge ${ft?(scoredP(b.p)?'win':'loss'):''}">${gx(scoredP(b.p))}⚽ ${b.p}${amt(b.st)}</span>`).join('')
+      const sc=scb.length?scb.map(b=>{const r=ft?scBetSettle(m,b):'';return `<span class="oubadge ${ft?(r==='won'?'win':r==='void'?'':'loss'):''}">${ft?(r==='won'?'✓ ':r==='void'?'':'✗ '):''}⚽ ${scBetName(b)}${amt(b.st)}</span>`;}).join('')
         :(s.scorer?`<span class="oubadge ${ft?(scoredP(s.scorer)?'win':'loss'):''}">${gx(scoredP(s.scorer))}⚽ ${s.scorer}</span>`:'');
       return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span>${ou}${bt}${sc}</div>`;}).filter(Boolean).join('');
     const ouSec=oup?`<div class="bou"><span class="boulabel">Side bets${ft?' · '+(m.s1+m.s2)+' goals':' · shown to all'}</span><div class="bpicks">${oup}</div></div>`:'';
