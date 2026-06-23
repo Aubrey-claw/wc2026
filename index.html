@@ -266,6 +266,10 @@
   .adminrow.done .gt{color:var(--acc)}
   /* wager strip */
   .wstrip{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:11px 14px;font-size:12.5px;flex-wrap:wrap}
+  .wstrip.live{background:linear-gradient(90deg,rgba(255,93,119,.08),transparent)}
+  .cashbtn{font-size:12px;font-weight:800;padding:6px 13px;border-radius:9px;border:1px solid var(--gold);background:rgba(255,210,77,.14);color:var(--gold);cursor:pointer;white-space:nowrap;animation:lpulse 2s ease-in-out infinite}
+  .cashbtn.dn{border-color:var(--live);background:rgba(255,93,119,.12);color:var(--live)}
+  .cashbtn:active{transform:scale(.96)}
   .wstrip .wlabel{color:var(--mut);font-weight:700}
   .wstrip.hint .wlabel{font-style:italic;color:var(--mut)}
   .wstrip.warn{background:linear-gradient(90deg,rgba(255,93,119,.12),transparent)}.wstrip.warn .wlabel{color:var(--live);font-weight:800}
@@ -1017,7 +1021,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[],survivor:{}};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[],survivor:{},cashouts:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -1041,7 +1045,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-am';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-an';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1092,11 +1096,12 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
       if(typeof r.match_id==='string'&&r.match_id.slice(0,3)==='HT|'){if(scb.length)(state.htbets[r.name]=state.htbets[r.name]||{})[r.match_id.slice(3)]=scb;return;}  // half-time live props stored under HT| namespace
       if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='MKT|'){if(scb.length)(state.mktbets[r.name]=state.mktbets[r.name]||{})[r.match_id.slice(4)]=scb;return;}  // extra fixed-odds markets stored under MKT| namespace
       if(r.match_id==='GG'){if(scb.length&&scb[0].gg)state.glovePick[r.name]=scb[0].gg;return;}  // Golden Glove tournament pick (team) stored under the GG row
       if(r.match_id==='SURV'){const mm={};scb.forEach(x=>{if(x&&x.r&&x.t)mm[x.r]=x.t;});if(Object.keys(mm).length)state.survivor[r.name]=mm;return;}  // Survivor last-man-standing picks {round:team} under the SURV row
+      if(typeof r.match_id==='string'&&r.match_id.slice(0,5)==='CASH|'){if(scb.length&&scb[0].cash!=null)(state.cashouts[r.name]=state.cashouts[r.name]||{})[r.match_id.slice(5)]=scb[0].cash;return;}  // early cash-out: locked return for a score wager, under the CASH| namespace
       if(r.ou||r.btts||r.scorer||scb.length)(state.sidepicks[r.name]=state.sidepicks[r.name]||{})[r.match_id]={ou:r.ou,btts:r.btts,scorer:r.scorer,ouStake:r.ou_stake||0,bttsStake:r.btts_stake||0,scbets:scb};});
     if(me){state.sidepicks[me]=state.sidepicks[me]||{};for(const id in pendingSide)state.sidepicks[me][id]={...pendingSide[id]};} // keep my in-flight side-bets
     if(me){state.htbets[me]=state.htbets[me]||{};for(const id in htPending)state.htbets[me][id]=JSON.parse(JSON.stringify(htPending[id]));} // keep my in-flight half-time bets
@@ -1470,6 +1475,7 @@ function bankOf(p){
   const ev=[];let inPlay=0,settledN=0;const dtOf=m=>new Date(m.dt).getTime();
   // predictions (wager) — joker doubles, knockout round multiplier on wins
   ALL.forEach(m=>{const pr=preds[m.id];if(!hasPick(pr)||!((pr[2]||0)>0))return;const jk=isJoker(p,m)?2:1;
+    const ca=cashedOf(p,m.id);if(ca!=null){ev.push({dt:dtOf(m),net:ca-pr[2]});settledN++;return;}  // cashed out early → settled at the locked value, ignores the final result
     if(!isFT(m)){inPlay+=pr[2]*jk;return;}
     const stake=pr[2],raw=(stake*multFor(points(pr,m))-stake)*jk;ev.push({dt:dtOf(m),net:raw>0?raw*roundMult(m):raw});settledN++;});
   // accumulators (parlays) — all legs must land; settle on the last leg's kickoff
@@ -1674,7 +1680,12 @@ function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state
       if(picked&&stake>0){const net=(stake*multFor(pts)-stake)*(jdbl?2:1);
         strip=`<div class="wstrip ${net>0?'win':net<0?'loss':''}"><span class="wlabel">Wagered ${fmtMoney(stake)}${jdbl?' <span class="jchip">★2×</span>':''}</span><span class="wout">${net>0?'won '+fmtMoney(net):net<0?'lost '+fmtMoney(stake*(jdbl?2:1)):'stake back'}</span></div>`;}}
     else if(locked){center=`<div class="result"><span class="lockbadge">LOCKED</span>${picked?`<span class="yourpick">${canEdit?'your pick':'pick'}: ${pr[0]}–${pr[1]}</span>`:'<span class="yourpick">no pick made</span>'}</div>`;
-      if(picked&&stake>0)strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span></div>`;}
+      if(picked&&stake>0){const ca=cashedOf(p,m.id);
+        if(ca!=null)strip=`<div class="wstrip win"><span class="wlabel">💵 Cashed out${jdbl?' <span class="jchip">★2×</span>':''}</span><span class="wout">settled at ${fmtMoney(ca)}</span></div>`;
+        else if(isLiveMatch(m)&&canEdit){const co=cashOffer(p,m);
+          if(co)strip=`<div class="wstrip live"><span class="wlabel">${fmtMoney(stake)} on the line · live ${co.score}</span><button class="cashbtn ${co.net>=0?'up':'dn'}" data-cash="${m.id}">💵 Cash out ${fmtMoney(co.R)}</button></div>`;
+          else strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span><span class="wreturn">cash-out opens with a live score</span></div>`;}
+        else strip=`<div class="wstrip"><span class="wlabel">${fmtMoney(stake)} on the line${jdbl?' <span class="jchip">★2×</span>':''}</span></div>`;}}
     else if(!canEdit){center=`<div class="result"><span class="lockbadge">HIDDEN</span><span class="yourpick">reveals at kickoff</span></div>`;}
     else{center=`<div class="center">${stepper(m.id,0,pr[0])}<span class="colon">:</span>${stepper(m.id,1,pr[1])}</div>`;
       const halfPick=(pr[0]!=null)!==(pr[1]!=null);  // exactly one score entered
@@ -1747,6 +1758,10 @@ function bindPredict(root,p,canEdit){
       markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('[data-scg]').forEach(b=>b.onclick=()=>{const id=b.dataset.scg,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].g=(o.scbets[i].g>=2)?1:2;saveSide(id);});
     root.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});
+    root.querySelectorAll('[data-cash]').forEach(b=>b.onclick=()=>{const id=b.dataset.cash,mm=findMatch(id);if(!mm)return;const co=cashOffer(p,mm);if(!co){flash('Cash-out unavailable — waiting for a live score');return;}
+      const stake=((state.preds[p][id]||[])[2])||0;
+      if(!confirm('Cash out '+mm.t1+' v '+mm.t2+' (live '+co.score+') now for '+fmtMoney(co.R)+'? That locks in '+(co.net>=0?'+'+fmtMoney(co.net):'−'+fmtMoney(-co.net))+' vs your '+fmtMoney(stake)+' stake — it will not change at full-time.'))return;
+      sbCashOut(p,id,co.R);flash('💵 Cashed out '+mm.t1+' v '+mm.t2+' for '+fmtMoney(co.R));if(co.net>=0)confetti();refreshCard(id);scheduleLeaderboard();});
     root.querySelectorAll('.mktbtn').forEach(b=>b.onclick=()=>mktToggle(b.dataset.mid,b.dataset.mkt,b.dataset.mp));
     root.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>{const mid=b.dataset.mid,mk=b.dataset.mstk,d=+b.dataset.d;const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
       const arr=(state.mktbets[me]||{})[mid]||[],bet=arr.find(x=>x.mk===mk);if(!bet)return;const free=bankOf(me).free,cap=Math.min(sideCap(me),free+(bet.st||0));bet.st=Math.max(MIN_WAGER,Math.min(cap,(bet.st||0)+d*STAKE_STEP));
@@ -1927,7 +1942,7 @@ function historyOf(p){
   const preds=state.preds[p]||{};const dtOf=m=>new Date(m.dt).getTime();const out=[];
   ALL.forEach(m=>{ if(!isFT(m))return;
     const pr=preds[m.id];
-    if(hasPick(pr)){
+    if(hasPick(pr)&&cashedOf(p,m.id)==null){
       const stake=pr[2]||0,jk=isJoker(p,m)?2:1,pts=points(pr,m),mult=multFor(pts);
       let net=0;if(stake>0){const raw=(stake*mult-stake)*jk;net=raw>0?raw*roundMult(m):raw;}
       const oc=pts===5?'Exact score ✓✓':pts===3?'Result + GD ✓':pts===2?'Right result ✓':'Missed ✗';
@@ -1948,6 +1963,8 @@ function historyOf(p){
   const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;(mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'mkt',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} @ ${od}x · ${r}`});});}
   (state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m||!isFT(m))return;const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;if(mine===his)return;out.push({dt:dtOf(m),m,kind:'duel',net:mine>his?d.amount:-d.amount,stake:d.amount,title:`${m.t1} v ${m.t2}`,sub:`Duel vs ${other} · ${mine>his?'won':'lost'}`});});
   (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length||!legs.every(isFT))return;const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;out.push({dt:Math.max.apply(null,legs.map(dtOf)),kind:'acca',net,stake:a.stake,title:`Acca · ${legs.length} legs`,sub:`${allRight?'all legs landed':'busted'}`});});
+  for(const id in (state.cashouts[p]||{})){const m=findMatch(id);if(!m)continue;const ca=state.cashouts[p][id],pr=(state.preds[p]||{})[id],stake=(pr&&pr[2])||0;
+    out.push({dt:new Date(m.dt).getTime(),m,kind:'cash',net:ca-stake,stake,title:`${m.t1} v ${m.t2}`,sub:`💵 Cashed out early · settled at ${fmtMoney(ca)}`});}
   return out;
 }
 function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({amt,label});};
@@ -2000,7 +2017,8 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   if(bonuses.length)trail+=`<div class="htbon"><b>Bonuses & specials: +${fmtMoney(bonusTot)}</b> <span class="sub">(added on top of your bets)</span><div class="htbonlist">${bonuses.map(b=>`<span class="htbontag">${b.label} <b>+${fmtMoney(b.amt)}</b></span>`).join('')}</div></div>`;
   if(!evs.length)trail+=`<div class="empty">No settled bets yet for ${p}. Once matches finish, every win and loss shows up here with a running bank.</div>`;
   else trail+=evs.slice().reverse().map(e=>{const win=e.net>0,loss=e.net<0,voidb=e.kind==='void';let head,brk,cls;
-    if(win){cls='pos';head=fmtMoney((e.stake||0)+e.net)+' back';brk=`${fmtMoney(e.stake||0)} stake + ${fmtMoney(e.net)} winnings`;}
+    if(e.kind==='cash'){cls=e.net>=0?'pos':'neg';head=fmtMoney((e.stake||0)+e.net)+' back';brk='cashed out early';}
+    else if(win){cls='pos';head=fmtMoney((e.stake||0)+e.net)+' back';brk=`${fmtMoney(e.stake||0)} stake + ${fmtMoney(e.net)} winnings`;}
     else if(loss){cls='neg';head='−'+fmtMoney(-e.net);brk=`${fmtMoney(e.stake||0)} stake lost`;}
     else if(voidb){cls='void';head='refunded';brk=`${fmtMoney(e.stake||0)} stake back`;}
     else{cls='void';head=e.pts?e.pts+' pts':'$0';brk='no wager';}
@@ -2348,6 +2366,19 @@ function applyLiveEv(m,ev){liveData[m.id]={status:ev.strStatus||'',prog:ev.strPr
 const htIsHT=m=>/^(HT|Half)/i.test((liveData[m.id]||{}).status||'');
 const htOpen=m=>{const s=htSnap[m.id],d=liveData[m.id];return !!(me&&state.players.includes(me)&&s&&htIsHT(m)&&d&&d.s1===s.h&&d.s2===s.a&&Date.now()-s.seen<6*60000);};  // bettable only while the feed still shows the frozen HT score (closes the instant a 2nd-half goal appears) + 6min backstop
 const htHas=(m,mk)=>((state.htbets[me]||{})[m.id]||[]).some(b=>b.mk===mk);
+// ===== LIVE CASH-OUT — pull your score wager out mid-match for a reduced, locked value (priced off the near-live score) =====
+const cashedOf=(p,id)=>{const c=(state.cashouts[p]||{})[id];return c==null?null:c;};
+function livePoints(pr,s1,s2){if(!pr||pr[0]==null||pr[1]==null)return 0;if(pr[0]===s1&&pr[1]===s2)return 5;const a=Math.sign(pr[0]-pr[1]),b=Math.sign(s1-s2);if(a===b)return (pr[0]-pr[1])===(s1-s2)?3:2;return 0;}
+function liveMin(d){if(!d)return 50;const st=(d.status||'')+'';if(/^(HT|Half)/i.test(st))return 45;const mm=((d.prog||'')+' '+st).match(/(\d{1,3})/);let m=mm?+mm[1]:NaN;if(/(2H|second)/i.test(st)&&(isNaN(m)||m<46))m=isNaN(m)?60:m+45;return isNaN(m)?50:Math.max(1,Math.min(95,m));}
+// returns {R (locked return), net, lp, mult, score, prog} or null if no live score to price against / already cashed / not a real wager
+function cashOffer(p,m){const pr=(state.preds[p]||{})[m.id];if(!hasPick(pr)||!((pr[2]||0)>0))return null;if(cashedOf(p,m.id)!=null)return null;
+  const d=liveData[m.id];if(!d||d.s1==null||d.s2==null||ftLike(d.status))return null;
+  const stake=pr[2],jk=isJoker(p,m)?2:1,prog=Math.min(1,liveMin(d)/90),lp=livePoints(pr,d.s1,d.s2),mult=multFor(lp);
+  let R;if(mult>0)R=stake+Math.round(stake*(mult-1)*jk*(0.45+0.4*prog));   // ahead → lock part of the winnings (more, the later it gets)
+  else R=Math.round(stake*(0.5-0.35*prog));                                // behind → take part of your stake back (less, the later it gets)
+  R=Math.max(1,R);return {R,net:R-stake,lp,mult,score:d.s1+'–'+d.s2,prog};}
+async function sbCashOut(name,id,R){state.cashouts[name]=state.cashouts[name]||{};state.cashouts[name][id]=R;
+  if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name,match_id:'CASH|'+id,scbets:[{cash:R}],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not cash out — try again');}}}
 function htStake(mid){const cap=htCap(me);const d=(htDraft[mid]!=null?htDraft[mid]:Math.min(cap,((state.preds[me]||{})[mid]||[])[2]||30));return Math.max(MIN_WAGER,Math.min(cap,d));}
 async function placeHt(mid,mk,pk){
   if(!me||!state.players.includes(me)){showJoin();return;}
