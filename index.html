@@ -505,6 +505,9 @@
   .mo-slide-in{animation:mo-slide-in .4s cubic-bezier(.22,1,.36,1) both}
   .mo-spin-star{display:inline-block;animation:mo-spin-star .5s ease-out}
   .mo-pick-pop{animation:mo-pick-pop .42s cubic-bezier(.22,1,.36,1)}
+  @keyframes mo-page{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .mo-page{animation:mo-page .3s cubic-bezier(.22,1,.36,1) both}
+  .wval{display:inline-block;min-width:46px;text-align:center}  /* stop the readout shifting when the number changes */
   .mo-stagger>*{animation:mo-fade-up .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--mo-i,0)*42ms)}
   .mo-skel{border-radius:var(--r-sm);background:linear-gradient(100deg,var(--panel) 30%,var(--panel2) 50%,var(--panel) 70%);background-size:220% 100%;animation:mo-shimmer 1.25s linear infinite}
   .mo-skel.row{height:62px;margin-bottom:11px}
@@ -519,7 +522,7 @@
   .mcard,.bcard{transition:transform .18s cubic-bezier(.22,1,.36,1),border-color .18s,box-shadow .18s}
   .mcard:hover,.bcard:hover{transform:translateY(-2px);border-color:rgba(91,149,255,.4);box-shadow:0 14px 32px rgba(0,0,0,.45)}
   @media(prefers-reduced-motion:reduce){
-    .mo-fade-up,.mo-scale-in,.mo-pop,.mo-bounce,.mo-glow,.mo-flash,.mo-flash-loss,.mo-slide-in,.mo-spin-star,.mo-pick-pop,.mo-stagger>*,.joinmask,.joinbox{animation:none!important}
+    .mo-fade-up,.mo-scale-in,.mo-pop,.mo-bounce,.mo-glow,.mo-flash,.mo-flash-loss,.mo-slide-in,.mo-spin-star,.mo-pick-pop,.mo-page,.mo-stagger>*,.joinmask,.joinbox{animation:none!important}
     *,*::before,*::after{transition-duration:.01ms!important}
     .livedot,.pill::before,.livechip,.lockcd.soon,.tab.notify::after,#leagueCard.live,.cfetti,.runner{animation:none!important}
   }
@@ -1022,7 +1025,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-ai';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-aj';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1406,6 +1409,7 @@ const mktOpenBet=m=>!!(me&&state.players.includes(me)&&!kickedOff(m));   // mark
 async function saveMkt(mid){const arr=(state.mktbets[me]||{})[mid]||[];markMktPending(mid);
   if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name:me,match_id:'MKT|'+mid,scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save bet');}}
   refreshCard(mid);scheduleLeaderboard();}
+async function saveMktQuiet(mid){if(!SB_ENABLED)return;const arr=(state.mktbets[me]||{})[mid]||[];try{await sb.from('sidepicks').upsert({name:me,match_id:'MKT|'+mid,scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save bet');}}
 function mktToggle(mid,mk,pk){
   if(!me||!state.players.includes(me)){showJoin();return;}
   const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
@@ -1632,8 +1636,8 @@ function syncPredict(){
     if(el._sig===html)return;                                   // unchanged → leave the DOM alone (no flicker)
     const od=el.querySelector('.mktwrap'),wasOpen=od&&od.open;
     const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.firstElementChild;if(!fresh)return;
-    fresh._sig=html;el.replaceWith(fresh);if(wasOpen){const nd=fresh.querySelector('.mktwrap');if(nd)nd.open=true;}
-    bindPredict(fresh,p,canEdit);});
+    el.innerHTML=fresh.innerHTML;el._sig=html;if(wasOpen){const nd=el.querySelector('.mktwrap');if(nd)nd.open=true;}
+    bindPredict(el,p,canEdit);});
 }
 function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
@@ -1690,10 +1694,11 @@ function bindPredict(root,p,canEdit){
       if(v!=null){const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;}  // typing one score auto-completes the other to 0
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
       saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}refreshCard(id);scheduleLeaderboard();});
-    root.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
+    root.querySelectorAll('.wbtn[data-w]').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
       let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));const wasAllIn=cur._ai;cur[2]=v;
-      const mm=findMatch(id);if(d>0&&v===maxStakeFor(p,id)&&v>=200&&!wasAllIn&&SB_ENABLED&&p===me){cur._ai=1;sbEmit(me,'allin',me+' went ALL-IN '+fmtMoney(v)+' on '+mm.t1+' v '+mm.t2);}else if(v<maxStakeFor(p,id))cur._ai=0;
-      saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}refreshCard(id);scheduleLeaderboard();});
+      const mm=findMatch(id),rm=roundMult(mm);if(d>0&&v===maxStakeFor(p,id)&&v>=200&&!wasAllIn&&SB_ENABLED&&p===me){cur._ai=1;sbEmit(me,'allin',me+' went ALL-IN '+fmtMoney(v)+' on '+mm.t1+' v '+mm.t2);}else if(v<maxStakeFor(p,id))cur._ai=0;
+      const strip=b.closest('.wstrip.edit');if(strip){const wv=strip.querySelector('.wval');if(wv)wv.textContent=fmtMoney(v);const r=strip.querySelector('.wreturn');if(r)r.textContent=fmtMoney(v*4*rm)+' · '+fmtMoney(v*2.5*rm)+' · '+fmtMoney(v*1.5*rm);}
+      saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('.jokerbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.jk;const cur=state.preds[p][id];if(!hasPick(cur)||!(cur[2]>0))return;
       const mm=findMatch(id),round=roundOf(mm),prev=activeJokerId(p,round);
       if(prev===id){cur[3]=0;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
@@ -1705,16 +1710,24 @@ function bindPredict(root,p,canEdit){
       if(o.ou===v)o.ou=null;else{o.ou=v;if(!(o.ouStake>0))o.ouStake=defSt(id);}saveSide(id);moOnce(document.querySelector('#predList .oubtn.on[data-ou="'+id+'"]'),'mo-pick-pop',440);});
     root.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
       if(o.btts===v)o.btts=null;else{o.btts=v;if(!(o.bttsStake>0))o.bttsStake=defSt(id);}saveSide(id);moOnce(document.querySelector('#predList .bbtn.on[data-bt="'+id+'"]'),'mo-pick-pop',440);});
-    root.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=b.dataset.ss,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o)return;const key=k==='ou'?'ouStake':'bttsStake';o[key]=Math.max(MIN_WAGER,Math.min(sideCap(p),(o[key]||0)+d*STAKE_STEP));saveSide(id);});
+    root.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=b.dataset.ss,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o)return;const key=k==='ou'?'ouStake':'bttsStake';o[key]=Math.max(MIN_WAGER,Math.min(sideCap(p),(o[key]||0)+d*STAKE_STEP));
+      const cell=b.closest('.sidestake');if(cell){const odds=k==='ou'?OU_ODDS[o.ou]:BTTS_ODDS[o.btts];const wv=cell.querySelector('.wval');if(wv)wv.textContent=fmtMoney(o[key]);const r=cell.querySelector('.wreturn');if(r)r.textContent='→ '+fmtMoney(Math.round(o[key]*odds));}
+      markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
       if(!o.scbets.some(x=>normName(x.p)===normName(v)))o.scbets.push({p:v,st:defSt(id)});saveSide(id);});
-    root.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));saveSide(id);});
+    root.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));
+      const chip=b.closest('.scchip');if(chip){const wv=chip.querySelector('.wval');if(wv)wv.textContent=fmtMoney(o.scbets[i].st);const w=chip.querySelector('.scwin');if(w)w.textContent='→'+fmtMoney(Math.round(o.scbets[i].st*scorerOdds(o.scbets[i].p)));}
+      markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});
     root.querySelectorAll('.mktbtn').forEach(b=>b.onclick=()=>mktToggle(b.dataset.mid,b.dataset.mkt,b.dataset.mp));
-    root.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>mktStakeStep(b.dataset.mid,b.dataset.mstk,+b.dataset.d));
+    root.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>{const mid=b.dataset.mid,mk=b.dataset.mstk,d=+b.dataset.d;const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
+      const arr=(state.mktbets[me]||{})[mid]||[],bet=arr.find(x=>x.mk===mk);if(!bet)return;const free=bankOf(me).free,cap=Math.min(sideCap(me),free+(bet.st||0));bet.st=Math.max(MIN_WAGER,Math.min(cap,(bet.st||0)+d*STAKE_STEP));
+      const cell=b.closest('.mktstk');if(cell){const wv=cell.querySelector('.wval');if(wv)wv.textContent=fmtMoney(bet.st);const r=cell.querySelector('.wreturn');if(r)r.textContent='→ '+fmtMoney(Math.round(bet.st*bet.od))+' @'+bet.od+'x';}
+      markMktPending(mid);saveMktQuiet(mid);updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('.mktcs').forEach(s=>s.onchange=()=>{const mid=s.dataset.mid,v=s.value;
       if(!v){const arr=(state.mktbets[me]||{})[mid]||[],i=arr.findIndex(x=>x.mk==='cscore');if(i>=0){arr.splice(i,1);saveMkt(mid);}return;}
-      mktToggle(mid,'cscore',v);});}
+      mktToggle(mid,'cscore',v);});
+    root.querySelectorAll('.mktwrap>summary').forEach(s=>s.addEventListener('click',()=>{const d=s.parentElement;if(!d.open)setTimeout(()=>{[...d.children].forEach(c=>{if(c.tagName!=='SUMMARY')moOnce(c,'mo-fade-up',300);});},0);}));}
 }
 let _lbT;function scheduleLeaderboard(){clearTimeout(_lbT);_lbT=setTimeout(()=>{try{renderLeaderboard();}catch(e){}},300);}  // off-screen leaderboard — defer so taps stay snappy
 // rebuild ONLY the touched card (not all ~100) — kills the per-tap relayout/jump; falls back to full render if the card isn't in view
@@ -1726,9 +1739,9 @@ function refreshCard(id){const p=state.active;if(!p)return;const wrap=document.g
   const od=el.querySelector('.mktwrap');const wasOpen=od&&od.open;  // keep "More markets" expanded across the refresh
   const html=mcardHTML(m,p,canEdit,goalsBy);const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.firstElementChild;
   if(!fresh){renderPredict();return;}
-  fresh._sig=html;el.replaceWith(fresh);
-  if(wasOpen){const nd=fresh.querySelector('.mktwrap');if(nd)nd.open=true;}
-  bindPredict(fresh,p,canEdit);}
+  el.innerHTML=fresh.innerHTML;el._sig=html;   // keep the SAME element → preserves :hover, kills the laptop wobble/flicker
+  if(wasOpen){const nd=el.querySelector('.mktwrap');if(nd)nd.open=true;}  // re-open BEFORE bind so the dropdown anim doesn't replay
+  bindPredict(el,p,canEdit);}
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();moStaggerSection('predict');});
 document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();moStaggerSection('board');});
 document.getElementById('addPlayer').onclick=addPlayer;
@@ -2175,7 +2188,7 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
   let s=`${done} group matches played`;if(next)s+=` · next: ${next.t1} v ${next.t2}`;
   document.getElementById('statusline').textContent=s;
   document.getElementById('foot').innerHTML='Times in Adelaide (ACST, UTC+9:30) &amp; Sydney (AEST, UTC+10), converted live. Everyone on the shared link plays one league, synced in real time. Predictions lock at kickoff and reveal to everyone then.';}
-document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById(b.dataset.tab).classList.add('on');moOnce(b,'mo-pop',320);moStaggerSection(b.dataset.tab);if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}});
+document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');const _sec=document.getElementById(b.dataset.tab);_sec.classList.add('on');moOnce(b,'mo-pop',320);moOnce(_sec,'mo-page',300);if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
 function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)return 'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
