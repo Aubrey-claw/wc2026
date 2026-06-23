@@ -1045,7 +1045,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-ap';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-ar';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1265,6 +1265,10 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
   const ah=m.s1,aa=m.s2;if(ph===ah&&pa===aa)return 5;const pr=Math.sign(ph-pa),ar=Math.sign(ah-aa);
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
+// live-feed state + predicates hoisted ABOVE the init renderAll() — cashOffer/accaCashOffer/isLiveMatch are reachable at first paint (syncPredict→mcardHTML, renderSidebets) and read these, so they must NOT be in their TDZ when init runs (same lesson as cashedOf)
+const liveData={};                         // match_id -> {status,prog,s1,s2,shots,ts}; populated later by the live feed, mutated in place
+const isLiveMatch=m=>kickedOff(m)&&!isFT(m)&&!!SQUAD[m.t1]&&!!SQUAD[m.t2];
+const ftLike=s=>/^(FT|Match Finished|AET|After Extra|PEN|Penalt)/i.test(s||'');
 // ================= MONEY (fantasy wagering) =================
 const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200, GLOVE_BONUS=400, SCORER_PTS=2;
 // SURVIVOR (last-man-standing knockout side-game): each KO round, back one team to advance; wrong = out; no team reuse.
@@ -1480,9 +1484,10 @@ function bankOf(p){
     if(!isFT(m)){inPlay+=pr[2]*jk;return;}
     const stake=pr[2],raw=(stake*multFor(points(pr,m))-stake)*jk;ev.push({dt:dtOf(m),net:raw>0?raw*roundMult(m):raw});settledN++;});
   // CASH-OUTS — a whole-match position (wager + O/U + BTTS + markets) locked early at one value; scorers/HT settle normally
-  for(const id in (state.cashouts[p]||{})){const m=findMatch(id);if(!m)continue;const c=state.cashouts[p][id];ev.push({dt:dtOf(m),net:(c.R||0)-(c.stake||0)});settledN++;}
+  for(const id in (state.cashouts[p]||{})){if(id.slice(0,4)==='ACCA')continue;const m=findMatch(id);if(!m)continue;const c=state.cashouts[p][id];ev.push({dt:dtOf(m),net:(c.R||0)-(c.stake||0)});settledN++;}  // ACCA cashouts booked in the acca loop
   // accumulators (parlays) — all legs must land; settle on the last leg's kickoff
   (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return;
+    const ac=cashedOf(p,'ACCA'+a.id);if(ac!=null){ev.push({dt:Math.max.apply(null,legs.map(dtOf)),net:(ac.R||0)-(ac.stake||0)});settledN++;return;}  // CASHED acca → locked net once, ignore leg results
     if(!legs.every(isFT)){inPlay+=a.stake;return;}
     const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});
     ev.push({dt:Math.max.apply(null,legs.map(dtOf)),net:allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake});});
@@ -1964,8 +1969,11 @@ function historyOf(p){
   const myht=state.htbets[p]||{};for(const rid in myht){const m=findMatch(rid);if(!m)continue;(myht[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=htSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'ht',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`Half-time prop @ ${od}x · ${r}`});});}
   const mymk=state.mktbets[p]||{};for(const rid in mymk){const m=findMatch(rid);if(!m)continue;(mymk[rid]||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const r=mktSettle(b,m);if(r==='open')return;if(r==='void'){out.push({dt:new Date(m.dt).getTime(),m,kind:'void',net:0,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} · refunded`});return;}const od=b.od||1;out.push({dt:new Date(m.dt).getTime(),m,kind:'mkt',net:r==='won'?st*(od-1):-st,stake:st,title:`${m.t1} v ${m.t2}`,sub:`${mktDesc(b,m)} @ ${od}x · ${r}`});});}
   (state.duels||[]).forEach(d=>{if(d.status!=='accepted'||(d.challenger!==p&&d.opponent!==p))return;const m=findMatch(d.match_id);if(!m||!isFT(m))return;const other=d.challenger===p?d.opponent:d.challenger;const mine=points((state.preds[p]||{})[m.id],m)||0,his=points((state.preds[other]||{})[m.id],m)||0;if(mine===his)return;out.push({dt:dtOf(m),m,kind:'duel',net:mine>his?d.amount:-d.amount,stake:d.amount,title:`${m.t1} v ${m.t2}`,sub:`Duel vs ${other} · ${mine>his?'won':'lost'}`});});
-  (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length||!legs.every(isFT))return;const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;out.push({dt:Math.max.apply(null,legs.map(dtOf)),kind:'acca',net,stake:a.stake,title:`Acca · ${legs.length} legs`,sub:`${allRight?'all legs landed':'busted'}`});});
-  for(const id in (state.cashouts[p]||{})){const m=findMatch(id);if(!m)continue;const c=state.cashouts[p][id],R=c.R||0,stk=c.stake||0;
+  (state.accas[p]||[]).forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return;
+    const c=cashedOf(p,'ACCA'+a.id);
+    if(c!=null){out.push({dt:Math.max.apply(null,legs.map(dtOf)),m:legs[0],kind:'cash',net:(c.R||0)-(c.stake||0),stake:c.stake||0,title:`Acca · ${legs.length} legs`,sub:`💵 Cashed out early · settled at ${fmtMoney(c.R||0)}`});return;}
+    if(!legs.every(isFT))return;const allRight=legs.every(m=>{const pr=preds[m.id];return hasPick(pr)&&points(pr,m)>=2;});const net=allRight?a.stake*legs.reduce((x,m)=>x*(points(preds[m.id],m)===5?2.5:1.8),1)-a.stake:-a.stake;out.push({dt:Math.max.apply(null,legs.map(dtOf)),kind:'acca',net,stake:a.stake,title:`Acca · ${legs.length} legs`,sub:`${allRight?'all legs landed':'busted'}`});});
+  for(const id in (state.cashouts[p]||{})){if(id.slice(0,4)==='ACCA')continue;const m=findMatch(id);if(!m)continue;const c=state.cashouts[p][id],R=c.R||0,stk=c.stake||0;
     out.push({dt:new Date(m.dt).getTime(),m,kind:'cash',net:R-stk,stake:stk,title:`${m.t1} v ${m.t2}`,sub:`💵 Cashed out early · settled at ${fmtMoney(R)}`});}
   return out;
 }
@@ -2167,7 +2175,10 @@ function renderSidebets(){
     mine.forEach(a=>{const legs=a.legs.map(findMatch).filter(Boolean);const ftL=legs.filter(isFT);const right=legs.filter(m=>{const pr=(state.preds[me]||{})[m.id];return isFT(m)&&hasPick(pr)&&points(pr,m)>=2;}).length;
       const allFT=legs.length&&legs.every(isFT),allRight=allFT&&right===legs.length,dead=ftL.some(m=>{const pr=(state.preds[me]||{})[m.id];return !(hasPick(pr)&&points(pr,m)>=2);});
       const wonAmt=a.stake*legs.reduce((x,m)=>x*(points((state.preds[me]||{})[m.id],m)===5?2.5:1.8),1)-a.stake;
-      ah+=`<div class="accacard ${allFT?(allRight?'win':'loss'):(dead?'loss':'live')}"><div class="acatop"><b>${fmtMoney(a.stake)} · ${legs.length} legs</b>${allFT?(allRight?'<span class="bnet win">✓ won '+fmtMoney(wonAmt)+'</span>':'<span class="bnet loss">✗ busted</span>'):'<span class="acastat">'+right+'/'+legs.length+' landed'+(dead?' · dead':'')+'</span>'}${!ftL.length?`<button class="acadel" data-acadel="${a.id}">✕</button>`:''}</div><div class="acalegs">`+legs.map(m=>{const pr=(state.preds[me]||{})[m.id];const st=isFT(m)?(hasPick(pr)&&points(pr,m)>=2?'win':'loss'):'';return `<span class="acaleg ${st}">${badge(m.t1)}${pr?' '+pr[0]+'-'+pr[1]+' ':' v '}${badge(m.t2)}</span>`;}).join('')+`</div></div>`;});
+      const cashed=cashedOf(me,'ACCA'+a.id),started=legs.some(kickedOff),aco=(legs.length&&!allFT&&!cashed&&started)?accaCashOffer(me,a):null;
+      const status=cashed!=null?`<span class="bnet ${(cashed.R-cashed.stake)>=0?'win':'loss'}">💵 cashed ${fmtMoney(cashed.R)}</span>`:(allFT?(allRight?'<span class="bnet win">✓ won '+fmtMoney(wonAmt)+'</span>':'<span class="bnet loss">✗ busted</span>'):'<span class="acastat">'+right+'/'+legs.length+' landed'+(dead?' · dead':'')+'</span>');
+      const tail=(cashed==null&&!started)?`<button class="acadel" data-acadel="${a.id}">✕</button>`:(aco?`<button class="cashbtn ${aco.net>=0?'up':'dn'}" data-acacash="${a.id}">💵 ${aco.busted?'Salvage':'Cash out'} ${fmtMoney(aco.R)}</button>`:'');
+      ah+=`<div class="accacard ${cashed!=null?'win':allFT?(allRight?'win':'loss'):(dead?'loss':'live')}"><div class="acatop"><b>${fmtMoney(a.stake)} · ${legs.length} legs</b>${status}${tail}</div><div class="acalegs">`+legs.map(m=>{const pr=(state.preds[me]||{})[m.id];const st=isFT(m)?(hasPick(pr)&&points(pr,m)>=2?'win':'loss'):'';return `<span class="acaleg ${st}">${badge(m.t1)}${pr?' '+pr[0]+'-'+pr[1]+' ':' v '}${badge(m.t2)}</span>`;}).join('')+`</div></div>`;});
     const openPicks=me?ALL.filter(m=>!kickedOff(m)&&hasPick((state.preds[me]||{})[m.id])).sort((a,b)=>new Date(a.dt)-new Date(b.dt)):[];
     if(me&&openPicks.length){const dl=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id)).length;const dmult=dl>=2?Math.pow(1.8,dl):0;
       ah+=`<div class="wlabel" style="margin:14px 0 7px">New acca — tap your picks to add legs</div><div class="acaopts">`+openPicks.map(m=>`<button class="acaopt ${accaDraft.legs.includes(m.id)?'on':''}" data-acaopt="${m.id}">${badge(m.t1)} v ${badge(m.t2)}</button>`).join('')+`</div>`;
@@ -2180,7 +2191,10 @@ function renderSidebets(){
     const sdn=document.getElementById('acaSdn');if(sdn)sdn.onclick=()=>{accaDraft.stake=Math.max(MIN_WAGER,accaDraft.stake-STAKE_STEP*5);renderSidebets();};
     const pl=document.getElementById('acaPlace');if(pl)pl.onclick=()=>{const legs=accaDraft.legs.filter(id=>openPicks.some(m=>m.id===id));if(legs.length<2){flash('Pick 2+ legs');return;}if(accaDraft.stake>bankOf(me).free){flash('Not enough free cash');return;}
       const a={id:me+'-'+Date.now(),legs:legs.slice(),stake:accaDraft.stake};(state.accas[me]=state.accas[me]||[]).push(a);if(SB_ENABLED){sbSaveAcca(a);sbEmit(me,'acca',me+' placed a '+legs.length+'-leg acca ('+fmtMoney(a.stake)+')');}accaDraft={legs:[],stake:100};flash('Acca placed — good luck!');renderSidebets();renderLeaderboard();updateLeagueBar();};
-    aw.querySelectorAll('.acadel').forEach(b=>b.onclick=()=>{const id=b.dataset.acadel;state.accas[me]=(state.accas[me]||[]).filter(a=>a.id!==id);if(SB_ENABLED)sbDelAcca(id);renderSidebets();renderLeaderboard();updateLeagueBar();});}
+    aw.querySelectorAll('.acadel').forEach(b=>b.onclick=()=>{const id=b.dataset.acadel;state.accas[me]=(state.accas[me]||[]).filter(a=>a.id!==id);if(SB_ENABLED)sbDelAcca(id);renderSidebets();renderLeaderboard();updateLeagueBar();});
+    aw.querySelectorAll('[data-acacash]').forEach(b=>b.onclick=()=>{const id=b.dataset.acacash,a=(state.accas[me]||[]).find(x=>x.id===id);if(!a)return;const co=accaCashOffer(me,a);if(!co){flash('Cash-out unavailable — waiting for a live score');return;}
+      if(!confirm('Cash out your '+a.legs.length+'-leg acca now for '+fmtMoney(co.R)+'? That locks in '+(co.net>=0?'+'+fmtMoney(co.net):'−'+fmtMoney(-co.net))+' vs your '+fmtMoney(a.stake)+' stake — it will not change at full-time.'))return;
+      sbCashOut(me,'ACCA'+id,co.R,a.stake);if(SB_ENABLED)sbEmit(me,'acca',me+' cashed out a '+a.legs.length+'-leg acca for '+fmtMoney(co.R));flash('💵 Cashed out acca for '+fmtMoney(co.R));if(co.net>=0)confetti();renderSidebets();renderLeaderboard();updateLeagueBar();});}
   // HEAD-TO-HEAD DUELS
   const dw=document.getElementById('duelWrap');
   if(dw){
@@ -2278,10 +2292,11 @@ function renderChat(){const box=document.getElementById('chatBox');if(!box)retur
   if(ct)ct.classList.toggle('notify',msgs.length>seen&&!onChat);
   if(onChat){try{localStorage.setItem('wc2026-chatseen',msgs.length);}catch(e){}if(ct)ct.classList.remove('notify');}
 }
-function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();syncPredict();renderBoard();try{renderLive();}catch(e){}renderSidebets();renderLeaderboard();try{renderGlove();}catch(e){}renderChat();try{renderSurvivor();}catch(e){}try{renderHistory();}catch(e){}statusLine();updateLeagueBar();}
+function renderAll(){moJustNavigated=false;computeStandings();resolveBracket();renderTicker();renderNext();renderStandings();renderKnockouts();renderFixtures();renderScorers();renderRail();syncPredict();renderBoard();try{renderLive();}catch(e){}try{renderSidebets();}catch(e){}renderLeaderboard();try{renderGlove();}catch(e){}renderChat();try{renderSurvivor();}catch(e){}try{renderHistory();}catch(e){}statusLine();updateLeagueBar();}
 loadState();
 if(adminMode)setupAdmin();
-renderAll();
+// belt-and-braces: if the first render ever throws, DON'T let it halt the rest of init — sbSubscribe/sbLoadAll/intervals/checkUpdate must still arm so the app can self-recover on the next deploy
+try{renderAll();}catch(e){console.error('init render failed (continuing so the app can self-update)',e);}
 try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){setSaveTag('This browser is not saving — open the file normally (not Private mode)',true);}
 if(SB_ENABLED){
   const jg=document.getElementById('joinGo');if(jg)jg.onclick=()=>claim(document.getElementById('joinName').value);
@@ -2354,13 +2369,10 @@ window.addEventListener('focus',()=>{if(SB_ENABLED&&sb){sbLoadAll().then(()=>ren
 
 // ===== NEAR-LIVE MATCH STATS (read-only): live score, clock & shot attempts for in-play matches =====
 // Free TheSportsDB feed gives score+status+shots (not possession/corners) and trails the TV by ~1-3 min — badged "near-live".
-const liveData={};                         // match_id -> {status,prog,s1,s2,shots,ts}
 const htSnap={};                           // match_id -> {h,a,seen} : the HALF-TIME score, frozen once (settles 2nd-half props)
 const htDraft={};                          // match_id -> stake the player is dialling in for a half-time prop
 let liveIdCache={};try{liveIdCache=JSON.parse(localStorage.getItem('wc2026-liveids')||'{}');}catch(e){}
 let liveBackoff=0;                         // pause upstream calls until this ts after a 429
-const isLiveMatch=m=>kickedOff(m)&&!isFT(m)&&!!SQUAD[m.t1]&&!!SQUAD[m.t2];
-const ftLike=s=>/^(FT|Match Finished|AET|After Extra|PEN|Penalt)/i.test(s||'');
 async function tsdbGet(u){const r=await fetch(u);if(r.status===429){liveBackoff=Date.now()+90000;throw new Error('429');}return r.json();}
 function applyLiveEv(m,ev){liveData[m.id]={status:ev.strStatus||'',prog:ev.strProgress||'',s1:ev.intHomeScore==null?null:+ev.intHomeScore,s2:ev.intAwayScore==null?null:+ev.intAwayScore,shots:(liveData[m.id]||{}).shots,ts:Date.now()};
   const d=liveData[m.id];if(/^(HT|Half)/i.test(d.status||'')&&d.s1!=null&&d.s2!=null&&!htSnap[m.id])htSnap[m.id]={h:d.s1,a:d.s2,seen:Date.now()};}  // freeze the HT score the first time we see half-time
@@ -2390,6 +2402,25 @@ function cashOffer(p,m){if(cashedOf(p,m.id)!=null)return null;
   return {R,net:R-stake,stake,score:d.s1+'–'+d.s2,parts:[...new Set(parts)],prog};}
 async function sbCashOut(name,id,R,stake){state.cashouts[name]=state.cashouts[name]||{};state.cashouts[name][id]={R,stake:stake||0};
   if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name,match_id:'CASH|'+id,scbets:[{cash:R,stake:stake||0}],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not cash out — try again');}}}
+// ACCA cash-out — price the whole parlay as one product off live legs. FT-won legs bank real odds; live-winning haircut by wf; live-LOSING & pending drag via lf/0.55; any FT-lost leg = busted (scrap). Stored under 'ACCA'+id; never reached by bankOf/init (no TDZ).
+function accaCashOffer(p,a){if(cashedOf(p,'ACCA'+a.id)!=null)return null;
+  const legs=a.legs.map(findMatch).filter(Boolean);if(!legs.length)return null;
+  if(legs.every(isFT))return null;                               // fully settled → settles normally
+  if(!legs.some(kickedOff))return null;                          // nothing live yet → delete-only window
+  const preds=state.preds[p]||{};
+  const legProg=m=>{if(isFT(m))return 1;const d=liveData[m.id];return (d&&d.s1!=null&&d.s2!=null&&!ftLike(d.status))?Math.min(1,liveMin(d)/90):0;};
+  const prog=legs.reduce((x,m)=>x+legProg(m),0)/legs.length,wf=0.45+0.4*prog,lf=0.5-0.35*prog;
+  const busted=legs.some(m=>{if(!isFT(m))return false;const pr=preds[m.id];return !(hasPick(pr)&&points(pr,m)>=2);});  // only an FT leg that missed
+  if(busted){const R=Math.max(1,Math.round(a.stake*Math.pow(lf,legs.length)*0.5));return {R,net:R-a.stake,stake:a.stake,prog,busted:true,liveN:legs.filter(m=>!isFT(m)).length,wonN:0};}  // scrap compounds per-leg so a DEAD slip can never out-price an equivalent still-live losing one
+  let mult=1,liveN=0,wonN=0;
+  for(const m of legs){const pr=preds[m.id];
+    if(isFT(m)){wonN++;mult*=(points(pr,m)===5?2.5:1.8);continue;}                 // banked at real acca odds
+    const d=liveData[m.id];
+    if(d&&d.s1!=null&&d.s2!=null&&!ftLike(d.status)){liveN++;const lp=livePoints(pr,d.s1,d.s2);
+      if(lp>=2)mult*=1+(1.8-1)*wf; else mult*=lf;}                                  // live winning → small credit; live losing → drag (the fix)
+    else mult*=0.55;}                                                              // pending / no feed → conservative
+  const R=Math.max(1,Math.round(a.stake*mult));
+  return {R,net:R-a.stake,stake:a.stake,prog,busted:false,liveN,wonN};}
 function htStake(mid){const cap=htCap(me);const d=(htDraft[mid]!=null?htDraft[mid]:Math.min(cap,((state.preds[me]||{})[mid]||[])[2]||30));return Math.max(MIN_WAGER,Math.min(cap,d));}
 async function placeHt(mid,mk,pk){
   if(!me||!state.players.includes(me)){showJoin();return;}
