@@ -1045,7 +1045,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-ao';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-ap';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1468,6 +1468,7 @@ function champOdds(team,progOverride){if(!team)return 1.5;
 function champOddsOf(p){const o=state.champOdds&&state.champOdds[p];return (o!=null&&!isNaN(o))?o:champOdds(state.champion[p],0);}  // grandfather un-stamped picks at early-bird odds
 function champPay(p){return Math.round(CHAMP_BASE*champOddsOf(p));}
 function champWon(p){const w=finalWinner();return (w&&state.champion[p]===w)?champPay(p):0;}
+const cashedOf=(p,id)=>{const c=(state.cashouts[p]||{})[id];return c==null?null:c;};  // MUST be defined before bankOf/init (TDZ) — reads the locked cash-out {R,stake} for a match
 function bankOf(p){
   const preds=state.preds[p]||{};
   // Collect EVERY settled bet across all categories into one timeline, then fold chronologically with the floor —
@@ -2367,8 +2368,7 @@ function applyLiveEv(m,ev){liveData[m.id]={status:ev.strStatus||'',prog:ev.strPr
 const htIsHT=m=>/^(HT|Half)/i.test((liveData[m.id]||{}).status||'');
 const htOpen=m=>{const s=htSnap[m.id],d=liveData[m.id];return !!(me&&state.players.includes(me)&&s&&htIsHT(m)&&d&&d.s1===s.h&&d.s2===s.a&&Date.now()-s.seen<6*60000);};  // bettable only while the feed still shows the frozen HT score (closes the instant a 2nd-half goal appears) + 6min backstop
 const htHas=(m,mk)=>((state.htbets[me]||{})[m.id]||[]).some(b=>b.mk===mk);
-// ===== LIVE CASH-OUT — pull your score wager out mid-match for a reduced, locked value (priced off the near-live score) =====
-const cashedOf=(p,id)=>{const c=(state.cashouts[p]||{})[id];return c==null?null:c;};
+// ===== LIVE CASH-OUT — pull your whole live position out mid-match for a reduced, locked value (cashedOf is defined earlier, before bankOf) =====
 function livePoints(pr,s1,s2){if(!pr||pr[0]==null||pr[1]==null)return 0;if(pr[0]===s1&&pr[1]===s2)return 5;const a=Math.sign(pr[0]-pr[1]),b=Math.sign(s1-s2);if(a===b)return (pr[0]-pr[1])===(s1-s2)?3:2;return 0;}
 function liveMin(d){if(!d)return 50;const st=(d.status||'')+'';if(/^(HT|Half)/i.test(st))return 45;const mm=((d.prog||'')+' '+st).match(/(\d{1,3})/);let m=mm?+mm[1]:NaN;if(/(2H|second)/i.test(st)&&(isNaN(m)||m<46))m=isNaN(m)?60:m+45;return isNaN(m)?50:Math.max(1,Math.min(95,m));}
 // returns {R (locked return), net, lp, mult, score, prog} or null if no live score to price against / already cashed / not a real wager
