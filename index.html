@@ -605,6 +605,15 @@
   .hck{font-size:10.5px;color:var(--mut);font-weight:700;letter-spacing:.3px;margin-top:2px}
   .hbestrow{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:12px}
   .hbest,.hworst{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px}
+  .accstrip{background:linear-gradient(90deg,rgba(25,227,166,.10),transparent);border:1px solid var(--line);border-radius:var(--r);padding:10px 13px;font-size:13px;margin-bottom:10px}
+  .accstrip b{color:var(--acc)}
+  .acctable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:340px}
+  .acctable th{color:var(--mut);font-weight:700;font-size:11px;text-align:center;padding:5px 6px;border-bottom:1px solid var(--line)}
+  .acctable th.l,.acctable td.l{text-align:left}
+  .acctable td{text-align:center;padding:7px 6px;border-bottom:1px solid rgba(38,50,79,.4)}
+  .acctable td b{color:var(--txt)} .acctable td small{color:var(--mut);font-weight:600;font-size:10px}
+  .acctable tr.accme{background:rgba(255,210,77,.07)} .acctable tr.accme td b{color:var(--gold)}
+  .acctable .nmcell{display:flex;align-items:center;gap:7px;font-weight:600}
   .histchips{margin-bottom:12px}
   .htbon{background:linear-gradient(90deg,rgba(255,210,77,.10),transparent);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;font-size:13px}
   .htbonlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
@@ -1025,7 +1034,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-aj';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-ak';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1925,6 +1934,20 @@ function historyOf(p){
 function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({amt,label});};
   add(champWon(p),'Champion pick');add(topscorerWon(p),'Golden Boot pick');add(gloveWon(p),'Golden Glove pick');
   add(qualWon(p),'Group qualifiers');add(quizWon(p),'Side quizzes');add(survWon(p),'Survivor');add(ouWon(p),'O/U & BTTS bonus');add(scorerWon(p),'Scorer bonus');return b;}
+// hit-rate accuracy: of the picks you've made on FINISHED games, what fraction landed
+function accuracyOf(p){
+  const preds=state.preds[p]||{};const sd=state.sidepicks[p]||{};let sp=0,ex=0,res=0,ouB=0,ouH=0,scB=0,scH=0;
+  ALL.forEach(m=>{if(!isFT(m))return;
+    const pr=preds[m.id];if(pr&&pr[0]!=null){sp++;const v=points(pr,m);if(v===5)ex++;if(v>=2)res++;}
+    const s=sd[m.id];if(s){
+      if(s.ou){ouB++;if(s.ou===ouResult(m))ouH++;}
+      if(s.btts){ouB++;if(s.btts===bttsResult(m))ouH++;}
+      (s.scbets||[]).forEach(b=>{if(!b.p)return;const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(hit){scB++;scH++;}else if(rec>=(m.s1+m.s2))scB++;});
+      if(s.scorer&&!(s.scbets&&s.scbets.length)){const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;if(hit){scB++;scH++;}else if(rec>=(m.s1+m.s2))scB++;}
+    }});
+  const pct=(n,d)=>d?Math.round(n/d*100):0;
+  return {sp,ex,res,exactPct:pct(ex,sp),resultPct:pct(res,sp),ouB,ouH,ouPct:pct(ouH,ouB),scB,scH,scorerPct:pct(scH,scB)};
+}
 function teamPos(t){for(const g in standings){const rows=standings[g].map(x=>({nm:x[0],pts:x[7],gd:x[5]-x[6],gf:x[5]})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);const i=rows.findIndex(x=>x.nm===t);if(i>=0)return {g,pos:i+1,n:rows.length};}return null;}
 function teamForm(t){return ALL.filter(m=>isFT(m)&&(m.t1===t||m.t2===t)).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(-5).map(m=>{const us=m.t1===t?m.s1:m.s2,th=m.t1===t?m.s2:m.s1;return us>th?'W':us<th?'L':'D';});}
 function nextMatch(t){return ALL.filter(m=>!isFT(m)&&!isPH(m.t1)&&!isPH(m.t2)&&(m.t1===t||m.t2===t)).sort((a,b)=>new Date(a.dt)-new Date(b.dt))[0]||null;}
@@ -1946,6 +1969,12 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   html+=`<div class="hcards">${sc(fmtMoney(cur),'gold','Current bank')}${sc((bk.inPlay>0?fmtMoney(bk.inPlay):'$0'),'','On the line')}${sc('+'+fmtMoney(won),'pos','Total won')}${sc('−'+fmtMoney(lost),'neg','Total lost')}${sc(ptsTot+' pts','','League points')}${sc(moneyEvs.length,'','Bets settled')}</div>`;
   if(best.net>0||worst.net<0)html+=`<div class="hbestrow">${best.net>0?`<span class="hbest">🟢 Best: <b>+${fmtMoney(best.net)}</b> · ${best.title}</span>`:''}${worst.net<0?`<span class="hworst">🔴 Worst: <b>−${fmtMoney(-worst.net)}</b> · ${worst.title}</span>`:''}</div>`;
   // tabs within history
+  // ACCURACY — % of guesses that landed, for the selected player + everyone to compare
+  const ac=accuracyOf(p);
+  html+=`<div class="accstrip">🎯 <b>${p}</b> — Exact score <b>${ac.exactPct}%</b> · Right result <b>${ac.resultPct}%</b>${ac.scB?` · Scorer <b>${ac.scorerPct}%</b>`:''}${ac.ouB?` · O/U·BTTS <b>${ac.ouPct}%</b>`:''} <span class="sub">(${ac.sp} score pick${ac.sp===1?'':'s'} settled)</span></div>`;
+  html+=`<div class="tablescroll"><table class="acctable"><thead><tr><th class="l">Player</th><th>Picks</th><th>Exact</th><th>Result</th><th>Scorer</th></tr></thead><tbody>`
+    +state.players.map(pl=>{const a=accuracyOf(pl);return `<tr${pl===p?' class="accme"':''}><td class="l"><span class="nmcell">${avatar(pl)} ${pl}${pl===me?' (you)':''}</span></td><td>${a.sp}</td><td><b>${a.exactPct}%</b><small> (${a.ex})</small></td><td><b>${a.resultPct}%</b><small> (${a.res})</small></td><td>${a.scB?'<b>'+a.scorerPct+'%</b><small> ('+a.scH+'/'+a.scB+')</small>':'—'}</td></tr>`;}).join('')
+    +`</tbody></table></div><div class="sub" style="margin:6px 0 14px;font-size:11px">Exact = perfect scoreline · Result = right winner/draw · Scorer = anytime-scorer bets that landed (excludes void/refunds). Counts in brackets.</div>`;
   html+=`<div class="chips histchips"><button class="fchip on" data-hc="trail">💰 My money trail</button><button class="fchip" data-hc="results">⚽ Results</button><button class="fchip" data-hc="form">📈 Form guide</button></div>`;
   // 1) money trail
   let trail='';
