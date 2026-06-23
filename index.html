@@ -745,7 +745,7 @@
     <h3 style="margin-bottom:8px">How it works</h3>
     <ul>
       <li>Everyone starts with <span class="pp">$1,000</span>. Every pick carries a wager. Payouts: <span class="pp">4×</span> exact score · <span class="pp">2.5×</span> right result + goal difference · <span class="pp">1.5×</span> right result · <span class="pp">lose stake</span> if wrong.</li>
-      <li>Points are also tracked (<span class="pp">5 / 3 / 2 / 0</span>) for the side standings. Your bank never drops below $10, so you're never out — go all-in to chase the leader.</li>
+      <li>Points are also tracked (<span class="pp">5 / 3 / 2 / 0</span>) for the side standings — plus <span class="pp">+2 pts</span> for each correct anytime-scorer call. Your bank never drops below $10, so you're never out — go all-in to chase the leader.</li>
       <li><span class="pp">★ Joker</span>: once per round, arm your Joker on one pick — it pays <span class="pp">double</span> points and double money, win or lose. Choose the match you trust most.</li>
       <li>Side bets: Over/Under, Both-teams-score, Anytime scorer, Champion, Golden Boot, and <span class="pp">Group qualifiers</span> (call each group's top 2). All extra cash on top of your wagers.</li>
     </ul>
@@ -1021,7 +1021,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-ae';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-af';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1234,7 +1234,7 @@ function points(pred,m){if(!pred||!isFT(m))return null;const[ph,pa]=pred;if(ph==
   if(pr===ar)return(ph-pa)===(ah-aa)?3:2;return 0;}
 const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 // ================= MONEY (fantasy wagering) =================
-const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200, GLOVE_BONUS=400;
+const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200, GLOVE_BONUS=400, SCORER_PTS=2;
 // SURVIVOR (last-man-standing knockout side-game): each KO round, back one team to advance; wrong = out; no team reuse.
 const SURV_ROUNDS=['Round of 32','Round of 16','Quarter-finals','Semi-finals','FINAL'];
 const SURV_LABEL={'Round of 32':'R32','Round of 16':'R16','Quarter-finals':'QF','Semi-finals':'SF','FINAL':'Final'};
@@ -1256,6 +1256,12 @@ const SCORER_ODDS={};Object.keys(SQUAD).forEach(t=>(SQUAD[t]||[]).forEach((n,i)=
 const scorerOdds=p=>SCORER_ODDS[normName(p)]||6.0;     // star 2.0 / regular 3.5 / longshot 6.0
 function sideCap(p){return Math.max(MIN_WAGER,Math.min(100,Math.round(bankOf(p).bal*0.25)));}  // single side-bet cap = min($100, 25% of bank)
 function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&!(s.scbets&&s.scbets.length)&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))t+=SCORER_BONUS;});return t;}
+// LEAGUE POINTS for correctly predicting a goalscorer (anytime scorer) — separate from the money market, counts toward the points standings
+function scorerHits(p,m){const s=(state.sidepicks[p]||{})[m.id];if(!s||!isFT(m))return 0;const hits=new Set();
+  (s.scbets||[]).forEach(b=>{if(b&&b.p&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p)))hits.add(normName(b.p));});
+  if(s.scorer&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))hits.add(normName(s.scorer));
+  return hits.size;}
+function scorerPoints(p){let t=0;ALL.forEach(m=>{t+=scorerHits(p,m)*SCORER_PTS;});return t;}
 // joker: one pick per round pays double points + double money swing
 function roundOf(m){return m.ko?m.round:'GROUP';}
 function activeJokerId(p,round){const preds=state.preds[p]||{};let best=null,bt=Infinity;
@@ -1692,7 +1698,8 @@ document.getElementById('newPlayer').addEventListener('keydown',e=>{if(e.key==='
 // ================= LEADERBOARD =================
 function totals(){return state.players.map(p=>{let pts=0,exact=0,correct=0,played=0;
   ALL.forEach(m=>{const v=points((state.preds[p]||{})[m.id],m);if(v!=null){played++;pts+=v*(isJoker(p,m)?2:1);if(v===5)exact++;if(v>=2)correct++;}});
-  const b=bankOf(p);return{p,pts,exact,correct,played,bal:b.bal,inPlay:b.inPlay,won:b.won,lost:b.lost};})
+  const scp=scorerPoints(p);pts+=scp;  // correct anytime-scorer predictions add league points too
+  const b=bankOf(p);return{p,pts,scorerPts:scp,exact,correct,played,bal:b.bal,inPlay:b.inPlay,won:b.won,lost:b.lost};})
   .sort((a,b)=>b.bal-a.bal||b.pts-a.pts);}
 function renderPitch(){
   const el=document.getElementById('pitchWrap');if(!el)return;
@@ -1852,7 +1859,7 @@ function historyOf(p){
       if(s.ou&&(s.ouStake||0)>0){const w=s.ou===ouResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.ouStake*(OU_ODDS[s.ou]-1):-s.ouStake,title:`${m.t1} v ${m.t2}`,sub:`${s.ou==='O'?'Over':'Under'} 2.5 @ ${OU_ODDS[s.ou]}x · ${w?'won':'lost'} · ${fmtMoney(s.ouStake)}`});}
       if(s.btts&&(s.bttsStake||0)>0){const w=s.btts===bttsResult(m);out.push({dt:dtOf(m),m,kind:'side',net:w?s.bttsStake*(BTTS_ODDS[s.btts]-1):-s.bttsStake,title:`${m.t1} v ${m.t2}`,sub:`BTTS ${s.btts==='Y'?'Yes':'No'} @ ${BTTS_ODDS[s.btts]}x · ${w?'won':'lost'} · ${fmtMoney(s.bttsStake)}`});}
       (s.scbets||[]).forEach(b=>{const st=b.st||0;if(st<=0)return;const hit=(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,b.p));const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;
-        if(hit)out.push({dt:dtOf(m),m,kind:'side',net:st*(scorerOdds(b.p)-1),title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · won · ${fmtMoney(st)}`});
+        if(hit)out.push({dt:dtOf(m),m,kind:'side',net:st*(scorerOdds(b.p)-1),title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · won · ${fmtMoney(st)} · +${SCORER_PTS} pts`});
         else if(rec>=(m.s1+m.s2))out.push({dt:dtOf(m),m,kind:'side',net:-st,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} @ ${scorerOdds(b.p)}x · lost · ${fmtMoney(st)}`});
         else out.push({dt:dtOf(m),m,kind:'void',net:0,title:`${m.t1} v ${m.t2}`,sub:`Scorer ${b.p} · refunded (feed incomplete) · ${fmtMoney(st)}`});});
     }
@@ -1881,7 +1888,7 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   const moneyEvs=evs.filter(e=>e.kind!=='void');
   const won=evs.filter(e=>e.net>0).reduce((s,e)=>s+e.net,0),lost=evs.filter(e=>e.net<0).reduce((s,e)=>s-e.net,0);
   const best=evs.reduce((mx,e)=>e.net>mx.net?e:mx,{net:0}),worst=evs.reduce((mn,e)=>e.net<mn.net?e:mn,{net:0});
-  const ptsTot=evs.filter(e=>e.kind==='pred').reduce((s,e)=>s+(e.pts||0),0);
+  const ptsTot=evs.filter(e=>e.kind==='pred').reduce((s,e)=>s+(e.pts||0),0)+scorerPoints(p);
   const sc=(v,cls,lbl)=>`<div class="hcard"><div class="hcv ${cls||''}">${v}</div><div class="hck">${lbl}</div></div>`;
   let html=sel;
   html+=`<div class="hcards">${sc(fmtMoney(cur),'gold','Current bank')}${sc((bk.inPlay>0?fmtMoney(bk.inPlay):'$0'),'','On the line')}${sc('+'+fmtMoney(won),'pos','Total won')}${sc('−'+fmtMoney(lost),'neg','Total lost')}${sc(ptsTot+' pts','','League points')}${sc(moneyEvs.length,'','Bets settled')}</div>`;
