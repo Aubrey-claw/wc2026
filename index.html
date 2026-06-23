@@ -1022,7 +1022,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-23-ag';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-23-ah';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1405,7 +1405,7 @@ const mktBetOf=(m,mk)=>mktArr(me,m.id).find(x=>x.mk===mk)||null;
 const mktOpenBet=m=>!!(me&&state.players.includes(me)&&!kickedOff(m));   // markets are PRE-MATCH; lock at kickoff
 async function saveMkt(mid){const arr=(state.mktbets[me]||{})[mid]||[];markMktPending(mid);
   if(SB_ENABLED){try{await sb.from('sidepicks').upsert({name:me,match_id:'MKT|'+mid,scbets:arr,updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save bet');}}
-  renderPredict();renderLeaderboard();updateLeagueBar();}
+  refreshCard(mid);scheduleLeaderboard();}
 function mktToggle(mid,mk,pk){
   if(!me||!state.players.includes(me)){showJoin();return;}
   const m=findMatch(mid);if(!m||!mktOpenBet(m)){flash('Locked — match has kicked off');return;}
@@ -1612,7 +1612,10 @@ function renderPredict(){
   if(!list.length){wrap.innerHTML='<div class="empty">No matches in this view.</div>';return;}
   const canEdit=(!SB_ENABLED)||p===me;
   const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});  // goals scored so far, for the scorer picker
-  wrap.innerHTML=list.map(m=>{const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
+  wrap.innerHTML=list.map(m=>mcardHTML(m,p,canEdit,goalsBy)).join('');
+  bindPredict(wrap,p,canEdit);
+}
+function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
     let center,strip='',oustrip='';const sidep=(state.sidepicks[p]||{})[m.id]||{},oupick=sidep.ou,bpick=sidep.btts;
     if(isFT(m)){const pts=points(pr,m);
@@ -1652,45 +1655,60 @@ function renderPredict(){
       if(spick&&!scbets.length){const r=isFT(m),ok=r&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,spick));const stm=inSquad(m.t1,spick)?m.t1:inSquad(m.t2,spick)?m.t2:'';oustrip+=`<div class="wstrip ${r?(ok?'win':'loss'):''}"><span class="wlabel">Scorer: ${stm?badge(stm)+' ':''}${spick}</span>${r?`<span class="wout">${ok?'won '+fmtMoney(SCORER_BONUS):'missed'}</span>`:'<span class="wreturn">locked</span>'}</div>`;}
     }
     const _ms=new Date(m.dt)-Date.now(),_cd=(!locked&&_ms>0)?(_ms<36e5?Math.round(_ms/6e4)+'m':_ms<864e5?Math.round(_ms/36e5)+'h':Math.round(_ms/864e5)+'d'):'';
-    return `<div class="card mcard"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
-      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}${mktPanelHtml(m,p,canEdit,locked)}</div>`;}).join('');
+    return `<div class="card mcard" data-mid="${m.id}"><div class="mtop"><span class="gt">${tag}${_cd?` <span class="lockcd ${_ms<36e5?'soon':''}">locks in ${_cd}</span>`:''}</span><span class="tm">${tcard(m.dt)} · ${m.venue}</span></div>
+      <div class="mbody"><div class="team">${badge(m.t1,true)}<span class="tname ${isPH(m.t1)?'ph':''}">${m.t1}</span></div>${center}<div class="team">${badge(m.t2,true)}<span class="tname ${isPH(m.t2)?'ph':''}">${m.t2}</span></div></div>${strip}${oustrip}${mktPanelHtml(m,p,canEdit,locked)}</div>`;
+}
+function bindPredict(root,p,canEdit){
   if(canEdit){
-    wrap.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
+    root.querySelectorAll('.vstep button').forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=+b.dataset.s,d=+b.dataset.d;
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;let v=cur[s];v=(v==null?0:v)+d;v=Math.max(0,Math.min(20,v));cur[s]=v;
       const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;  // setting one score auto-completes the other to 0 — no half-picks
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
-      saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
-    wrap.querySelectorAll('.svin').forEach(inp=>inp.onchange=()=>{const id=inp.dataset.svin,s=+inp.dataset.s;let v=parseInt(inp.value,10);v=isNaN(v)?null:Math.max(0,Math.min(20,v));
+      saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}refreshCard(id);scheduleLeaderboard();});
+    root.querySelectorAll('.svin').forEach(inp=>inp.onchange=()=>{const id=inp.dataset.svin,s=+inp.dataset.s;let v=parseInt(inp.value,10);v=isNaN(v)?null:Math.max(0,Math.min(20,v));
       const cur=state.preds[p][id]||[null,null,0,0];state.preds[p][id]=cur;cur[s]=v;
       if(v!=null){const _o=s===0?1:0;if(cur[_o]==null)cur[_o]=0;}  // typing one score auto-completes the other to 0
       if(hasPick(cur)&&(!cur[2]||cur[2]<MIN_WAGER))cur[2]=Math.max(MIN_WAGER,Math.min(DEFAULT_STAKE,maxStakeFor(p,id)));
-      saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
-    wrap.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
+      saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}refreshCard(id);scheduleLeaderboard();});
+    root.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.w,d=+b.dataset.d;const cur=state.preds[p][id];if(!hasPick(cur))return;
       let v=(cur[2]||0)+d*STAKE_STEP;v=Math.max(MIN_WAGER,Math.min(maxStakeFor(p,id),v));const wasAllIn=cur._ai;cur[2]=v;
       const mm=findMatch(id);if(d>0&&v===maxStakeFor(p,id)&&v>=200&&!wasAllIn&&SB_ENABLED&&p===me){cur._ai=1;sbEmit(me,'allin',me+' went ALL-IN '+fmtMoney(v)+' on '+mm.t1+' v '+mm.t2);}else if(v<maxStakeFor(p,id))cur._ai=0;
-      saveState();renderPredict();renderLeaderboard();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}});
-    wrap.querySelectorAll('.jokerbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.jk;const cur=state.preds[p][id];if(!hasPick(cur)||!(cur[2]>0))return;
+      saveState();if(SB_ENABLED){markPending(id);sbUpsertPred(p,id);}refreshCard(id);scheduleLeaderboard();});
+    root.querySelectorAll('.jokerbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.jk;const cur=state.preds[p][id];if(!hasPick(cur)||!(cur[2]>0))return;
       const mm=findMatch(id),round=roundOf(mm),prev=activeJokerId(p,round);
       if(prev===id){cur[3]=0;markPending(id);if(SB_ENABLED)sbUpsertPred(p,id);}
       else{if(prev){const pc=state.preds[p][prev];if(pc){pc[3]=0;markPending(prev);if(SB_ENABLED)sbUpsertPred(p,prev);}}cur[3]=1;markPending(id);if(SB_ENABLED){sbUpsertPred(p,id);if(p===me)sbEmit(me,'joker',me+' armed their Joker ★ on '+mm.t1+' v '+mm.t2);}}
-      saveState();renderPredict();renderLeaderboard();updateLeagueBar();const jb=wrap.querySelector('.jokerbtn.on[data-jk="'+id+'"]');if(jb){moOnce(jb,'mo-glow',700);const st=jb.querySelector('.jkstar');moOnce(st||jb,'mo-spin-star',520);}});
+      saveState();refreshCard(id);scheduleLeaderboard();const jb=document.querySelector('#predList .jokerbtn.on[data-jk="'+id+'"]');if(jb){moOnce(jb,'mo-glow',700);const st=jb.querySelector('.jkstar');moOnce(st||jb,'mo-spin-star',520);}});
     const defSt=(id)=>Math.max(MIN_WAGER,Math.min(sideCap(p),((state.preds[p][id]||[])[2])||DEFAULT_STAKE));
-    const saveSide=(id)=>{markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);renderPredict();renderLeaderboard();updateLeagueBar();};
-    wrap.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
-      if(o.ou===v)o.ou=null;else{o.ou=v;if(!(o.ouStake>0))o.ouStake=defSt(id);}saveSide(id);moOnce(wrap.querySelector('.oubtn.on[data-ou="'+id+'"]'),'mo-pick-pop',440);});
-    wrap.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
-      if(o.btts===v)o.btts=null;else{o.btts=v;if(!(o.bttsStake>0))o.bttsStake=defSt(id);}saveSide(id);moOnce(wrap.querySelector('.bbtn.on[data-bt="'+id+'"]'),'mo-pick-pop',440);});
-    wrap.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=b.dataset.ss,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o)return;const key=k==='ou'?'ouStake':'bttsStake';o[key]=Math.max(MIN_WAGER,Math.min(sideCap(p),(o[key]||0)+d*STAKE_STEP));saveSide(id);});
-    wrap.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
+    const saveSide=(id)=>{markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);refreshCard(id);scheduleLeaderboard();};
+    root.querySelectorAll('.oubtn').forEach(b=>b.onclick=()=>{const id=b.dataset.ou,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
+      if(o.ou===v)o.ou=null;else{o.ou=v;if(!(o.ouStake>0))o.ouStake=defSt(id);}saveSide(id);moOnce(document.querySelector('#predList .oubtn.on[data-ou="'+id+'"]'),'mo-pick-pop',440);});
+    root.querySelectorAll('.bbtn').forEach(b=>b.onclick=()=>{const id=b.dataset.bt,v=b.dataset.v;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};
+      if(o.btts===v)o.btts=null;else{o.btts=v;if(!(o.bttsStake>0))o.bttsStake=defSt(id);}saveSide(id);moOnce(document.querySelector('#predList .bbtn.on[data-bt="'+id+'"]'),'mo-pick-pop',440);});
+    root.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=b.dataset.ss,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o)return;const key=k==='ou'?'ouStake':'bttsStake';o[key]=Math.max(MIN_WAGER,Math.min(sideCap(p),(o[key]||0)+d*STAKE_STEP));saveSide(id);});
+    root.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
       if(!o.scbets.some(x=>normName(x.p)===normName(v)))o.scbets.push({p:v,st:defSt(id)});saveSide(id);});
-    wrap.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));saveSide(id);});
-    wrap.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});
-    wrap.querySelectorAll('.mktbtn').forEach(b=>b.onclick=()=>mktToggle(b.dataset.mid,b.dataset.mkt,b.dataset.mp));
-    wrap.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>mktStakeStep(b.dataset.mid,b.dataset.mstk,+b.dataset.d));
-    wrap.querySelectorAll('.mktcs').forEach(s=>s.onchange=()=>{const mid=s.dataset.mid,v=s.value;
+    root.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));saveSide(id);});
+    root.querySelectorAll('[data-scx]').forEach(b=>b.onclick=()=>{const id=b.dataset.scx,i=+b.dataset.i;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets)return;o.scbets.splice(i,1);saveSide(id);});
+    root.querySelectorAll('.mktbtn').forEach(b=>b.onclick=()=>mktToggle(b.dataset.mid,b.dataset.mkt,b.dataset.mp));
+    root.querySelectorAll('[data-mstk]').forEach(b=>b.onclick=()=>mktStakeStep(b.dataset.mid,b.dataset.mstk,+b.dataset.d));
+    root.querySelectorAll('.mktcs').forEach(s=>s.onchange=()=>{const mid=s.dataset.mid,v=s.value;
       if(!v){const arr=(state.mktbets[me]||{})[mid]||[],i=arr.findIndex(x=>x.mk==='cscore');if(i>=0){arr.splice(i,1);saveMkt(mid);}return;}
       mktToggle(mid,'cscore',v);});}
 }
+let _lbT;function scheduleLeaderboard(){clearTimeout(_lbT);_lbT=setTimeout(()=>{try{renderLeaderboard();}catch(e){}},300);}  // off-screen leaderboard — defer so taps stay snappy
+// rebuild ONLY the touched card (not all ~100) — kills the per-tap relayout/jump; falls back to full render if the card isn't in view
+function refreshCard(id){const p=state.active;if(!p)return;const wrap=document.getElementById('predList');if(!wrap)return;
+  const el=wrap.querySelector('.mcard[data-mid="'+id+'"]');const m=findMatch(id);const canEdit=(!SB_ENABLED)||p===me;
+  renderBanner();updateLeagueBar();
+  if(!el||!m){renderPredict();return;}
+  const goalsBy={};liveScorers().forEach(s=>{goalsBy[normName(s[0])]=s[2];});
+  const od=el.querySelector('.mktwrap');const wasOpen=od&&od.open;  // keep "More markets" expanded across the refresh
+  const tmp=document.createElement('div');tmp.innerHTML=mcardHTML(m,p,canEdit,goalsBy);const fresh=tmp.firstElementChild;
+  if(!fresh){renderPredict();return;}
+  el.replaceWith(fresh);
+  if(wasOpen){const nd=fresh.querySelector('.mktwrap');if(nd)nd.open=true;}
+  bindPredict(fresh,p,canEdit);}
 document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.filter;renderPredict();moStaggerSection('predict');});
 document.querySelectorAll('#boardChips .fchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('#boardChips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');boardFilter=b.dataset.bfilter;renderBoard();moStaggerSection('board');});
 document.getElementById('addPlayer').onclick=addPlayer;
