@@ -277,6 +277,7 @@
   .liveband{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--live);text-transform:uppercase;margin-bottom:10px}
   .livecard{background:var(--glass);border:1px solid var(--glassline);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
   .lvtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .lvcash{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,210,77,.25)}
   .lvteam{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:14px;flex:1;min-width:0}.lvteam.r{justify-content:flex-end;text-align:right}
   .lvscore{font-size:26px;font-weight:800;letter-spacing:2px;flex:0 0 auto;padding:0 6px}
   .lvclk{text-align:center;margin:6px 0 12px}
@@ -1062,7 +1063,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-bc';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-bd';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2586,9 +2587,14 @@ function renderLive(){
   el.innerHTML=`<div class="liveband"><span class="livedot"></span>NEAR-LIVE · may trail your TV by a minute or two</div>`+live.map(m=>{const d=liveData[m.id];const sh=d.shots||{};
     const sc=(d.s1!=null?d.s1:'–')+'  '+(d.s2!=null?d.s2:'–');const clk=d.prog?d.prog+"'":(d.status||'LIVE');
     const stats=(sh.onTarget||sh.total||sh.inBox)?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Shots in box',sh.inBox)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">shot stats loading…</div>';
-    return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">● ${clk}</span></div>${stats}${htPanelHtml(m)}</div>`;}).join('');
+    const co=me?cashOffer(me,m):null;
+    const cashRow=co?`<div class="lvcash"><span class="sub">cash out ${co.parts.join(' + ')}${co.blind?' · est., no live score':''}</span><button class="cashbtn ${co.net>=0?'up':'dn'}" data-cash="${m.id}">💵 Cash out ${fmtMoney(co.R)}</button></div>`:'';
+    return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">● ${clk}</span></div>${stats}${cashRow}${htPanelHtml(m)}</div>`;}).join('');
   el.querySelectorAll('[data-htbet]').forEach(b=>b.onclick=()=>placeHt(b.dataset.htbet,b.dataset.mk,b.dataset.pk));
   el.querySelectorAll('[data-htm]').forEach(b=>b.onclick=()=>{const mid=b.dataset.htm,cap=htCap(me);htDraft[mid]=Math.max(MIN_WAGER,Math.min(cap,htStake(mid)+(+b.dataset.d)*STAKE_STEP));renderLive();});
+  el.querySelectorAll('[data-cash]').forEach(b=>b.onclick=()=>{const id=b.dataset.cash,mm=findMatch(id);if(!mm||!me)return;const co=cashOffer(me,mm);if(!co){flash('Cash-out unavailable');return;}
+    if(!confirm('Cash out your '+co.parts.join(' + ')+' on '+mm.t1+' v '+mm.t2+' '+(co.blind?'(estimated — no live score yet)':'(live '+co.score+')')+' now for '+fmtMoney(co.R)+'? Locks in '+(co.net>=0?'+'+fmtMoney(co.net):'−'+fmtMoney(-co.net))+' vs your '+fmtMoney(co.stake)+' staked. (Scorer bets are not included.)'))return;
+    sbCashOut(me,id,co.R,co.stake);flash('💵 Cashed out '+mm.t1+' v '+mm.t2+' for '+fmtMoney(co.R));if(co.net>=0)confetti();renderLive();syncPredict();scheduleLeaderboard();});
 }
 setTimeout(refreshLive,6000);setInterval(refreshLive,60000);
 </script>
