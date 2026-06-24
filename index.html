@@ -1045,7 +1045,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-ar';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-as';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1600,7 +1600,7 @@ function renderScorers(){
 // ================= PREDICT =================
 let filter='next';
 function filtered(){if(filter==='group')return ALL.filter(m=>!m.ko);if(filter==='ko')return ALL.filter(m=>m.ko);
-  if(filter==='next'){const now=Date.now();return ALL.filter(m=>!kickedOff(m)&&new Date(m.dt)>now).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(0,12);}return ALL;}
+  if(filter==='next'){const now=Date.now();return ALL.filter(m=>!isFT(m)&&(isLiveMatch(m)||(!kickedOff(m)&&new Date(m.dt)>now))).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(0,12);}return ALL;}  // keep LIVE games in "Next up" so the cash-out button stays reachable (they sort to the top by past dt)
 function renderRail(){
   const r=document.getElementById('prail');
   r.innerHTML=state.players.map(p=>`<div class="pavatar ${p===state.active?'on':''}" data-p="${p}">${(p===me||!SB_ENABLED)?`<button class="del" data-del="${p}">✕</button>`:''}${avatar(p)}<span class="pn">${p}${p===me?' (you)':''}</span></div>`).join('')+`<button class="addp" id="addp">+</button>`;
