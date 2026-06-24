@@ -1038,7 +1038,7 @@ function tcard(iso){const a=fmt(iso,ADL),s=fmt(iso,SYD);
 const dayLabel=iso=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));
 
 // ================= LOCAL STATE =================
-const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[],survivor:{},cashouts:{}};
+const KEY='wc2026-app';let state={players:[],active:null,preds:{},champion:{},champOdds:{},quiz:{},sidepicks:{},htbets:{},mktbets:{},topscorer:{},glovePick:{},groupquals:{},events:[],accas:{},duels:[],chat:[],survivor:{},cashouts:{},matchStats:{}};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
 function setSaveTag(txt,warn){const e=document.getElementById('savetag');if(!e)return;e.textContent=txt;e.classList.toggle('warn',!!warn);}
 function setMe(p){state.active=p;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -1062,7 +1062,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-bb';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-bc';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1113,8 +1113,8 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.teamShots={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
-      if(typeof r.match_id==='string'&&r.match_id.slice(0,6)==='STATS|'){if(scb.length&&scb[0]){state.teamShots[r.match_id.slice(6)]=scb[0];shotCache[r.match_id.slice(6)]=scb[0];}return;}  // precomputed per-team shots-on-target cache under STATS|
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.matchStats={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+      if(typeof r.match_id==='string'&&r.match_id.slice(0,6)==='STATS|'){if(scb.length&&scb[0])state.matchStats[r.match_id.slice(6)]=scb[0];return;}  // ESPN per-match stats: shots/corners/possession/cards/first-scorer/half-goals — for settling new MKT markets
       if(typeof r.match_id==='string'&&r.match_id.slice(0,3)==='HT|'){if(scb.length)(state.htbets[r.name]=state.htbets[r.name]||{})[r.match_id.slice(3)]=scb;return;}  // half-time live props stored under HT| namespace
       if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='MKT|'){if(scb.length)(state.mktbets[r.name]=state.mktbets[r.name]||{})[r.match_id.slice(4)]=scb;return;}  // extra fixed-odds markets stored under MKT| namespace
       if(r.match_id==='GG'){if(scb.length&&scb[0].gg)state.glovePick[r.name]=scb[0].gg;return;}  // Golden Glove tournament pick (team) stored under the GG row
@@ -1437,7 +1437,18 @@ const csOddsP=p=>Math.max(1.5,Math.round(Math.min(51,0.82/Math.max(0.008,p))*2)/
 function csScoreOdds(m,pk){const ab=(pk||'').split('-');if(ab.length!==2)return 26;const a=+ab[0],c=+ab[1];
   if(isNaN(a)||isNaN(c)||a<0||c<0||a>3||c>3)return 26;const e=csExpGoals(m);return csOddsP(poiss(a,e[0])*poiss(c,e[1]));}
 const MGN_LABEL={h1:'Home by 1',h2:'Home by 2',h3:'Home by 3+',d:'Draw',a1:'Away by 1',a2:'Away by 2',a3:'Away by 3+'};
+// ESPN-stats markets (settle off state.matchStats blob — backfilled per match)
+const COR_LINE=9.5, SOT_LINE=8.5, CARD_LINE=4.5;            // total over/under thresholds (.5 = no push possible)
+const COR_TOT_ODDS={O:1.85,U:1.85}, SOT_TOT_ODDS={O:1.85,U:1.85}, CARD_TOT_ODDS={O:1.85,U:1.85};
+const HI_HALF_LABEL={'1':'1st half','2':'2nd half','T':'Tie / level halves'};
+const mstats=m=>m?(state.matchStats||{})[m.id]:null;
+function corMostOdds(m){const p=winProbs(m);return {H:oddsP(Math.max(0.2,Math.min(0.75,p.H+p.D*0.45))),A:oddsP(Math.max(0.2,Math.min(0.75,p.A+p.D*0.45)))};}
+function posDomOdds(m){const p=winProbs(m);return {H:oddsP(Math.max(0.15,Math.min(0.7,p.H*0.6+0.1))),A:oddsP(Math.max(0.15,Math.min(0.7,p.A*0.6+0.1)))};}
+function hiHalfOdds(){return {'1':2.2,'2':2.0,'T':4.5};}    // 2nd half historically slightly more goals; tie is rare
+function fstScrOdds(player){return Math.min(25,Math.max(3,Math.round(scorerOdds(player)*4*10)/10));}
 function mktSettle(b,m){if(!isFT(m))return 'open';const a=m.s1,c=m.s2;if(a==null||c==null)return 'open';
+  const S=mstats(m);                                          // ESPN stats blob — null until backfilled
+  const needStats=()=>{if(!S)return 'open';return null;};      // markets that depend on stats stay 'open' until they arrive (cron fills)
   switch(b.mk){
     case 'win': return (b.pk==='H'?a>c:b.pk==='A'?c>a:a===c)?'won':'lost';
     case 'dc':  return (b.pk==='1X'?a>=c:b.pk==='X2'?c>=a:a!==c)?'won':'lost';
@@ -1445,6 +1456,13 @@ function mktSettle(b,m){if(!isFT(m))return 'open';const a=m.s1,c=m.s2;if(a==null
     case 'wtn': return (b.pk==='H'?(a>c&&c===0):(c>a&&a===0))?'won':'lost';
     case 'mgn': {const d=a-c,map={d:d===0,h1:d===1,h2:d===2,h3:d>=3,a1:d===-1,a2:d===-2,a3:d<=-3};return map[b.pk]?'won':'lost';}
     case 'cscore': return (b.pk===a+'-'+c)?'won':'lost';
+    case 'cor_tot': {const r=needStats();if(r)return r;if(S.cor1==null||S.cor2==null)return 'void';const t=S.cor1+S.cor2;return (b.pk==='O'?t>COR_LINE:t<COR_LINE)?'won':'lost';}
+    case 'cor_most':{const r=needStats();if(r)return r;if(S.cor1==null||S.cor2==null)return 'void';if(S.cor1===S.cor2)return 'void';return (b.pk==='H'?S.cor1>S.cor2:S.cor2>S.cor1)?'won':'lost';}
+    case 'sot_tot':{const r=needStats();if(r)return r;if(S.sot1==null||S.sot2==null)return 'void';const t=S.sot1+S.sot2;return (b.pk==='O'?t>SOT_LINE:t<SOT_LINE)?'won':'lost';}
+    case 'pos_dom':{const r=needStats();if(r)return r;if(S.pos1==null||S.pos2==null)return 'void';const dom=S.pos1>=60?'H':S.pos2>=60?'A':null;return dom===b.pk?'won':'lost';}
+    case 'card_tot':{const r=needStats();if(r)return r;if(S.yel1==null&&S.red1==null)return 'void';const t=(S.yel1||0)+(S.yel2||0)+(S.red1||0)+(S.red2||0);return (b.pk==='O'?t>CARD_LINE:t<CARD_LINE)?'won':'lost';}
+    case 'hi_half':{const r=needStats();if(r)return r;if(S.h1g==null||S.h2g==null)return 'void';const w=S.h1g>S.h2g?'1':S.h2g>S.h1g?'2':'T';return w===b.pk?'won':'lost';}
+    case 'fst_scr':{const r=needStats();if(r)return r;if(!S.fstScr)return 'void';return normName(S.fstScr)===normName(b.pk)?'won':'lost';}
     default: return 'void';
   }}
 function mktDesc(b,m){const T1=m?m.t1:'Home',T2=m?m.t2:'Away';
@@ -1455,9 +1473,18 @@ function mktDesc(b,m){const T1=m?m.t1:'Home',T2=m?m.t2:'Away';
     case 'wtn': return (b.pk==='H'?T1:T2)+' win to nil';
     case 'mgn': return (MGN_LABEL[b.pk]||'Margin').replace('Home',T1).replace('Away',T2);
     case 'cscore': return 'Correct score '+b.pk+' ('+T1+'–'+T2+')';
+    case 'cor_tot': return 'Total corners '+(b.pk==='O'?'Over':'Under')+' '+COR_LINE;
+    case 'cor_most':return 'Most corners — '+(b.pk==='H'?T1:T2);
+    case 'sot_tot': return 'Shots on target '+(b.pk==='O'?'Over':'Under')+' '+SOT_LINE+' (total)';
+    case 'pos_dom': return (b.pk==='H'?T1:T2)+' to dominate possession (60%+)';
+    case 'card_tot':return 'Total cards '+(b.pk==='O'?'Over':'Under')+' '+CARD_LINE;
+    case 'hi_half': return 'Highest-scoring half — '+(HI_HALF_LABEL[b.pk]||b.pk);
+    case 'fst_scr': return 'First goalscorer — '+b.pk;
     default: return b.mk;
   }}
-function mktOdds(m,mk,pk){switch(mk){case 'win':return winOdds(m)[pk];case 'dc':return dcOdds(m)[pk];case 'cs':return csOdds(m)[pk];case 'wtn':return wtnOdds(m)[pk];case 'mgn':return mgnOdds(m)[pk];case 'cscore':return csScoreOdds(m,pk);default:return 1;}}
+function mktOdds(m,mk,pk){switch(mk){case 'win':return winOdds(m)[pk];case 'dc':return dcOdds(m)[pk];case 'cs':return csOdds(m)[pk];case 'wtn':return wtnOdds(m)[pk];case 'mgn':return mgnOdds(m)[pk];case 'cscore':return csScoreOdds(m,pk);
+  case 'cor_tot':return COR_TOT_ODDS[pk];case 'cor_most':return corMostOdds(m)[pk];case 'sot_tot':return SOT_TOT_ODDS[pk];case 'pos_dom':return posDomOdds(m)[pk];case 'card_tot':return CARD_TOT_ODDS[pk];case 'hi_half':return hiHalfOdds()[pk];case 'fst_scr':return fstScrOdds(pk);
+  default:return 1;}}
 const mktArr=(p,id)=>((state.mktbets[p]||{})[id])||[];
 const mktPickOf=(m,mk)=>{const b=mktArr(me,m.id).find(x=>x.mk===mk);return b?b.pk:null;};
 const mktBetOf=(m,mk)=>mktArr(me,m.id).find(x=>x.mk===mk)||null;
@@ -1654,11 +1681,23 @@ function mktPanelHtml(m,p,canEdit,locked){
     const stk=mk=>{const b=mktBetOf(m,mk);return b?`<div class="mktstk"><button class="wbtn sm" aria-label="Decrease stake" data-mstk="${mk}" data-mid="${m.id}" data-d="-1">−</button><span class="wval" aria-live="polite">${fmtMoney(b.st)}</span><button class="wbtn sm" aria-label="Increase stake" data-mstk="${mk}" data-mid="${m.id}" data-d="1">+</button><span class="wreturn">→ ${fmtMoney(Math.round(b.st*b.od))} @${b.od}x</span></div>`:'';};
     const csB=mktBetOf(m,'cscore');
     const csSel=`<select class="mktcs" data-mid="${m.id}"><option value="">Correct score…</option>${CS_SCORES.map(s=>`<option value="${s}"${csB&&csB.pk===s?' selected':''}>${s.replace('-','–')} (${csScoreOdds(m,s)}x)</option>`).join('')}</select>${csB?stk('cscore'):''}`;
-    return `<details class="mktwrap"${bets.length?' open':''}><summary>＋ More markets <span class="sub">— to win · double chance · clean sheet · win-to-nil · margin · correct score</span></summary>
+    const cm=corMostOdds(m),pd=posDomOdds(m),hh=hiHalfOdds();
+    // first scorer dropdown (any squad player from either side; odds = 4× anytime)
+    const fsB=mktBetOf(m,'fst_scr');
+    const fsPlayers=[...(SQUAD[m.t1]||[]).map(p=>({p,t:m.t1})),...(SQUAD[m.t2]||[]).map(p=>({p,t:m.t2}))].sort((a,b)=>fstScrOdds(a.p)-fstScrOdds(b.p));
+    const fsSel=fsPlayers.length?`<select class="mktfs" data-mid="${m.id}"><option value="">First goalscorer…</option>${fsPlayers.map(x=>`<option value="${x.p}"${fsB&&fsB.pk===x.p?' selected':''}>${x.p} · ${x.t.slice(0,3).toUpperCase()} (${fstScrOdds(x.p)}x)</option>`).join('')}</select>${fsB?stk('fst_scr'):''}`:'';
+    return `<details class="mktwrap"${bets.length?' open':''}><summary>＋ More markets <span class="sub">— to win · corners · shots · cards · possession · first scorer · halves · margin · correct score</span></summary>
       <div class="mktrow"><span class="wlabel">To win</span><div class="mktopts">${opt('win','H',m.t1,wo.H)}${opt('win','D','Draw',wo.D)}${opt('win','A',m.t2,wo.A)}</div>${stk('win')}</div>
       <div class="mktrow"><span class="wlabel">Double chance</span><div class="mktopts">${opt('dc','1X',m.t1+' / draw',dc['1X'])}${opt('dc','12','No draw',dc['12'])}${opt('dc','X2',m.t2+' / draw',dc['X2'])}</div>${stk('dc')}</div>
       <div class="mktrow"><span class="wlabel">Clean sheet</span><div class="mktopts">${opt('cs','H',m.t1,cs.H)}${opt('cs','A',m.t2,cs.A)}</div>${stk('cs')}</div>
       <div class="mktrow"><span class="wlabel">Win to nil</span><div class="mktopts">${opt('wtn','H',m.t1,wt.H)}${opt('wtn','A',m.t2,wt.A)}</div>${stk('wtn')}</div>
+      <div class="mktrow"><span class="wlabel">Total corners (O/U ${COR_LINE})</span><div class="mktopts">${opt('cor_tot','O','Over',COR_TOT_ODDS.O)}${opt('cor_tot','U','Under',COR_TOT_ODDS.U)}</div>${stk('cor_tot')}</div>
+      <div class="mktrow"><span class="wlabel">Most corners</span><div class="mktopts">${opt('cor_most','H',m.t1,cm.H)}${opt('cor_most','A',m.t2,cm.A)}</div>${stk('cor_most')}</div>
+      <div class="mktrow"><span class="wlabel">Total shots on target (O/U ${SOT_LINE})</span><div class="mktopts">${opt('sot_tot','O','Over',SOT_TOT_ODDS.O)}${opt('sot_tot','U','Under',SOT_TOT_ODDS.U)}</div>${stk('sot_tot')}</div>
+      <div class="mktrow"><span class="wlabel">Dominate possession (60%+)</span><div class="mktopts">${opt('pos_dom','H',m.t1,pd.H)}${opt('pos_dom','A',m.t2,pd.A)}</div>${stk('pos_dom')}</div>
+      <div class="mktrow"><span class="wlabel">Total cards (O/U ${CARD_LINE})</span><div class="mktopts">${opt('card_tot','O','Over',CARD_TOT_ODDS.O)}${opt('card_tot','U','Under',CARD_TOT_ODDS.U)}</div>${stk('card_tot')}</div>
+      <div class="mktrow"><span class="wlabel">Highest-scoring half</span><div class="mktopts">${opt('hi_half','1','1st half',hh['1'])}${opt('hi_half','2','2nd half',hh['2'])}${opt('hi_half','T','Tie',hh['T'])}</div>${stk('hi_half')}</div>
+      ${fsSel?`<div class="mktrow"><span class="wlabel">First goalscorer</span><div class="mktopts">${fsSel}</div></div>`:''}
       <div class="mktrow"><span class="wlabel">Winning margin</span><div class="mktopts">${opt('mgn','h1',m.t1+' by 1',mg.h1)}${opt('mgn','h2','by 2',mg.h2)}${opt('mgn','h3','by 3+',mg.h3)}${opt('mgn','d','Draw',mg.d)}${opt('mgn','a1',m.t2+' by 1',mg.a1)}${opt('mgn','a2','by 2',mg.a2)}${opt('mgn','a3','by 3+',mg.a3)}</div>${stk('mgn')}</div>
       <div class="mktrow"><span class="wlabel">Correct score</span><div class="mktopts">${csSel}</div></div>
     </details>`;
@@ -1817,6 +1856,9 @@ function bindPredict(root,p,canEdit){
     root.querySelectorAll('.mktcs').forEach(s=>s.onchange=()=>{const mid=s.dataset.mid,v=s.value;
       if(!v){const arr=(state.mktbets[me]||{})[mid]||[],i=arr.findIndex(x=>x.mk==='cscore');if(i>=0){arr.splice(i,1);saveMkt(mid);}return;}
       mktToggle(mid,'cscore',v);});
+    root.querySelectorAll('.mktfs').forEach(s=>s.onchange=()=>{const mid=s.dataset.mid,v=s.value;
+      if(!v){const arr=(state.mktbets[me]||{})[mid]||[],i=arr.findIndex(x=>x.mk==='fst_scr');if(i>=0){arr.splice(i,1);saveMkt(mid);}return;}
+      mktToggle(mid,'fst_scr',v);});
     root.querySelectorAll('.mktwrap>summary').forEach(s=>s.addEventListener('click',()=>{const d=s.parentElement;if(!d.open)setTimeout(()=>{[...d.children].forEach(c=>{if(c.tagName!=='SUMMARY')moOnce(c,'mo-fade-up',300);});},0);}));}
 }
 let _lbT;function scheduleLeaderboard(){clearTimeout(_lbT);_lbT=setTimeout(()=>{try{renderLeaderboard();}catch(e){}},300);}  // off-screen leaderboard — defer so taps stay snappy
