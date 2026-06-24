@@ -1062,7 +1062,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-az';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-ba';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1984,7 +1984,7 @@ function survNotify(){const tab=document.querySelector('#tabs .tab[data-tab="sur
   tab.classList.toggle('notify',need);}
 // ================= HISTORY / STATS HUB =================
 // Personal money trail (where you won/lost), the results archive, and a form guide to inform guesses. All read-only.
-let histPlayer=null;
+let histPlayer=null;let histTab='trail';  // which History sub-tab is open (trail/results/form) — persisted so a background renderAll() doesn't snap it back
 // every SETTLED money event for player p, labelled — nets mirror bankOf's timeline exactly so the running balance reconciles
 function historyOf(p){
   const preds=state.preds[p]||{};const dtOf=m=>new Date(m.dt).getTime();const out=[];
@@ -2063,7 +2063,7 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   html+=`<div class="tablescroll"><table class="acctable"><thead><tr><th class="l">Player</th><th>Picks</th><th>Exact</th><th>Result</th><th>Scorer</th></tr></thead><tbody>`
     +state.players.map(pl=>{const a=accuracyOf(pl);return `<tr${pl===p?' class="accme"':''}><td class="l"><span class="nmcell">${avatar(pl)} ${pl}${pl===me?' (you)':''}</span></td><td>${a.sp}</td><td><b>${a.exactPct}%</b><small> (${a.ex})</small></td><td><b>${a.resultPct}%</b><small> (${a.res})</small></td><td>${a.scB?'<b>'+a.scorerPct+'%</b><small> ('+a.scH+'/'+a.scB+')</small>':'—'}</td></tr>`;}).join('')
     +`</tbody></table></div><div class="sub" style="margin:6px 0 14px;font-size:11px">Exact = perfect scoreline · Result = right winner/draw · Scorer = anytime-scorer bets that landed (excludes void/refunds). Counts in brackets.</div>`;
-  html+=`<div class="chips histchips"><button class="fchip on" data-hc="trail">💰 My money trail</button><button class="fchip" data-hc="results">⚽ Results</button><button class="fchip" data-hc="form">📈 Form guide</button></div>`;
+  html+=`<div class="chips histchips"><button class="fchip ${histTab==='trail'?'on':''}" data-hc="trail">💰 My money trail</button><button class="fchip ${histTab==='results'?'on':''}" data-hc="results">⚽ Results</button><button class="fchip ${histTab==='form'?'on':''}" data-hc="form">📈 Form guide</button></div>`;
   // 1) money trail
   let trail='';
   if(bonuses.length)trail+=`<div class="htbon"><b>Bonuses & specials: +${fmtMoney(bonusTot)}</b> <span class="sub">(added on top of your bets)</span><div class="htbonlist">${bonuses.map(b=>`<span class="htbontag">${b.label} <b>+${fmtMoney(b.amt)}</b></span>`).join('')}</div></div>`;
@@ -2092,11 +2092,11 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
       const nxt=nx?`<span class="hnext">→ ${opp} <small>(${cdShort(nx.dt)})</small></span>`:'<span class="sub" style="font-size:11px">—</span>';
       return `<div class="frow ${i<2?'q':''}"><span class="fpos">${i+1}</span><span class="fteam">${badge(r.nm)} ${r.nm}</span><span class="fpts">${r.pts}p</span><span class="fform">${dots}</span>${nxt}</div>`;}).join('');
     return `<div class="fgroup"><div class="fgh">Group ${g}</div>${body}</div>`;}).join('');
-  html+=`<div id="hcTrail" class="hcsec">${trail}</div><div id="hcResults" class="hcsec" style="display:none">${results}</div><div id="hcForm" class="hcsec" style="display:none">${form}</div>`;
+  html+=`<div id="hcTrail" class="hcsec" style="display:${histTab==='trail'?'':'none'}">${trail}</div><div id="hcResults" class="hcsec" style="display:${histTab==='results'?'':'none'}">${results}</div><div id="hcForm" class="hcsec" style="display:${histTab==='form'?'':'none'}">${form}</div>`;
   el.innerHTML=html;
   const hs=document.getElementById('histSel');if(hs)hs.onchange=()=>{histPlayer=hs.value;renderHistory();};
   el.querySelectorAll('.histchips .fchip').forEach(b=>b.onclick=()=>{el.querySelectorAll('.histchips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-    const k=b.dataset.hc;['trail','results','form'].forEach(s=>{const d=document.getElementById('hc'+s.charAt(0).toUpperCase()+s.slice(1));if(d)d.style.display=(s===k)?'':'none';});});
+    const k=b.dataset.hc;histTab=k;['trail','results','form'].forEach(s=>{const d=document.getElementById('hc'+s.charAt(0).toUpperCase()+s.slice(1));if(d)d.style.display=(s===k)?'':'none';});});
   el.querySelectorAll('.htfchips .fchip').forEach(b=>b.onclick=()=>{el.querySelectorAll('.htfchips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.dataset.htf;el.querySelectorAll('#hcTrail .htrow').forEach(r=>{r.style.display=(f==='all'||r.dataset.bt===f)?'':'none';});});
 }
 function rr(c,x0,y0,w,h,r){c.beginPath();c.moveTo(x0+r,y0);c.arcTo(x0+w,y0,x0+w,y0+h,r);c.arcTo(x0+w,y0+h,x0,y0+h,r);c.arcTo(x0,y0+h,x0,y0,r);c.arcTo(x0,y0,x0+w,y0,r);c.closePath();}
