@@ -634,6 +634,9 @@
   .htmain{flex:1;min-width:0}
   .httitle{font-weight:700;font-size:13.5px}
   .htsub{font-size:11.5px;color:var(--mut);margin-top:2px}
+  .bttag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:1px 6px;border-radius:6px;margin-right:7px;vertical-align:1px}
+  .bt-score{background:rgba(91,149,255,.16);color:#9cc0ff} .bt-side{background:rgba(31,230,171,.16);color:#5fe3c0} .bt-market{background:rgba(245,196,107,.16);color:#f5c46b} .bt-special{background:rgba(200,140,255,.16);color:#d2a9ff}
+  .htfchips{margin:2px 0 12px}
   .htright{text-align:right;white-space:nowrap}
   .htnet{font-weight:800;font-size:14px}
   .htnet.pos{color:var(--acc)} .htnet.neg{color:var(--live)} .htnet.void{color:var(--mut);font-weight:700;font-size:12px}
@@ -1045,7 +1048,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-au';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-av';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2026,13 +2029,15 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   let trail='';
   if(bonuses.length)trail+=`<div class="htbon"><b>Bonuses & specials: +${fmtMoney(bonusTot)}</b> <span class="sub">(added on top of your bets)</span><div class="htbonlist">${bonuses.map(b=>`<span class="htbontag">${b.label} <b>+${fmtMoney(b.amt)}</b></span>`).join('')}</div></div>`;
   if(!evs.length)trail+=`<div class="empty">No settled bets yet for ${p}. Once matches finish, every win and loss shows up here with a running bank.</div>`;
-  else trail+=evs.slice().reverse().map(e=>{const win=e.net>0,loss=e.net<0,voidb=e.kind==='void';let head,brk,cls;
+  else trail+=`<div class="chips htfchips"><button class="fchip on" data-htf="all">All</button><button class="fchip" data-htf="score">⚽ Score picks</button><button class="fchip" data-htf="side">🎯 Side bets</button><button class="fchip" data-htf="market">📊 Markets</button><button class="fchip" data-htf="special">💫 Specials</button></div>`+evs.slice().reverse().map(e=>{const win=e.net>0,loss=e.net<0,voidb=e.kind==='void';let head,brk,cls;
+    const cat=e.kind==='pred'?'score':e.kind==='side'?'side':(e.kind==='mkt'||e.kind==='ht')?'market':e.kind==='void'?(/scorer|over|under|btts/i.test(e.sub)?'side':/win|draw/i.test(e.sub)?'market':'special'):'special';
+    const btLabel=e.kind==='pred'?'Score':e.kind==='side'?(/^Over|^Under/.test(e.sub)?'O/U':/^BTTS/.test(e.sub)?'BTTS':/^Scorer/.test(e.sub)?'Scorer':'Side'):e.kind==='mkt'?'Market':e.kind==='ht'?'Half-time':e.kind==='acca'?'Acca':e.kind==='duel'?'Duel':e.kind==='cash'?'Cash-out':'Refund';
     if(e.kind==='cash'){cls=e.net>=0?'pos':'neg';head=fmtMoney((e.stake||0)+e.net)+' back';brk='cashed out early';}
     else if(win){cls='pos';head=fmtMoney((e.stake||0)+e.net)+' back';brk=`${fmtMoney(e.stake||0)} stake + ${fmtMoney(e.net)} winnings`;}
     else if(loss){cls='neg';head='−'+fmtMoney(-e.net);brk=`${fmtMoney(e.stake||0)} stake lost`;}
     else if(voidb){cls='void';head='refunded';brk=`${fmtMoney(e.stake||0)} stake back`;}
     else{cls='void';head=e.pts?e.pts+' pts':'$0';brk='no wager';}
-    return `<div class="htrow"><div class="htmain"><div class="httitle">${e.title}</div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${head}</div><div class="htbreak">${brk}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
+    return `<div class="htrow" data-bt="${cat}"><div class="htmain"><div class="httitle"><span class="bttag bt-${cat}">${btLabel}</span>${e.title}</div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${head}</div><div class="htbreak">${brk}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
     +`<div class="htstart">Wins show your <b>full return</b> — your stake plus winnings. Your stake is never taken out of your bank, so only the winnings are new money. Started with ${fmtMoney(START_BAL)} · bank never drops below ${fmtMoney(FLOOR)}.</div>`;
   // 2) results archive
   const played=ALL.filter(isFT).sort((a,b)=>new Date(b.dt)-new Date(a.dt));
@@ -2054,6 +2059,7 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   const hs=document.getElementById('histSel');if(hs)hs.onchange=()=>{histPlayer=hs.value;renderHistory();};
   el.querySelectorAll('.histchips .fchip').forEach(b=>b.onclick=()=>{el.querySelectorAll('.histchips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     const k=b.dataset.hc;['trail','results','form'].forEach(s=>{const d=document.getElementById('hc'+s.charAt(0).toUpperCase()+s.slice(1));if(d)d.style.display=(s===k)?'':'none';});});
+  el.querySelectorAll('.htfchips .fchip').forEach(b=>b.onclick=()=>{el.querySelectorAll('.htfchips .fchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.dataset.htf;el.querySelectorAll('#hcTrail .htrow').forEach(r=>{r.style.display=(f==='all'||r.dataset.bt===f)?'':'none';});});
 }
 function rr(c,x0,y0,w,h,r){c.beginPath();c.moveTo(x0+r,y0);c.arcTo(x0+w,y0,x0+w,y0+h,r);c.arcTo(x0+w,y0+h,x0,y0+h,r);c.arcTo(x0,y0+h,x0,y0,r);c.arcTo(x0,y0,x0+w,y0,r);c.closePath();}
 function shareCard(){
