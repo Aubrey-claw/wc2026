@@ -396,6 +396,18 @@
   .quizc.locked{opacity:.6;border-style:dashed}
   /* over/under */
   .wstrip.ou .outog{display:flex;gap:8px}
+  .insights{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin:8px 0}
+  .inshd{font-size:12px;font-weight:800;color:var(--gold);margin-bottom:7px}.inshd .inssub{font-weight:500;color:var(--mut)}
+  .insmls{font-size:13px;margin-bottom:8px}.insmls b{font-size:14px}.insmls .sub{font-size:11px}
+  .insgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .inscol{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+  .inst{font-size:12px;font-weight:700;margin-bottom:4px}.insf{display:flex;gap:3px;margin-bottom:4px}.insn{font-size:10.5px;color:var(--mut)}
+  .inslean{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+  .insp{font-size:11px;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:3px 8px;color:var(--mut)}.insp b{color:var(--acc2);font-weight:800}
+  .insscr{font-size:11.5px;line-height:1.9}.insscr .inslbl{color:var(--mut);font-size:10.5px}
+  .insc{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px 8px;margin:0 3px;font-size:11px;font-weight:700;color:var(--txt);cursor:pointer}
+  .insc:hover{border-color:var(--acc);color:var(--acc)}
+  .insteam{margin-right:6px}
   .oubtn,.bbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
   .oubtn:hover,.bbtn:hover{border-color:var(--acc2);color:var(--acc2)}
   .oubtn.on,.bbtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
@@ -1049,7 +1061,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-aw';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-ax';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1684,6 +1696,23 @@ function syncPredict(){
     el.innerHTML=fresh.innerHTML;el._sig=html;if(wasOpen){const nd=el.querySelector('.mktwrap');if(nd)nd.open=true;}
     bindPredict(el,p,canEdit);});
 }
+function teamFacts(team){const ms=ALL.filter(x=>isFT(x)&&(x.t1===team||x.t2===team));let gf=0,ga=0,btts=0,ov=0,cs=0;
+  ms.forEach(x=>{const home=x.t1===team,f=home?x.s1:x.s2,a=home?x.s2:x.s1;gf+=f;ga+=a;if(f>0&&a>0)btts++;if((x.s1+x.s2)>2.5)ov++;if(a===0)cs++;});
+  const n=ms.length||1;return {n:ms.length,avgGF:gf/n,avgGA:ga/n,bttsPct:Math.round(btts/n*100),over25Pct:Math.round(ov/n*100),cs};}
+function matchInsights(m){const a=teamFacts(m.t1),b=teamFacts(m.t2);const xg1=(a.avgGF+b.avgGA)/2,xg2=(b.avgGF+a.avgGA)/2,tot=xg1+xg2;
+  const ouLean=tot>=3.1?'leans Over 2.5':tot<=2.2?'leans Under 2.5':'line-ball';const bp=(a.bttsPct+b.bttsPct)/2,bttsLean=bp>=55?'likely Yes':bp<=35?'likely No':'line-ball';
+  return {a,b,xg1,xg2,ms1:Math.round(xg1),ms2:Math.round(xg2),ouLean,bttsLean,enough:a.n>=1&&b.n>=1};}
+function scorersFor(team,goalsBy){return (SQUAD[team]||[]).map(pn=>({pn,g:(goalsBy||{})[normName(pn)]||0})).filter(x=>x.g>0).sort((a,b)=>b.g-a.g);}
+function insightsHTML(m,goalsBy){const i=matchInsights(m);
+  if(!i.enough)return `<div class="insights"><div class="inshd">📊 Form &amp; facts</div><div class="insn">Not enough games played yet to read these two.</div></div>`;
+  const dots=t=>{const f=teamForm(t);return f.length?f.map(x=>`<span class="fdot ${x}">${x}</span>`).join(''):'<span class="insn">—</span>';};
+  const scList=(team)=>{const arr=scorersFor(team,goalsBy).slice(0,3);return arr.length?arr.map(x=>`<button class="insc" data-insc="${m.id}" data-pn="${x.pn}">${x.pn.split(' ').pop()} ${x.g}⚽</button>`).join(''):'<span class="insn">no scorers yet</span>';};
+  return `<div class="insights"><div class="inshd">📊 Form &amp; facts <span class="inssub">— to guide your bets</span></div>
+    <div class="insmls">Most likely score <b>${badge(m.t1)} ${i.ms1}–${i.ms2} ${badge(m.t2)}</b> <span class="sub">(expected goals ${i.xg1.toFixed(1)}–${i.xg2.toFixed(1)})</span></div>
+    <div class="insgrid"><div class="inscol"><div class="inst">${badge(m.t1)} ${m.t1}</div><div class="insf">${dots(m.t1)}</div><div class="insn">${i.a.avgGF.toFixed(1)} scored · ${i.a.avgGA.toFixed(1)} conceded /game</div></div>
+      <div class="inscol"><div class="inst">${badge(m.t2)} ${m.t2}</div><div class="insf">${dots(m.t2)}</div><div class="insn">${i.b.avgGF.toFixed(1)} scored · ${i.b.avgGA.toFixed(1)} conceded /game</div></div></div>
+    <div class="inslean"><span class="insp">Total goals <b>${i.ouLean}</b></span><span class="insp">Both score <b>${i.bttsLean}</b></span><span class="insp">Over 2.5 hit rate ${i.a.over25Pct}% / ${i.b.over25Pct}%</span></div>
+    <div class="insscr"><span class="inslbl">Likely scorers — tap to add to your bets:</span><br><span class="insteam">${badge(m.t1)} ${scList(m.t1)}</span> <span class="insteam">${badge(m.t2)} ${scList(m.t2)}</span></div></div>`;}
 function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
     let center,strip='',oustrip='';const sidep=(state.sidepicks[p]||{})[m.id]||{},oupick=sidep.ou,bpick=sidep.btts;
@@ -1711,7 +1740,7 @@ function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state
     const scTeamOpts=(team)=>(SQUAD[team]||[]).filter(pn=>!addedKeys.has(normName(pn))).sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0))
       .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' · '+g+'⚽':''}</option>`;}).join('');
     if(canEdit&&!locked){
-      oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
+      oustrip=insightsHTML(m,goalsBy)+`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
       if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
         oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
@@ -1765,6 +1794,8 @@ function bindPredict(root,p,canEdit){
       markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
     root.querySelectorAll('.scadd').forEach(s=>s.onchange=()=>{const id=s.dataset.sc,v=s.value;if(!v)return;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
       if(!o.scbets.some(x=>normName(x.p)===normName(v)))o.scbets.push({p:v,st:defSt(id)});saveSide(id);});
+    root.querySelectorAll('[data-insc]').forEach(b=>b.onclick=()=>{const id=b.dataset.insc,v=b.dataset.pn;const sp=state.sidepicks[p]=state.sidepicks[p]||{};const o=sp[id]=sp[id]||{};o.scbets=o.scbets||[];
+      if(o.scbets.some(x=>normName(x.p)===normName(v))){flash(v+' already in your scorer bets');return;}o.scbets.push({p:v,st:defSt(id)});flash('Added '+v+' — anytime scorer');saveSide(id);});
     root.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{const id=b.dataset.scst,i=+b.dataset.i,d=+b.dataset.d;const o=(state.sidepicks[p]||{})[id];if(!o||!o.scbets||!o.scbets[i])return;o.scbets[i].st=Math.max(MIN_WAGER,Math.min(sideCap(p),(o.scbets[i].st||0)+d*STAKE_STEP));
       const chip=b.closest('.scchip');if(chip){const wv=chip.querySelector('.wval');if(wv)wv.textContent=fmtMoney(o.scbets[i].st);const w=chip.querySelector('.scwin');if(w)w.textContent='→'+fmtMoney(Math.round(o.scbets[i].st*scBetOdds(o.scbets[i])));}
       markPendingSide(id);if(SB_ENABLED)sbSetSide(p,id);updateLeagueBar();scheduleLeaderboard();});
