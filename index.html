@@ -408,6 +408,7 @@
   .insc{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px 8px;margin:0 3px;font-size:11px;font-weight:700;color:var(--txt);cursor:pointer}
   .insc:hover{border-color:var(--acc);color:var(--acc)}
   .insteam{margin-right:6px}
+  .insshots{font-size:11.5px;margin-top:7px;line-height:1.8}
   .oubtn,.bbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
   .oubtn:hover,.bbtn:hover{border-color:var(--acc2);color:var(--acc2)}
   .oubtn.on,.bbtn.on{background:var(--acc2);color:#04121f;border-color:var(--acc2)}
@@ -1061,7 +1062,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-ay';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-az';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1112,7 +1113,8 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.teamShots={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+      if(typeof r.match_id==='string'&&r.match_id.slice(0,6)==='STATS|'){if(scb.length&&scb[0]){state.teamShots[r.match_id.slice(6)]=scb[0];shotCache[r.match_id.slice(6)]=scb[0];}return;}  // precomputed per-team shots-on-target cache under STATS|
       if(typeof r.match_id==='string'&&r.match_id.slice(0,3)==='HT|'){if(scb.length)(state.htbets[r.name]=state.htbets[r.name]||{})[r.match_id.slice(3)]=scb;return;}  // half-time live props stored under HT| namespace
       if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='MKT|'){if(scb.length)(state.mktbets[r.name]=state.mktbets[r.name]||{})[r.match_id.slice(4)]=scb;return;}  // extra fixed-odds markets stored under MKT| namespace
       if(r.match_id==='GG'){if(scb.length&&scb[0].gg)state.glovePick[r.name]=scb[0].gg;return;}  // Golden Glove tournament pick (team) stored under the GG row
@@ -1285,6 +1287,7 @@ const hasPick=pr=>pr&&pr[0]!=null&&pr[1]!=null;
 const liveData={};                         // match_id -> {status,prog,s1,s2,shots,ts}; populated later by the live feed, mutated in place
 const isLiveMatch=m=>kickedOff(m)&&!isFT(m)&&!!SQUAD[m.t1]&&!!SQUAD[m.t2];
 const ftLike=s=>/^(FT|Match Finished|AET|After Extra|PEN|Penalt)/i.test(s||'');
+const shotCache={};const shotQueue=[];let shotBusy=false;  // best-effort shots-on-target cache (team -> {sf,sa,n} | 'loading'); read by insightsHTML at init so it's hoisted here too
 // ================= MONEY (fantasy wagering) =================
 const START_BAL=1000, MIN_WAGER=10, FLOOR=10, DEFAULT_STAKE=50, STAKE_STEP=10, CHAMP_BONUS=500, OU_BONUS=40, BTTS_BONUS=30, GB_BONUS=400, SCORER_BONUS=80, QUAL_TEAM_BONUS=120, QUAL_PERFECT_BONUS=200, GLOVE_BONUS=400, SCORER_PTS=2;
 // SURVIVOR (last-man-standing knockout side-game): each KO round, back one team to advance; wrong = out; no team reuse.
@@ -1677,6 +1680,7 @@ function renderPredict(){
   wrap.innerHTML=htmls.join('');
   [...wrap.querySelectorAll('.mcard')].forEach((el,i)=>{el._sig=htmls[i];});  // signature → lets syncPredict skip unchanged cards
   bindPredict(wrap,p,canEdit);
+  queueShotsFor(list);                                          // lazily pull shots-on-target for the upcoming teams in view
 }
 // reconcile in place (used by renderAll on realtime/interval) — only swap cards whose content changed, so the list doesn't flicker
 function syncPredict(){
@@ -1706,12 +1710,14 @@ function scorersFor(team,goalsBy){return (SQUAD[team]||[]).map(pn=>({pn,g:(goals
 function insightsHTML(m,goalsBy){const i=matchInsights(m);
   if(!i.enough)return `<div class="insights"><div class="inshd">📊 Form &amp; facts</div><div class="insn">Not enough games played yet to read these two.</div></div>`;
   const dots=t=>{const f=teamForm(t);return f.length?f.map(x=>`<span class="fdot ${x}">${x}</span>`).join(''):'<span class="insn">—</span>';};
+  const shot=t=>{const s=shotCache[t];return s==='loading'?'<span class="insn">loading…</span>':(!s||!s.n)?'<span class="insn">building…</span>':'<b>'+s.sf+'</b> <span class="insn">/game (last '+s.n+')</span>';};
   const scList=(team)=>{const arr=scorersFor(team,goalsBy).slice(0,3);return arr.length?arr.map(x=>`<button class="insc" data-insc="${m.id}" data-pn="${x.pn}">${x.pn.split(' ').pop()} ${x.g}⚽</button>`).join(''):'<span class="insn">no scorers yet</span>';};
   return `<div class="insights"><div class="inshd">📊 Form &amp; facts <span class="inssub">— to guide your bets</span></div>
     <div class="insmls">Most likely score <b>${badge(m.t1)} ${i.ms1}–${i.ms2} ${badge(m.t2)}</b> <span class="sub">(expected goals ${i.xg1.toFixed(1)}–${i.xg2.toFixed(1)})</span></div>
     <div class="insgrid"><div class="inscol"><div class="inst">${badge(m.t1)} ${m.t1}</div><div class="insf">${dots(m.t1)}</div><div class="insn">${i.a.avgGF.toFixed(1)} scored · ${i.a.avgGA.toFixed(1)} conceded /game</div></div>
       <div class="inscol"><div class="inst">${badge(m.t2)} ${m.t2}</div><div class="insf">${dots(m.t2)}</div><div class="insn">${i.b.avgGF.toFixed(1)} scored · ${i.b.avgGA.toFixed(1)} conceded /game</div></div></div>
     <div class="inslean"><span class="insp">Total goals <b>${i.ouLean}</b></span><span class="insp">Both score <b>${i.bttsLean}</b></span><span class="insp">Over 2.5 hit rate ${i.a.over25Pct}% / ${i.b.over25Pct}%</span></div>
+    <div class="insshots">🎯 Shots on target: <span class="insteam">${badge(m.t1)} ${shot(m.t1)}</span> · <span class="insteam">${badge(m.t2)} ${shot(m.t2)}</span></div>
     <div class="insscr"><span class="inslbl">Likely scorers — tap to add to your bets:</span><br><span class="insteam">${badge(m.t1)} ${scList(m.t1)}</span> <span class="insteam">${badge(m.t2)} ${scList(m.t2)}</span></div></div>`;}
 function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state.preds[p][m.id]||[null,null,0,0];const stake=pr[2]||0;const picked=hasPick(pr);const jdbl=isJoker(p,m);
     const tag=m.ko?m.mno+(m.round?' · '+m.round:''):'GROUP '+m.group;
@@ -2308,7 +2314,7 @@ function statusLine(){const now=Date.now();const done=matches.filter(m=>m.status
   let s=`${done} group matches played`;if(next)s+=` · next: ${next.t1} v ${next.t2}`;
   document.getElementById('statusline').textContent=s;
   document.getElementById('foot').innerHTML='Times in Adelaide (ACST, UTC+9:30) &amp; Sydney (AEST, UTC+10), converted live. Everyone on the shared link plays one league, synced in real time. Predictions lock at kickoff and reveal to everyone then.';}
-document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');const _sec=document.getElementById(b.dataset.tab);_sec.classList.add('on');moOnce(b,'mo-pop',320);moOnce(_sec,'mo-page',300);if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}});
+document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));b.classList.add('on');const _sec=document.getElementById(b.dataset.tab);_sec.classList.add('on');moOnce(b,'mo-pop',320);moOnce(_sec,'mo-page',300);if(b.dataset.tab==='chat'){renderChat();const i=document.getElementById('chatText');if(i)i.focus();}else if(b.dataset.tab==='predict')renderPredict();});
 document.querySelectorAll('#tz button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tz button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tzMode=b.dataset.tz;renderAll();});
 
 function relTime(ts){const s=(Date.now()-new Date(ts).getTime())/1000;if(s<60)return 'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
@@ -2424,6 +2430,27 @@ function liveMin(d){if(!d)return 50;const st=(d.status||'')+'';if(/^(HT|Half)/i.
 // returns {R (locked return), net, lp, mult, score, prog} or null if no live score to price against / already cashed / not a real wager
 // values the player's WHOLE cashable position on a live match (score wager + O/U + BTTS + score-derived markets) off the near-live score.
 // scorers (no live scorer feed) + HT props are NOT cashable and settle normally. ahead→lock part of winnings; behind→part of stake back; scales with the minute.
+// SHOTS-ON-TARGET (best-effort) — lazy per-team fetch from TheSportsDB eventstats, throttled, DB-cached under STATS|. Resolution is partial (free feed), so we label sample size and degrade to "building…".
+async function eidFor(m){if(liveIdCache[m.id])return liveIdCache[m.id];
+  try{const q=encodeURIComponent((TSDB_TEAM[m.t1]||m.t1)+'_vs_'+(TSDB_TEAM[m.t2]||m.t2));
+    const j=await tsdbGet('https://www.thesportsdb.com/api/v1/json/3/searchevents.php?e='+q+'&s=2026');
+    const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
+    if(ev&&ev.idEvent){liveIdCache[m.id]=ev.idEvent;try{localStorage.setItem('wc2026-liveids',JSON.stringify(liveIdCache));}catch(e){}return ev.idEvent;}
+  }catch(e){}return null;}
+async function loadTeamShots(team){const _sl=ms=>new Promise(r=>setTimeout(r,ms));
+  const ms=ALL.filter(m=>isFT(m)&&(m.t1===team||m.t2===team)).sort((a,b)=>new Date(b.dt)-new Date(a.dt)).slice(0,4);
+  let sf=0,sa=0,n=0;
+  for(const m of ms){if(liveBackoff&&Date.now()<liveBackoff)break;const id=await eidFor(m);if(!id){await _sl(300);continue;}
+    try{const r=await tsdbGet('https://www.thesportsdb.com/api/v1/json/3/lookupeventstats.php?id='+id);const st=(r&&r.eventstats||[]).find(s=>s.strStat==='Shots on Goal');
+      if(st){const home=m.t1===team;sf+=(+(home?st.intHome:st.intAway))||0;sa+=(+(home?st.intAway:st.intHome))||0;n++;}}catch(e){}
+    await _sl(300);}
+  shotCache[team]=n>0?{sf:+(sf/n).toFixed(1),sa:+(sa/n).toFixed(1),n}:{n:0};if(n>0)sbSaveShots(team,shotCache[team]);}
+function queueTeamShots(team){if(!team||shotCache[team]!==undefined||!SQUAD[team])return;shotCache[team]='loading';shotQueue.push(team);processShotQueue();}
+function queueShotsFor(list){(list||[]).filter(m=>!isFT(m)).slice(0,20).forEach(m=>{queueTeamShots(m.t1);queueTeamShots(m.t2);});}
+async function processShotQueue(){if(shotBusy||!shotQueue.length)return;shotBusy=true;
+  while(shotQueue.length){const team=shotQueue.shift();try{await loadTeamShots(team);}catch(e){shotCache[team]={n:0};}if(typeof syncPredict==='function'){try{syncPredict();}catch(e){}}}
+  shotBusy=false;}
+async function sbSaveShots(team,data){if(!SB_ENABLED)return;try{await sb.from('sidepicks').upsert({name:'_shots',match_id:'STATS|'+team,scbets:[data],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){}}
 function cashOffer(p,m){if(cashedOf(p,m.id)!=null)return null;
   const d=liveData[m.id];const hasLive=d&&d.s1!=null&&d.s2!=null&&!ftLike(d.status);
   if(!hasLive){                                                 // live game but the feed has no in-play score -> always-available conservative time-decayed buyback ("blind")
