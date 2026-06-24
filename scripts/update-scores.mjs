@@ -93,4 +93,79 @@ function parseSquads(html) {
   console.log(`fixtures=${fixtures.length} eligible=${cand.length} needed=${need.length} wrote=${wrote.length} skipped=${skipped.length} elapsed=${Math.round((Date.now() - t0) / 1000)}s`);
   wrote.forEach(s => console.log('  + ' + s));
   skipped.forEach(s => console.log('  - ' + s));
+
+  // ====== PASS 2: ESPN STATS — fetch shots/corners/possession/cards/first-scorer/half-goals for FT matches missing STATS|<id>
+  // Source: ESPN public FIFA scoreboard (no key, no quota). Feeds the new betting markets.
+  console.log('--- pass2 espn stats ---');
+  const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+  const ESPN_ALIAS = { 'Bosnia-Herzegovina': 'Bosnia & Herzegovina', 'Congo DR': 'DR Congo', 'Czechia': 'Czech Republic', 'Türkiye': 'Turkey' };
+  const eNorm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/gi, '').toLowerCase();
+  const eOur = n => ESPN_ALIAS[n] || n;
+  const KEY_TO_NAME = { shotsOnTarget: 'sot', totalShots: 'sh', wonCorners: 'cor', possessionPct: 'pos', yellowCards: 'yel', redCards: 'red', foulsCommitted: 'fou', offsides: 'off', saves: 'sav' };
+  const halfOf = c => { if (!c) return null; const mm = parseInt(String(c).replace(/'/g, '').split('+')[0], 10); return isNaN(mm) ? null : (mm <= 45 ? 1 : 2); };
+
+  // 1) Which FT matches DON'T already have a STATS row?
+  const stRows = await sb('sidepicks?name=eq._stats&match_id=like.STATS|*&select=match_id').then(r => r.json()).catch(() => []);
+  const haveStats = new Set((stRows || []).map(r => r.match_id.slice(6)));
+  const ftAll = await sb('results?status=eq.FT&select=match_id,s1,s2').then(r => r.json()).catch(() => []);
+  const ftNeedStats = (ftAll || []).filter(r => !haveStats.has(r.match_id));
+  console.log(`stats: ${haveStats.size} stored, ${ftAll.length} FT total, ${ftNeedStats.length} missing`);
+  if (!ftNeedStats.length) { console.log('  (all caught up)'); process.exit(0); }
+
+  // 2) Build ESPN event map across WC dates
+  const wantDates = new Set(ftNeedStats.map(r => r.match_id.split('|')[0].slice(0, 10).replace(/-/g, '')));
+  const pair2evt = {};
+  for (const d of wantDates) {
+    try {
+      const j = await fetch(`${ESPN}/scoreboard?dates=${d}`).then(r => r.json()).catch(() => null);
+      for (const e of (j && j.events || [])) {
+        const cs = ((e.competitions || [])[0] || {}).competitors || []; if (cs.length < 2) continue;
+        const home = eOur(((cs.find(c => c.homeAway === 'home') || cs[0]).team || {}).displayName || '');
+        const away = eOur(((cs.find(c => c.homeAway === 'away') || cs[1]).team || {}).displayName || '');
+        const k1 = eNorm(home) + '|' + eNorm(away), k2 = eNorm(away) + '|' + eNorm(home);
+        pair2evt[k1] = { id: e.id, home, away }; pair2evt[k2] = { id: e.id, home, away };
+      }
+    } catch (e) { console.log('  scoreboard', d, e.message); }
+    await sleep(150);
+  }
+
+  // 3) Fetch summary + upsert per match
+  let sOk = 0, sErr = 0;
+  for (const r of ftNeedStats) {
+    const parts = r.match_id.split('|'); if (parts.length < 3) { sErr++; continue; }
+    const t1 = parts[1], t2 = parts[2];
+    const evt = pair2evt[eNorm(t1) + '|' + eNorm(t2)];
+    if (!evt) { console.log('  ESPN miss:', t1, 'v', t2); sErr++; continue; }
+    try {
+      const sum = await fetch(`${ESPN}/summary?event=${evt.id}`).then(x => x.json());
+      const teams = (sum.boxscore || {}).teams || [];
+      const home = teams.find(x => eOur(((x.team || {}).displayName) || '') === t1) || teams[0];
+      const away = teams.find(x => x !== home) || teams[1];
+      const num = v => { if (v == null) return null; const n = parseFloat(String(v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? null : n; };
+      const grab = (t, k) => { const s = ((t || {}).statistics || []).find(x => x.name === k); return s ? s.displayValue : null; };
+      const stats = {};
+      for (const [ek, ourk] of Object.entries(KEY_TO_NAME)) {
+        const h = num(grab(home, ek)), a = num(grab(away, ek));
+        if (h != null) stats[ourk + '1'] = h; if (a != null) stats[ourk + '2'] = a;
+      }
+      // first goalscorer (skip OG)
+      const goals = (sum.keyEvents || []).filter(e => /^Goal!/.test(e.text || '') && !/own goal/i.test(e.text || ''))
+        .sort((a, b) => { const am = parseInt((((a.clock || {}).displayValue || '0')).replace(/'/g, '').split('+')[0], 10), bm = parseInt((((b.clock || {}).displayValue || '0')).replace(/'/g, '').split('+')[0], 10); return am - bm; });
+      if (goals.length) { const m1 = (goals[0].text || '').match(/Goal!.*?\.\s*([^(]+?)\s*\(/); if (m1) stats.fstScr = m1[1].trim(); }
+      // half goals (counts goals + own goals — those count toward either half)
+      const allG = (sum.keyEvents || []).filter(e => /Goal|own goal/i.test(e.text || ''));
+      stats.h1g = allG.filter(g => halfOf(((g.clock || {}).displayValue)) === 1).length;
+      stats.h2g = allG.filter(g => halfOf(((g.clock || {}).displayValue)) === 2).length;
+      stats.espnId = evt.id;
+      const u = await sb('sidepicks?on_conflict=name,match_id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify([{ name: '_stats', match_id: 'STATS|' + r.match_id, scbets: [stats], updated_at: new Date().toISOString() }])
+      });
+      if (!u.ok) { console.log('  upsert err', t1, 'v', t2, u.status); sErr++; }
+      else { sOk++; console.log('  + stats', t1, 'v', t2, '— SoT', stats.sot1 + '/' + stats.sot2, '· corners', stats.cor1 + '/' + stats.cor2); }
+    } catch (e) { console.log('  summary err', t1, 'v', t2, e.message); sErr++; }
+    await sleep(200);
+  }
+  console.log(`stats: ok=${sOk} err=${sErr}`);
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
