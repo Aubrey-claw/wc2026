@@ -637,6 +637,7 @@
   .bttag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:1px 6px;border-radius:6px;margin-right:7px;vertical-align:1px}
   .bt-score{background:rgba(91,149,255,.16);color:#9cc0ff} .bt-side{background:rgba(31,230,171,.16);color:#5fe3c0} .bt-market{background:rgba(245,196,107,.16);color:#f5c46b} .bt-special{background:rgba(200,140,255,.16);color:#d2a9ff}
   .htfchips{margin:2px 0 12px}
+  .htdate{font-size:10.5px;font-weight:600;color:var(--mut);margin-left:7px;white-space:nowrap}
   .htright{text-align:right;white-space:nowrap}
   .htnet{font-weight:800;font-size:14px}
   .htnet.pos{color:var(--acc)} .htnet.neg{color:var(--live)} .htnet.void{color:var(--mut);font-weight:700;font-size:12px}
@@ -1048,7 +1049,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-av';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-aw';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2006,6 +2007,7 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
   const p=(histPlayer&&state.players.includes(histPlayer))?histPlayer:(me&&state.players.includes(me)?me:state.active||state.players[0]);
   const sel=`<div class="champrow" style="margin-bottom:14px"><span class="wlabel">Viewing</span><select id="histSel">${state.players.map(pl=>`<option value="${pl}"${pl===p?' selected':''}>${pl}${pl===me?' (you)':''}</option>`).join('')}</select></div>`;
   const evs=historyOf(p).sort((a,b)=>a.dt-b.dt);
+  const fmtDay=t=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,day:'numeric',month:'short'}).format(new Date(t));
   let bal=START_BAL;evs.forEach(e=>{bal=Math.max(FLOOR,bal+e.net);e._bal=bal;});
   const bonuses=historyBonuses(p),bonusTot=bonuses.reduce((s,x)=>s+x.amt,0);
   const bk=bankOf(p),cur=bk.bal;
@@ -2037,11 +2039,10 @@ function renderHistory(){const el=document.getElementById('histList');if(!el)ret
     else if(loss){cls='neg';head='−'+fmtMoney(-e.net);brk=`${fmtMoney(e.stake||0)} stake lost`;}
     else if(voidb){cls='void';head='refunded';brk=`${fmtMoney(e.stake||0)} stake back`;}
     else{cls='void';head=e.pts?e.pts+' pts':'$0';brk='no wager';}
-    return `<div class="htrow" data-bt="${cat}"><div class="htmain"><div class="httitle"><span class="bttag bt-${cat}">${btLabel}</span>${e.title}</div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${head}</div><div class="htbreak">${brk}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
+    return `<div class="htrow" data-bt="${cat}"><div class="htmain"><div class="httitle"><span class="bttag bt-${cat}">${btLabel}</span>${e.title}<span class="htdate">${fmtDay(e.dt)}</span></div><div class="htsub">${e.sub}</div></div><div class="htright"><div class="htnet ${cls}">${head}</div><div class="htbreak">${brk}</div><div class="htbal">bank ${fmtMoney(e._bal)}</div></div></div>`;}).join('')
     +`<div class="htstart">Wins show your <b>full return</b> — your stake plus winnings. Your stake is never taken out of your bank, so only the winnings are new money. Started with ${fmtMoney(START_BAL)} · bank never drops below ${fmtMoney(FLOOR)}.</div>`;
   // 2) results archive
   const played=ALL.filter(isFT).sort((a,b)=>new Date(b.dt)-new Date(a.dt));
-  const fmtDay=t=>new Intl.DateTimeFormat('en-AU',{timeZone:tzMode==='syd'?SYD:ADL,day:'numeric',month:'short'}).format(new Date(t));
   let results=`<div class="sub" style="margin:2px 0 10px">${played.length} matches played${played.length?' · most recent first':''}</div>`;
   results+=played.length?played.map(m=>{const w1=m.s1>m.s2,w2=m.s2>m.s1,tag=m.ko?m.mno:'Grp '+m.group;
     return `<div class="hres"><span class="hrtag">${tag}</span><span class="hrt ${w1?'win':''}">${badge(m.t1)} ${m.t1}</span><span class="hrsc">${m.s1}–${m.s2}</span><span class="hrt r ${w2?'win':''}">${m.t2} ${badge(m.t2)}</span><span class="hrd">${fmtDay(m.dt)}</span></div>`;}).join(''):`<div class="empty">No matches finished yet.</div>`;
