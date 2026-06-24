@@ -1045,7 +1045,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-at';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-au';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1293,7 +1293,7 @@ const scorerOdds=p=>SCORER_ODDS[normName(p)]||6.0;     // star 2.0 / regular 3.5
 // scorer bet helpers — a bet is {p, st, g?}; g>=2 = "2+ goals" (brace) at ~3× the anytime price. Centralised so every site agrees.
 function scGoals(m,p){return (m.scorers||[]).filter(x=>!isOwnGoal(x)&&scEq(x,p)).length;}
 function scBetOdds(b){const o=scorerOdds(b.p);return (b&&b.g>=2)?Math.round(o*30)/10:o;}
-function scBetSettle(m,b){if(!isFT(m))return 'open';if(scGoals(m,b.p)>=((b&&b.g)||1))return 'won';const rec=(m.scorers||[]).filter(x=>!isOwnGoal(x)).length;return rec>=(m.s1+m.s2)?'lost':'void';}  // void = feed incomplete & not yet hit
+function scBetSettle(m,b){if(!isFT(m))return 'open';if(scGoals(m,b.p)>=((b&&b.g)||1))return 'won';const rec=(m.scorers||[]).length;return rec>=(m.s1+m.s2)?'lost':'void';}  // completeness counts ALL recorded goal events incl. own goals (an OG is still a goal) so OG games can settle; scGoals still excludes OGs from a player's tally
 function scBetName(b){return b.p+((b&&b.g>=2)?' 2+':'');}
 function sideCap(p){return Math.max(MIN_WAGER,Math.min(100,Math.round(bankOf(p).bal*0.25)));}  // single side-bet cap = min($100, 25% of bank)
 function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&!(s.scbets&&s.scbets.length)&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))t+=SCORER_BONUS;});return t;}
