@@ -1438,14 +1438,14 @@ function csScoreOdds(m,pk){const ab=(pk||'').split('-');if(ab.length!==2)return 
   if(isNaN(a)||isNaN(c)||a<0||c<0||a>3||c>3)return 26;const e=csExpGoals(m);return csOddsP(poiss(a,e[0])*poiss(c,e[1]));}
 const MGN_LABEL={h1:'Home by 1',h2:'Home by 2',h3:'Home by 3+',d:'Draw',a1:'Away by 1',a2:'Away by 2',a3:'Away by 3+'};
 // ESPN-stats markets (settle off state.matchStats blob — backfilled per match)
-const COR_LINE=9.5, SOT_LINE=8.5, CARD_LINE=4.5;            // total over/under thresholds (.5 = no push possible)
+const COR_LINE=9.5, SOT_LINE=8.5, CARD_LINE=3.5;            // total over/under thresholds (.5 = no push possible); CARD_LINE dropped 4.5→3.5 (WC avg ~3.5/match)
 const COR_TOT_ODDS={O:1.85,U:1.85}, SOT_TOT_ODDS={O:1.85,U:1.85}, CARD_TOT_ODDS={O:1.85,U:1.85};
 const HI_HALF_LABEL={'1':'1st half','2':'2nd half','T':'Tie / level halves'};
 const mstats=m=>m?(state.matchStats||{})[m.id]:null;
 function corMostOdds(m){const p=winProbs(m);return {H:oddsP(Math.max(0.2,Math.min(0.75,p.H+p.D*0.45))),A:oddsP(Math.max(0.2,Math.min(0.75,p.A+p.D*0.45)))};}
-function posDomOdds(m){const p=winProbs(m);return {H:oddsP(Math.max(0.15,Math.min(0.7,p.H*0.6+0.1))),A:oddsP(Math.max(0.15,Math.min(0.7,p.A*0.6+0.1)))};}
-function hiHalfOdds(){return {'1':2.2,'2':2.0,'T':4.5};}    // 2nd half historically slightly more goals; tie is rare
-function fstScrOdds(player){return Math.min(25,Math.max(3,Math.round(scorerOdds(player)*4*10)/10));}
+function posDomOdds(m){const p=winProbs(m);return {H:oddsP(Math.max(0.15,Math.min(0.6,p.H*0.45+0.05))),A:oddsP(Math.max(0.15,Math.min(0.6,p.A*0.45+0.05)))};} // 60%+ possession is rare even for favourites — base coef trimmed
+function hiHalfOdds(){return {'1':2.6,'2':2.4,'T':2.9};}    // 2nd half slightly favoured; level halves (~28-32%) re-priced from 4.5x → 2.9x
+function fstScrOdds(player){return Math.min(20,Math.max(3,Math.round(scorerOdds(player)*2.8*10)/10));}  // real-book FGS ≈ anytime × 2.8 (was ×4 — too generous)
 function mktSettle(b,m){if(!isFT(m))return 'open';const a=m.s1,c=m.s2;if(a==null||c==null)return 'open';
   const S=mstats(m);                                          // ESPN stats blob — null until backfilled
   const needStats=()=>{if(!S)return 'open';return null;};      // markets that depend on stats stay 'open' until they arrive (cron fills)
