@@ -1063,7 +1063,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-bd';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-be';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2563,30 +2563,75 @@ function htPanelHtml(m){
   const hd=open?'⏱ HALF-TIME PROPS · bet the 2nd half':'⏱ Your half-time bets';
   return `<div class="htbox"><div class="hthd">${hd}</div>${rows}${chip}</div>`;}
 async function fetchLiveOne(m){
+  try{await pullEspnLive(m);}catch(e){}                                  // ESPN FIRST: works mid-match, gives score + shots + corners + possession; runs even if TSDB fails for this match
   const T='https://www.thesportsdb.com/api/v1/json/3';let id=liveIdCache[m.id];
   if(!id){const q=encodeURIComponent(TSDB_TEAM[m.t1]||m.t1)+'_vs_'+encodeURIComponent(TSDB_TEAM[m.t2]||m.t2);
-    const j=await tsdbGet(T+'/searchevents.php?e='+q+'&s=2026');const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
+    const j=await tsdbGet(T+'/searchevents.php?e='+q+'&s=2026').catch(()=>null);const ev=(j&&j.event||[]).find(e=>/world cup/i.test(e.strLeague||''))||(j&&j.event||[])[0];
     if(!ev)return;id=ev.idEvent;liveIdCache[m.id]=id;try{localStorage.setItem('wc2026-liveids',JSON.stringify(liveIdCache));}catch(e){}applyLiveEv(m,ev);}
-  else{const j=await tsdbGet(T+'/lookupevent.php?id='+id);const ev=(j&&j.events||[])[0];if(ev)applyLiveEv(m,ev);}
+  else{const j=await tsdbGet(T+'/lookupevent.php?id='+id).catch(()=>null);const ev=(j&&j.events||[])[0];if(ev)applyLiveEv(m,ev);}
   try{const s=await tsdbGet(T+'/lookupeventstats.php?id='+id);const arr=(s&&s.eventstats)||[];
     const g=n=>{const r=arr.find(x=>(x.strStat||'').toLowerCase()===n);return r?{h:+r.intHome||0,a:+r.intAway||0}:null;};
-    if(liveData[m.id])liveData[m.id].shots={onTarget:g('shots on goal'),total:g('total shots'),inBox:g('shots insidebox')};}catch(e){}
+    // only overlay TSDB shots if ESPN didn't already give them
+    if(liveData[m.id]&&!(liveData[m.id].shots&&liveData[m.id].shots.onTarget))liveData[m.id].shots={onTarget:g('shots on goal'),total:g('total shots'),inBox:g('shots insidebox')};}catch(e){}
 }
+// ESPN live overlay — works during the match, includes corners + possession (the headline fixes for the live banner)
+const ESPN_BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+const ESPN_ALIAS={'Bosnia-Herzegovina':'Bosnia & Herzegovina','Congo DR':'DR Congo','Czechia':'Czech Republic','Türkiye':'Turkey'};
+const espnNorm=s=>(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/gi,'').toLowerCase();
+let espnIdCache={};try{espnIdCache=JSON.parse(localStorage.getItem('wc2026-espnids')||'{}');}catch(e){}
+let espnScoreboardCache={ymd:null,map:{},ts:0};
+async function espnIdFor(m){
+  if(espnIdCache[m.id])return espnIdCache[m.id];
+  const ymd=m.dt.slice(0,10).replace(/-/g,'');
+  if(espnScoreboardCache.ymd!==ymd||Date.now()-espnScoreboardCache.ts>120000){
+    const sb=await fetch(`${ESPN_BASE}/scoreboard?dates=${ymd}`).then(r=>r.json()).catch(()=>null);
+    const map={};
+    for(const e of ((sb&&sb.events)||[])){const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;
+      const h=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName]||((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName);
+      const a=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName]||((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName);
+      map[espnNorm(h)+'|'+espnNorm(a)]=e.id;map[espnNorm(a)+'|'+espnNorm(h)]=e.id;}
+    espnScoreboardCache={ymd,map,ts:Date.now()};}
+  const id=espnScoreboardCache.map[espnNorm(m.t1)+'|'+espnNorm(m.t2)];
+  if(id){espnIdCache[m.id]=id;try{localStorage.setItem('wc2026-espnids',JSON.stringify(espnIdCache));}catch(e){}}
+  return id;}
+async function pullEspnLive(m){const id=await espnIdFor(m);if(!id)return;
+  const sum=await fetch(`${ESPN_BASE}/summary?event=${id}`).then(r=>r.json()).catch(()=>null);if(!sum)return;
+  // live score from header
+  const comp=((sum.header||{}).competitions||[])[0]||{};const cs=comp.competitors||[];
+  const home=cs.find(c=>c.homeAway==='home')||cs[0]||{},away=cs.find(c=>c.homeAway==='away')||cs[1]||{};
+  const ts=((comp.status||{}).type||{}).shortDetail||((comp.status||{}).type||{}).description||'';
+  const period=(comp.status||{}).period,clock=(comp.status||{}).displayClock;
+  liveData[m.id]=liveData[m.id]||{};const d=liveData[m.id];
+  if(home.score!=null)d.s1=+home.score;if(away.score!=null)d.s2=+away.score;
+  if(period===1)d.status='1H';else if(period===2)d.status='2H';else if(/^HT|Half/i.test(ts))d.status='HT';else if(/Full|FT/i.test(ts))d.status='FT';else d.status=d.status||ts;
+  if(clock)d.prog=clock.replace(/'/g,'');
+  d.ts=Date.now();
+  // stats overlay from boxscore
+  const teams=((sum.boxscore||{}).teams)||[];const homeT=teams.find(x=>(x.team||{}).id===home.id)||teams[0];const awayT=teams.find(x=>x!==homeT)||teams[1];
+  const grab=(t,k)=>{const s=((t||{}).statistics||[]).find(x=>x.name===k);return s?(parseFloat(String(s.displayValue).replace(/[^\d.\-]/g,''))||0):null;};
+  const pair=k=>{const h=grab(homeT,k),a=grab(awayT,k);return (h==null&&a==null)?null:{h:h||0,a:a||0};};
+  const sot=pair('shotsOnTarget'),sh=pair('totalShots'),cor=pair('wonCorners'),pos=pair('possessionPct');
+  if(sot||sh)d.shots={onTarget:sot||(d.shots||{}).onTarget,total:sh||(d.shots||{}).total,inBox:(d.shots||{}).inBox};
+  if(cor)d.corners=cor;if(pos)d.possession=pos;}
+// "live in ESPN's eyes" — match scheduled within ±4h or already showing non-FT liveData. Handles app-clock-vs-real-clock offsets (some app dts are off from reality).
+const espnLiveCandidate=m=>{const t=Math.abs(Date.now()-new Date(m.dt).getTime());if(t<=4*3600000&&!isFT(m)&&SQUAD[m.t1]&&SQUAD[m.t2])return true;const d=liveData[m.id];return !!(d&&d.s1!=null&&!ftLike(d.status));};
 async function refreshLive(){
   if(!SB_ENABLED||document.hidden||Date.now()<liveBackoff)return;
-  const live=ALL.filter(isLiveMatch);if(!live.length){renderLive();return;}
-  for(const m of live.slice(0,3)){try{await fetchLiveOne(m);}catch(e){if(String(e.message).includes('429'))break;}await sleep2(800);}
+  // wider net than strict kickedOff() — catches matches that started before m.dt per ESPN
+  const live=ALL.filter(espnLiveCandidate);if(!live.length){renderLive();return;}
+  for(const m of live.slice(0,4)){try{await fetchLiveOne(m);}catch(e){if(String(e.message).includes('429'))break;}await sleep2(600);}
   renderLive();
 }
 function lpct(h,a){const t=(h||0)+(a||0);return t?Math.round(h/t*100):50;}
 function renderLive(){
   const el=document.getElementById('liveWrap');if(!el)return;
-  const live=ALL.filter(isLiveMatch).filter(m=>liveData[m.id]&&!ftLike(liveData[m.id].status));
+  const live=ALL.filter(m=>liveData[m.id]&&liveData[m.id].s1!=null&&!ftLike(liveData[m.id].status));
   if(!live.length){el.innerHTML='';return;}
   const bar=(lbl,v)=>v&&(v.h||v.a)?`<div class="lstat"><span class="lslbl">${lbl}</span><div class="lsbar"><span class="lsh" style="width:${lpct(v.h,v.a)}%"></span></div><span class="lsv">${v.h} · ${v.a}</span></div>`:'';
   el.innerHTML=`<div class="liveband"><span class="livedot"></span>NEAR-LIVE · may trail your TV by a minute or two</div>`+live.map(m=>{const d=liveData[m.id];const sh=d.shots||{};
     const sc=(d.s1!=null?d.s1:'–')+'  '+(d.s2!=null?d.s2:'–');const clk=d.prog?d.prog+"'":(d.status||'LIVE');
-    const stats=(sh.onTarget||sh.total||sh.inBox)?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Shots in box',sh.inBox)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">shot stats loading…</div>';
+    const anyStat=sh.onTarget||sh.total||sh.inBox||d.corners||d.possession;
+    const stats=anyStat?`<div class="lstats">${bar('Shots on target',sh.onTarget)}${bar('Total shots',sh.total)}${bar('Corners',d.corners)}${bar('Possession %',d.possession)}</div>`:'<div class="sub" style="text-align:center;padding:6px 0">stats loading…</div>';
     const co=me?cashOffer(me,m):null;
     const cashRow=co?`<div class="lvcash"><span class="sub">cash out ${co.parts.join(' + ')}${co.blind?' · est., no live score':''}</span><button class="cashbtn ${co.net>=0?'up':'dn'}" data-cash="${m.id}">💵 Cash out ${fmtMoney(co.R)}</button></div>`:'';
     return `<div class="livecard"><div class="lvtop"><span class="lvteam">${badge(m.t1)} ${m.t1}</span><span class="lvscore">${sc}</span><span class="lvteam r">${m.t2} ${badge(m.t2)}</span></div><div class="lvclk"><span class="livechip">● ${clk}</span></div>${stats}${cashRow}${htPanelHtml(m)}</div>`;}).join('');
