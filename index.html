@@ -1062,7 +1062,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-24-ba';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-24-bb';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1680,7 +1680,6 @@ function renderPredict(){
   wrap.innerHTML=htmls.join('');
   [...wrap.querySelectorAll('.mcard')].forEach((el,i)=>{el._sig=htmls[i];});  // signature → lets syncPredict skip unchanged cards
   bindPredict(wrap,p,canEdit);
-  queueShotsFor(list);                                          // lazily pull shots-on-target for the upcoming teams in view
 }
 // reconcile in place (used by renderAll on realtime/interval) — only swap cards whose content changed, so the list doesn't flicker
 function syncPredict(){
@@ -1746,7 +1745,7 @@ function mcardHTML(m,p,canEdit,goalsBy){const locked=kickedOff(m);const pr=state
     const scTeamOpts=(team)=>(SQUAD[team]||[]).filter(pn=>!addedKeys.has(normName(pn))).sort((a,b)=>(goalsBy[normName(b)]||0)-(goalsBy[normName(a)]||0))
       .map(pn=>{const g=goalsBy[normName(pn)]||0;return `<option value="${pn}">${pn} (${scorerOdds(pn)}x)${g?' · '+g+'⚽':''}</option>`;}).join('');
     if(canEdit&&!locked){
-      oustrip=insightsHTML(m,goalsBy)+`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
+      oustrip=`<div class="wstrip ou"><span class="wlabel">Total goals</span><div class="outog"><button class="oubtn ${oupick==='O'?'on':''}" data-ou="${m.id}" data-v="O">Over 2.5 <b>${OU_ODDS.O}x</b></button><button class="oubtn ${oupick==='U'?'on':''}" data-ou="${m.id}" data-v="U">Under 2.5 <b>${OU_ODDS.U}x</b></button></div>${oupick?stepHTML('ou',ouSt,OU_ODDS[oupick]):'<span class="wreturn">tap to bet</span>'}</div>`
         +`<div class="wstrip ou"><span class="wlabel">Both teams score</span><div class="outog"><button class="bbtn ${bpick==='Y'?'on':''}" data-bt="${m.id}" data-v="Y">Yes <b>${BTTS_ODDS.Y}x</b></button><button class="bbtn ${bpick==='N'?'on':''}" data-bt="${m.id}" data-v="N">No <b>${BTTS_ODDS.N}x</b></button></div>${bpick?stepHTML('bt',btSt,BTTS_ODDS[bpick]):'<span class="wreturn">tap to bet</span>'}</div>`;
       if(haveT1||haveT2){const partial=m.ko&&(haveT1!==haveT2);
         oustrip+=`<div class="wstrip ou col"><div class="wlabel">Anytime scorer <span class="sub" style="font-weight:400">— pick as many as you like${partial?'; other side unlocks when decided':''}</span></div>`
