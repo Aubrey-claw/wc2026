@@ -110,7 +110,7 @@ function parseSquads(html) {
   const ftAll = await sb('results?status=eq.FT&select=match_id,s1,s2').then(r => r.json()).catch(() => []);
   const ftNeedStats = (ftAll || []).filter(r => !haveStats.has(r.match_id));
   console.log(`stats: ${haveStats.size} stored, ${ftAll.length} FT total, ${ftNeedStats.length} missing`);
-  if (!ftNeedStats.length) { console.log('  (all caught up)'); process.exit(0); }
+  if (!ftNeedStats.length) console.log('  (all caught up)');
 
   // 2) Build ESPN event map across WC dates
   const wantDates = new Set(ftNeedStats.map(r => r.match_id.split('|')[0].slice(0, 10).replace(/-/g, '')));
@@ -168,4 +168,43 @@ function parseSquads(html) {
     await sleep(200);
   }
   console.log(`stats: ok=${sOk} err=${sErr}`);
+
+  // ====== PASS 3: CLAUDE'S MISSING PICKS — deterministic backfill.
+  // Replaces the unreliable agent-driven daily task. Ensures Claude has a score-wager pick for EVERY upcoming match, every 15 min. Idempotent — never overwrites an existing pick.
+  console.log('--- pass3 claude picks ---');
+  const STRONG = new Set(['Brazil','France','Spain','Argentina','England','Germany','Portugal','Netherlands']);
+  const MID = new Set(['Belgium','Croatia','Uruguay','Morocco','Colombia','Mexico','United States','Senegal','Japan','Switzerland','Norway','Canada','Ivory Coast','Sweden','Turkey','South Korea','Australia','Paraguay']);
+  const tier = t => STRONG.has(t) ? 3 : MID.has(t) ? 2 : 1;            // 3=strong, 2=mid, 1=rest
+  // pick a scoreline (home, away, stake) from the matchup. Picks reflect WC2026 form patterns: stronger team wins by 1-2, equal tiers lean draw/close, big mismatches are 3-0.
+  function claudePick(h, a) {
+    const th = tier(h), ta = tier(a);
+    const d = th - ta;
+    if (d === 2)  return [3, 0, 80];   // strong vs weak
+    if (d === 1)  return [2, 0, 60];   // strong vs mid OR mid vs weak
+    if (d === 0)  return th === 3 ? [1, 1, 70] : th === 2 ? [2, 1, 60] : [1, 1, 50];  // equal — high-tier draw, mid-tier home edge, low-low draw
+    if (d === -1) return [0, 2, 60];   // weak vs mid OR mid vs strong
+    if (d === -2) return [0, 3, 80];   // weak vs strong
+    return [1, 1, 50];
+  }
+  // who has Claude already picked?
+  const cp = await sb('predictions?name=eq.Claude&select=match_id').then(r => r.json()).catch(() => []);
+  const havePick = new Set((cp || []).map(r => r.match_id));
+  // upcoming matches: future dt, both teams have squads, not yet predicted
+  const nowT = Date.now();
+  const upcoming = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() > nowT && !havePick.has(m.id));
+  console.log(`claude: already has ${havePick.size} picks; ${upcoming.length} upcoming need picks`);
+  let cOk = 0, cErr = 0;
+  for (const m of upcoming) {
+    const [home, away, stake] = claudePick(m.t1, m.t2);
+    const body = [{ name: 'Claude', match_id: m.id, home, away, stake, joker: false, updated_at: new Date().toISOString() }];
+    const r = await sb('predictions?on_conflict=name,match_id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) { console.log('  upsert err', m.t1, 'v', m.t2, r.status); cErr++; }
+    else { cOk++; console.log(`  + claude ${m.t1} ${home}-${away} ${m.t2} $${stake}`); }
+    await sleep(120);
+  }
+  console.log(`claude: added=${cOk} err=${cErr}`);
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
