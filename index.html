@@ -1065,7 +1065,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-25-bg';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-25-bh';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2584,18 +2584,20 @@ const ESPN_BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world
 const ESPN_ALIAS={'Bosnia-Herzegovina':'Bosnia & Herzegovina','Congo DR':'DR Congo','Czechia':'Czech Republic','Türkiye':'Turkey'};
 const espnNorm=s=>(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/gi,'').toLowerCase();
 let espnIdCache={};try{espnIdCache=JSON.parse(localStorage.getItem('wc2026-espnids')||'{}');}catch(e){}
-let espnScoreboardCache={ymd:null,map:{},ts:0};
+let espnScoreboardCache={key:null,map:{},ts:0};
 async function espnIdFor(m){
   if(espnIdCache[m.id])return espnIdCache[m.id];
-  const ymd=m.dt.slice(0,10).replace(/-/g,'');
-  if(espnScoreboardCache.ymd!==ymd||Date.now()-espnScoreboardCache.ts>120000){
-    const sb=await fetch(`${ESPN_BASE}/scoreboard?dates=${ymd}`).then(r=>r.json()).catch(()=>null);
+  // ESPN sometimes catalogs a match on the day BEFORE the app's stored dt (timezone difference): a 23:00 BST kickoff = 22:00 UTC = previous-day UTC. So scan a 3-day window around m.dt.
+  const t=new Date(m.dt).getTime();const days=[t-86400000,t,t+86400000].map(x=>new Date(x).toISOString().slice(0,10).replace(/-/g,''));
+  const key=days.join(',');
+  if(espnScoreboardCache.key!==key||Date.now()-espnScoreboardCache.ts>120000){
     const map={};
-    for(const e of ((sb&&sb.events)||[])){const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;
-      const h=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName]||((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName);
-      const a=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName]||((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName);
-      map[espnNorm(h)+'|'+espnNorm(a)]=e.id;map[espnNorm(a)+'|'+espnNorm(h)]=e.id;}
-    espnScoreboardCache={ymd,map,ts:Date.now()};}
+    for(const ymd of days){const sb=await fetch(`${ESPN_BASE}/scoreboard?dates=${ymd}`).then(r=>r.json()).catch(()=>null);
+      for(const e of ((sb&&sb.events)||[])){const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;
+        const h=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName]||((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName);
+        const a=(ESPN_ALIAS[((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName]||((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName);
+        map[espnNorm(h)+'|'+espnNorm(a)]=e.id;map[espnNorm(a)+'|'+espnNorm(h)]=e.id;}}
+    espnScoreboardCache={key,map,ts:Date.now()};}
   const id=espnScoreboardCache.map[espnNorm(m.t1)+'|'+espnNorm(m.t2)];
   if(id){espnIdCache[m.id]=id;try{localStorage.setItem('wc2026-espnids',JSON.stringify(espnIdCache));}catch(e){}}
   return id;}
