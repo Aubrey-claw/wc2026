@@ -1065,7 +1065,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-26-bj';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-26-bk';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2204,7 +2204,7 @@ function renderBoard(){
           res=`<span class="pillpts ${pts===0?'zero':''}">${pts>0?'✓ ':''}+${pts*(jk?2:1)}</span><span class="bnet ${net>0?'win':net<0?'loss':''}">${net>0?'✓ +'+fmtMoney(net):net<0?'✗ −'+fmtMoney(stake*(jk?2:1)):'—'}</span>`;}
         return `<div class="bpick"><span class="bpl">${avatar(pl)}<span class="bnm">${pl}${pl===me?' (you)':''}</span></span><span class="bsc">${pr[0]}–${pr[1]}${jk?' <span class="jchip">★2×</span>':''}</span><span class="bwg">${fmtMoney(stake)}</span>${res}</div>`;}).filter(Boolean).join('');
       body=rows||'<div class="bhidden">No picks were made for this match.</div>';}
-    const oup=state.players.map(pl=>{const s=(state.sidepicks[pl]||{})[m.id];const scb=(s&&s.scbets)||[];if(!s||(!s.ou&&!s.btts&&!s.scorer&&!scb.length))return '';
+    const oup=state.players.map(pl=>{if(!revealed&&HIDDEN_PLAYERS.has(pl))return '';const s=(state.sidepicks[pl]||{})[m.id];const scb=(s&&s.scbets)||[];if(!s||(!s.ou&&!s.btts&&!s.scorer&&!scb.length))return '';
       const gx=ok=>ft?(ok?'✓ ':'✗ '):'';const amt=v=>v>0?' '+fmtMoney(v):'';
       const scoredP=name=>(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,name));
       const ou=s.ou?`<span class="oubadge ${ft?(s.ou===ouResult(m)?'win':'loss'):''}">${gx(s.ou===ouResult(m))}${s.ou==='O'?'Over 2.5':'Under 2.5'}${amt(s.ouStake)}</span>`:'';
