@@ -1065,7 +1065,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-25-bh';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-26-bi';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1075,6 +1075,8 @@ const ME_KEY='wc2026-me';
 let me=null;try{me=localStorage.getItem(ME_KEY)||null;}catch(e){}
 const qp=new URLSearchParams(location.search);
 const adminMode=!!ADMIN_SECRET&&!ADMIN_SECRET.startsWith('__')&&qp.get('admin')===ADMIN_SECRET;
+// PRIVATE SHADOW PLAYERS: present in the shared DB & played like everyone, but rendered ONLY for admin (Nobby via ?admin=KEY). Stripped from all state for non-admins so no render path can surface them.
+const HIDDEN_PLAYERS=new Set(['Claude Sharp']);
 const predTimers={};let loadT=null;
 const pendingMine={};const pendingT={};  // protects MY in-flight edits from being clobbered by a live reload
 function markPending(id){const v=(state.preds[me]||{})[id];if(!v)return;pendingMine[id]=v.slice();clearTimeout(pendingT[id]);pendingT[id]=setTimeout(()=>{delete pendingMine[id];},6000);}
@@ -1137,9 +1139,13 @@ async function sbLoadAll(){if(!sb)return;
     applyResults(rs.error?[]:rs.data);computeStandings();resolveBracket();
     const preds={};
     (pr.data||[]).forEach(r=>{const mine=r.name===me;const m=findMatch(r.match_id);const open=m?!kickedOff(m):false;
-      if(!mine&&open)return; // hide opponents' picks until kickoff
+      if(!mine&&open&&!(adminMode&&HIDDEN_PLAYERS.has(r.name)))return; // hide opponents' picks until kickoff (admin sees shadow players' upcoming picks too)
       (preds[r.name]=preds[r.name]||{})[r.match_id]=[r.home,r.away,r.stake||0,r.joker?1:0];});
     state.preds=preds;
+    // strip shadow players from EVERY per-player structure for non-admins → invisible in all render paths (leaderboard/board/pitch/scorers/history/glove/survivor)
+    if(!adminMode)HIDDEN_PLAYERS.forEach(nm=>{state.players=state.players.filter(n=>n!==nm);
+      ['preds','champion','topscorer','champOdds','sidepicks','htbets','mktbets','glovePick','survivor','cashouts','quiz','accas','groupquals'].forEach(k=>{if(state[k])delete state[k][nm];});
+      if(Array.isArray(state.duels))state.duels=state.duels.filter(d=>d.challenger!==nm&&d.opponent!==nm);});
     if(me){state.preds[me]=state.preds[me]||{};for(const id in pendingMine)state.preds[me][id]=pendingMine[id].slice();} // keep my in-flight edits
     if(me&&!state.players.includes(me))state.players.push(me);
     if(!state.active||!state.players.includes(state.active))state.active=me||state.players[0]||null;
