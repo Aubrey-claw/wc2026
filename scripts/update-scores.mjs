@@ -234,4 +234,57 @@ function parseSquads(html) {
     await sleep(120);
   }
   console.log(`claude side bets: added=${sOk2} err=${sErr2}`);
+
+  // ====== PASS 4: SMART CLAUDE ('Claude Sharp') — FORM-AWARE private picks (admin-only visible in app).
+  // Independent of pass 3's static tiers: builds REAL form (GF/GA/scorers/clean sheets) from results,
+  // derives score/OU/BTTS/scorer per upcoming match. Idempotent — never overwrites an existing pick.
+  console.log('--- pass4 claude sharp (form-aware) ---');
+  const SH = 'Claude Sharp';
+  const normN = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const freshRes = await sb('results?status=eq.FT&select=match_id,s1,s2,scorers').then(r => r.json()).catch(() => []);
+  const fT = {}, gBy = {}, cSh = {};
+  for (const r of (freshRes || [])) {
+    const p = r.match_id.split('|'); if (p.length < 3) continue;
+    const t1 = p[1], t2 = p[2], s1 = r.s1, s2 = r.s2;
+    for (const row of [[t1, s1, s2], [t2, s2, s1]]) {
+      const tt = row[0], gf = row[1], ga = row[2];
+      const e = fT[tt] || (fT[tt] = { n: 0, gf: 0, ga: 0 }); e.n++; e.gf += gf; e.ga += ga;
+      if (ga === 0) cSh[tt] = (cSh[tt] || 0) + 1;
+    }
+    for (let nm of (r.scorers || '').split(',')) { nm = nm.trim(); if (!nm || /\(OG\)/.test(nm)) continue; gBy[normN(nm)] = (gBy[normN(nm)] || 0) + 1; }
+  }
+  const shPrior = t => STRONG.has(t) ? [1.9, 0.8] : MID.has(t) ? [1.2, 1.1] : [0.7, 1.9];
+  const shRates = t => { const e = fT[t] || { n: 0, gf: 0, ga: 0 }; const pr = shPrior(t); return [(e.gf + pr[0]) / (e.n + 1), (e.ga + pr[1]) / (e.n + 1)]; };
+  const clampn = x => Math.max(0, Math.min(5, Math.round(x)));
+  const topScorerFor = team => { const pls = squad[team] || []; let best = null, bg = -1, bi = 99; pls.forEach((p, i) => { const g = gBy[normN(p)] || 0; if (g > bg || (g === bg && i < bi)) { bg = g; bi = i; best = p; } }); return best; };
+  function sharpPick(t1, t2) {
+    const a = shRates(t1), b = shRates(t2);
+    const xgH = (a[0] + b[1]) / 2, xgA = (b[0] + a[1]) / 2;
+    let home = clampn(xgH), away = clampn(xgA);
+    if (home === 0 && away === 0) { if (xgH >= xgA) home = 1; else away = 1; }
+    const tot = xgH + xgA, conf = Math.abs(xgH - xgA);
+    const stake = Math.min(100, Math.max(40, Math.round((40 + conf * 45) / 10) * 10));
+    const ou = tot >= 2.7 ? 'O' : 'U';
+    const btts = Math.min(xgH, xgA) >= 0.9 ? 'Y' : 'N';
+    const fav = xgH >= xgA ? t1 : t2;
+    return { home, away, stake, ou, btts, scorer: topScorerFor(fav), conf };
+  }
+  const shHave = new Set((await sb('predictions?name=eq.' + encodeURIComponent(SH) + '&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id));
+  const shHaveSide = new Set((await sb('sidepicks?name=eq.' + encodeURIComponent(SH) + '&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id));
+  const shUpcoming = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() > Date.now() && !shHave.has(m.id));
+  console.log(`claude sharp: ${shHave.size} picks; ${shUpcoming.length} upcoming need picks`);
+  let shJoker = null, shJC = -1;
+  const shPicks = shUpcoming.map(m => { const pk = sharpPick(m.t1, m.t2); if (pk.conf > shJC) { shJC = pk.conf; shJoker = m.id; } return { m, pk }; });
+  let shP = 0, shS = 0;
+  for (const { m, pk } of shPicks) {
+    const r = await sb('predictions?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: m.id, home: pk.home, away: pk.away, stake: pk.stake, joker: m.id === shJoker, updated_at: new Date().toISOString() }]) });
+    if (r.ok) shP++; else console.log('  sharp pred err', m.t1, 'v', m.t2, r.status);
+    if (!shHaveSide.has(m.id)) {
+      const scb = pk.scorer ? [{ p: pk.scorer, st: 25 }] : [];
+      const rr = await sb('sidepicks?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: m.id, ou: pk.ou, ou_stake: 25, btts: pk.btts, btts_stake: 20, scorer: null, scbets: scb, updated_at: new Date().toISOString() }]) });
+      if (rr.ok) shS++; else console.log('  sharp side err', m.t1, 'v', m.t2, rr.status);
+    }
+    await sleep(100);
+  }
+  console.log(`claude sharp: preds+=${shP} sides+=${shS} joker=${shJoker || 'none'}`);
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
