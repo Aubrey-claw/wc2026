@@ -246,11 +246,10 @@ function parseSquads(html) {
   for (const r of (freshRes || [])) {
     const p = r.match_id.split('|'); if (p.length < 3) continue;
     const t1 = p[1], t2 = p[2], s1 = r.s1, s2 = r.s2;
-    for (const row of [[t1, s1, s2], [t2, s2, s1]]) {
-      const tt = row[0], gf = row[1], ga = row[2];
-      const e = fT[tt] || (fT[tt] = { n: 0, gf: 0, ga: 0 }); e.n++; e.gf += gf; e.ga += ga;
-      if (ga === 0) cSh[tt] = (cSh[tt] || 0) + 1;
-    }
+    const e1 = fT[t1] || (fT[t1] = { n: 0, gf: 0, ga: 0, pts: 0 }), e2 = fT[t2] || (fT[t2] = { n: 0, gf: 0, ga: 0, pts: 0 });
+    e1.n++; e1.gf += s1; e1.ga += s2; e2.n++; e2.gf += s2; e2.ga += s1;
+    if (s2 === 0) cSh[t1] = (cSh[t1] || 0) + 1; if (s1 === 0) cSh[t2] = (cSh[t2] || 0) + 1;
+    if (s1 > s2) e1.pts += 3; else if (s2 > s1) e2.pts += 3; else { e1.pts++; e2.pts++; }
     for (let nm of (r.scorers || '').split(',')) { nm = nm.trim(); if (!nm || /\(OG\)/.test(nm)) continue; gBy[normN(nm)] = (gBy[normN(nm)] || 0) + 1; }
   }
   const shPrior = t => STRONG.has(t) ? [1.9, 0.8] : MID.has(t) ? [1.2, 1.1] : [0.7, 1.9];
@@ -271,8 +270,11 @@ function parseSquads(html) {
   }
   const shHave = new Set((await sb('predictions?name=eq.' + encodeURIComponent(SH) + '&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id));
   const shHaveSide = new Set((await sb('sidepicks?name=eq.' + encodeURIComponent(SH) + '&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id));
-  const shUpcoming = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() > Date.now() && !shHave.has(m.id));
-  console.log(`claude sharp: ${shHave.size} picks; ${shUpcoming.length} upcoming need picks`);
+  // ROLLING WINDOW: only the 4 SOONEST upcoming games (Nobby asked Claude Sharp to focus on the next four at a time).
+  const next4 = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() > Date.now())
+    .sort((a, b) => new Date(a.dt) - new Date(b.dt)).slice(0, 4);
+  const shUpcoming = next4.filter(m => !shHave.has(m.id));
+  console.log(`claude sharp: ${shHave.size} picks; next-4 window, ${shUpcoming.length} need score/side picks`);
   let shJoker = null, shJC = -1;
   const shPicks = shUpcoming.map(m => { const pk = sharpPick(m.t1, m.t2); if (pk.conf > shJC) { shJC = pk.conf; shJoker = m.id; } return { m, pk }; });
   let shP = 0, shS = 0;
@@ -287,4 +289,37 @@ function parseSquads(html) {
     await sleep(100);
   }
   console.log(`claude sharp: preds+=${shP} sides+=${shS} joker=${shJoker || 'none'}`);
+
+  // ====== PASS 4B: SMART CLAUDE markets ("more bets") for the next-4 window — score-derived, priced with the app's exact odds model. Idempotent.
+  try {
+    const SEED_STR = { Brazil: 9, France: 9, Spain: 9, Argentina: 9, England: 8, Germany: 8, Portugal: 8, Netherlands: 7, Belgium: 6, Croatia: 5, Uruguay: 5, Morocco: 5, Colombia: 4, Mexico: 4, 'United States': 4, Senegal: 4, Japan: 4, Switzerland: 4, Denmark: 4, Italy: 4 };
+    const teamStrength = t => { const e = fT[t]; const f = e ? (e.pts * 3 + (e.gf - e.ga) + e.gf * 0.3) : 0; return f + (SEED_STR[t] || 2); };
+    const oddsP = p => Math.max(1.1, Math.round(Math.min(17, 0.90 / Math.max(0.05, p)) * 20) / 20);
+    const wProbs = (sH, sA) => { const eH = Math.exp(sH / 3.2), eA = Math.exp(sA / 3.2), wH = eH / (eH + eA), pD = Math.max(0.16, 0.30 - 0.26 * Math.abs(wH - 0.5)); return { H: wH * (1 - pD), D: pD, A: (1 - wH) * (1 - pD) }; };
+    const FACT = [1, 1, 2, 6], poiss = (k, l) => Math.exp(-l) * Math.pow(l, k) / FACT[k];
+    const csExp = (sH, sA) => [Math.max(0.45, Math.min(3.0, 1.35 * Math.exp((sH - sA) * 0.055))), Math.max(0.45, Math.min(3.0, 1.35 * Math.exp((sA - sH) * 0.055)))];
+    const csOddsP = p => Math.max(1.5, Math.round(Math.min(51, 0.82 / Math.max(0.008, p)) * 2) / 2);
+    const csScoreOdds = (sH, sA, a, c) => { if (a > 3 || c > 3) return 26; const e = csExp(sH, sA); return csOddsP(poiss(a, e[0]) * poiss(c, e[1])); };
+    const csOdds = (sH, sA) => ({ H: oddsP(Math.max(0.12, Math.min(0.6, 0.33 + (sH - sA) * 0.022))), A: oddsP(Math.max(0.12, Math.min(0.6, 0.33 + (sA - sH) * 0.022))) });
+    const mgnOdds = (sH, sA) => { const p = wProbs(sH, sA); return { h1: oddsP(p.H * 0.55), h2: oddsP(p.H * 0.30), h3: oddsP(p.H * 0.15), d: oddsP(p.D), a1: oddsP(p.A * 0.55), a2: oddsP(p.A * 0.30), a3: oddsP(p.A * 0.15) }; };
+    const winOddsJ = (sH, sA) => { const p = wProbs(sH, sA); return { H: oddsP(p.H), D: oddsP(p.D), A: oddsP(p.A) }; };
+    const shHaveMkt = new Set((await sb('sidepicks?name=eq.' + encodeURIComponent(SH) + '&match_id=like.MKT|*&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id.slice(4)));
+    const myPickMap2 = {}; (await sb('predictions?name=eq.' + encodeURIComponent(SH) + '&select=match_id,home,away').then(r => r.json()).catch(() => [])).forEach(r => myPickMap2[r.match_id] = r);
+    let mk4 = 0;
+    for (const m of next4) {
+      if (shHaveMkt.has(m.id)) continue;
+      const p = myPickMap2[m.id]; if (!p) continue;
+      const sH = teamStrength(m.t1), sA = teamStrength(m.t2), h = p.home, a = p.away, d = h - a;
+      const rows = [];
+      const tw = d > 0 ? 'H' : d < 0 ? 'A' : 'D'; rows.push({ mk: 'win', pk: tw, st: 20, od: winOddsJ(sH, sA)[tw] });
+      if (h <= 3 && a <= 3) rows.push({ mk: 'cscore', pk: h + '-' + a, st: 15, od: csScoreOdds(sH, sA, h, a) });
+      const mp = d === 0 ? 'd' : d === 1 ? 'h1' : d === 2 ? 'h2' : d >= 3 ? 'h3' : d === -1 ? 'a1' : d === -2 ? 'a2' : 'a3'; rows.push({ mk: 'mgn', pk: mp, st: 15, od: mgnOdds(sH, sA)[mp] });
+      if (a === 0 && h > 0) rows.push({ mk: 'cs', pk: 'H', st: 20, od: csOdds(sH, sA).H });
+      else if (h === 0 && a > 0) rows.push({ mk: 'cs', pk: 'A', st: 20, od: csOdds(sH, sA).A });
+      const rr = await sb('sidepicks?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: 'MKT|' + m.id, scbets: rows, updated_at: new Date().toISOString() }]) });
+      if (rr.ok) mk4++; else console.log('  sharp mkt err', m.t1, 'v', m.t2, rr.status);
+      await sleep(100);
+    }
+    console.log(`claude sharp markets: added=${mk4}`);
+  } catch (e) { console.log('  pass4b markets error (non-fatal):', e.message); }
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
