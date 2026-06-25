@@ -207,4 +207,31 @@ function parseSquads(html) {
     await sleep(120);
   }
   console.log(`claude: added=${cOk} err=${cErr}`);
+
+  // PASS 3B: side bets for EVERY Claude pick on an upcoming match. Derived from his predicted score. Idempotent — skips if sidepicks row already exists.
+  const haveSide = new Set((await sb("sidepicks?name=eq.Claude&select=match_id").then(r=>r.json()).catch(()=>[])).map(r=>r.match_id));
+  const allMyPicks = await sb('predictions?name=eq.Claude&select=match_id,home,away,stake').then(r=>r.json()).catch(()=>[]);
+  const myPickMap = {}; (allMyPicks||[]).forEach(r=>myPickMap[r.match_id]=r);
+  const fxById = {}; fixtures.forEach(m=>fxById[m.id]=m);
+  const sideTargets = Object.values(myPickMap).map(r=>fxById[r.match_id]).filter(m=>m && teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime()>Date.now() && !haveSide.has(m.id));
+  console.log(`claude side bets: ${haveSide.size} already; ${sideTargets.length} new picks need side bets`);
+  let sOk2 = 0, sErr2 = 0;
+  for (const m of sideTargets) {
+    const p = myPickMap[m.id]; const tot = p.home + p.away; const both = p.home > 0 && p.away > 0;
+    const ou = tot >= 3 ? 'O' : 'U';
+    const btts = both ? 'Y' : 'N';
+    const fav = p.home > p.away ? m.t1 : p.away > p.home ? m.t2 : (tier(m.t1) >= tier(m.t2) ? m.t1 : m.t2);
+    const star = (squad[fav] || [])[0] || null;             // index 0 = the team's headline striker, prices at 2.0x
+    const scbets = star ? [{ p: star, st: 25 }] : [];
+    const row = { name: 'Claude', match_id: m.id, ou, ou_stake: 25, btts, btts_stake: 20, scorer: null, scbets, updated_at: new Date().toISOString() };
+    const rr = await sb('sidepicks?on_conflict=name,match_id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([row])
+    });
+    if (!rr.ok) { console.log('  side upsert err', m.t1, 'v', m.t2, rr.status); sErr2++; }
+    else { sOk2++; console.log(`  + claude side ${m.t1.slice(0,3)}-${m.t2.slice(0,3)}: O/U=${ou}$25 BTTS=${btts}$20 ⚽${star||'(none)'}$25`); }
+    await sleep(120);
+  }
+  console.log(`claude side bets: added=${sOk2} err=${sErr2}`);
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
