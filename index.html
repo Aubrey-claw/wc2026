@@ -1065,7 +1065,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-26-bm';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-26-bn';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1077,8 +1077,13 @@ const qp=new URLSearchParams(location.search);
 // ADMIN = the ?admin=KEY link ONLY (no stickiness). The plain URL NEVER shows the private shadow player — to anyone, ever. Nobby bookmarks the admin link to peek at Claude Sharp; everyone else's normal link is the public league.
 const adminMode=!!ADMIN_SECRET&&!ADMIN_SECRET.startsWith('__')&&qp.get('admin')===ADMIN_SECRET;
 try{localStorage.removeItem('wc2026-admin');}catch(e){}  // scrub any sticky flag left by build bl (auto-revokes leaked admin on every device on next load)
-// PRIVATE SHADOW PLAYERS: present in the shared DB & played like everyone, but rendered ONLY for admin (Nobby via ?admin=KEY). Stripped from all state for non-admins so no render path can surface them.
+// PRIVATE SHADOW PLAYER: in the shared DB & played like everyone, but visible ONLY when you are logged in as its owner (Nobby). For anyone else it's stripped from ALL state, so no render path — leaderboard, board, login list, anywhere — can surface it. There are NO signs of it unless me==='Nobby'.
 const HIDDEN_PLAYERS=new Set(['Claude Sharp']);
+const HIDDEN_OWNER='Nobby';
+function stripHidden(){ if(me===HIDDEN_OWNER)return;   // owner sees their shadow player; everyone else gets it scrubbed from state
+  HIDDEN_PLAYERS.forEach(nm=>{ if(Array.isArray(state.players))state.players=state.players.filter(n=>n!==nm);
+    ['preds','champion','topscorer','champOdds','sidepicks','htbets','mktbets','glovePick','survivor','cashouts','quiz','accas','groupquals'].forEach(k=>{if(state[k])delete state[k][nm];});
+    if(Array.isArray(state.duels))state.duels=state.duels.filter(d=>d.challenger!==nm&&d.opponent!==nm); }); }
 const predTimers={};let loadT=null;
 const pendingMine={};const pendingT={};  // protects MY in-flight edits from being clobbered by a live reload
 function markPending(id){const v=(state.preds[me]||{})[id];if(!v)return;pendingMine[id]=v.slice();clearTimeout(pendingT[id]);pendingT[id]=setTimeout(()=>{delete pendingMine[id];},6000);}
@@ -1144,10 +1149,7 @@ async function sbLoadAll(){if(!sb)return;
       if(!mine&&open)return; // hide everyone's picks until kickoff — shadow players included (admin still won't peek pre-kickoff)
       (preds[r.name]=preds[r.name]||{})[r.match_id]=[r.home,r.away,r.stake||0,r.joker?1:0];});
     state.preds=preds;
-    // strip shadow players from EVERY per-player structure for non-admins → invisible in all render paths (leaderboard/board/pitch/scorers/history/glove/survivor)
-    if(!adminMode)HIDDEN_PLAYERS.forEach(nm=>{state.players=state.players.filter(n=>n!==nm);
-      ['preds','champion','topscorer','champOdds','sidepicks','htbets','mktbets','glovePick','survivor','cashouts','quiz','accas','groupquals'].forEach(k=>{if(state[k])delete state[k][nm];});
-      if(Array.isArray(state.duels))state.duels=state.duels.filter(d=>d.challenger!==nm&&d.opponent!==nm);});
+    stripHidden();  // remove the shadow player from ALL state unless you're logged in as its owner (Nobby) — invisible in every render path incl. the login list
     if(me){state.preds[me]=state.preds[me]||{};for(const id in pendingMine)state.preds[me][id]=pendingMine[id].slice();} // keep my in-flight edits
     if(me&&!state.players.includes(me))state.players.push(me);
     if(!state.active||!state.players.includes(state.active))state.active=me||state.players[0]||null;
@@ -1196,14 +1198,14 @@ async function sbSetResult(id,s1,s2,status,scorers){if(!sb){flash('Local mode �
 const inviteLink=()=>location.href.split('?')[0];
 function showJoin(){const mask=document.getElementById('joinMask');if(!mask)return;
   const switching=!!me;
-  document.getElementById('joinPick').innerHTML=state.players.filter(p=>p!==me).map(p=>`<button class="pk" data-p="${p}">${avatar(p)}${p}</button>`).join('');
+  document.getElementById('joinPick').innerHTML=state.players.filter(p=>p!==me&&!HIDDEN_PLAYERS.has(p)).map(p=>`<button class="pk" data-p="${p}">${avatar(p)}${p}</button>`).join('');
   document.getElementById('joinHint').textContent=state.players.length?(switching?'Tap another name to switch to it.':'Already joined? Tap your name above.'):'';
   const ttl=document.getElementById('joinTitle');if(ttl)ttl.textContent=switching?'Switch player or log out':'World Cup 2026 Predictor';
   const mr=document.getElementById('joinManage');
   if(mr){mr.innerHTML=switching?`<button class="iconbtn" id="joinCancel">Cancel</button><button class="iconbtn danger" id="joinLogout">Log out of ${me}</button>`:`<button class="iconbtn" id="joinSpectate">Browse as spectator</button>`;
     const cn=document.getElementById('joinCancel');if(cn)cn.onclick=()=>{mask.style.display='none';};
     const sp=document.getElementById('joinSpectate');if(sp)sp.onclick=()=>{mask.style.display='none';if(!state.active)state.active=state.players[0]||null;renderAll();};
-    const lo=document.getElementById('joinLogout');if(lo)lo.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;state.active=state.players[0]||null;mask.style.display='none';renderAll();flash('Logged out — you are spectating. Tap Join to play.');};}
+    const lo=document.getElementById('joinLogout');if(lo)lo.onclick=()=>{try{localStorage.removeItem(ME_KEY);}catch(e){}me=null;stripHidden();state.active=state.players[0]||null;mask.style.display='none';renderAll();flash('Logged out — you are spectating. Tap Join to play.');};}
   mask.style.display='flex';const n=document.getElementById('joinName');if(n&&!switching)n.focus();}
 function claim(name,deliberate){name=(name||'').trim();if(!name)return;
   // only warn on a freshly TYPED name that collides; tapping an existing name in the list is a deliberate switch
@@ -1212,7 +1214,7 @@ function claim(name,deliberate){name=(name||'').trim();if(!name)return;
   state.active=name;if(!state.players.includes(name))state.players.push(name);
   const mask=document.getElementById('joinMask');if(mask)mask.style.display='none';
   if(SB_ENABLED){const fresh=!(state.events||[]).some(e=>e.kind==='join'&&e.actor===name);sbAddPlayer(name);if(fresh)sbEmit(name,'join',name+' joined the league');}
-  saveState();renderAll();flash('You are in — playing as '+name);}
+  saveState();if(SB_ENABLED)queueLoad();renderAll();flash('You are in — playing as '+name);}
 let prevBank=null;
 let accaDraft={legs:[],stake:100};let duelDraft={match:'',opp:'',amount:100};
 let recapShown=false;
@@ -1661,7 +1663,7 @@ function filtered(){if(filter==='group')return ALL.filter(m=>!m.ko);if(filter===
   if(filter==='next'){const now=Date.now();return ALL.filter(m=>!isFT(m)&&new Date(m.dt).getTime()>now-3*36e5).sort((a,b)=>new Date(a.dt)-new Date(b.dt)).slice(0,12);}return ALL;}  // upcoming + GENUINELY-live (kicked off within 3h, not FT) — keeps the cash-out button reachable without flooding with stale unrecorded matches
 function renderRail(){
   const r=document.getElementById('prail');
-  r.innerHTML=state.players.map(p=>`<div class="pavatar ${p===state.active?'on':''}" data-p="${p}">${(p===me||!SB_ENABLED)?`<button class="del" data-del="${p}">✕</button>`:''}${avatar(p)}<span class="pn">${p}${p===me?' (you)':''}</span></div>`).join('')+`<button class="addp" id="addp">+</button>`;
+  r.innerHTML=state.players.filter(p=>!HIDDEN_PLAYERS.has(p)).map(p=>`<div class="pavatar ${p===state.active?'on':''}" data-p="${p}">${(p===me||!SB_ENABLED)?`<button class="del" data-del="${p}">✕</button>`:''}${avatar(p)}<span class="pn">${p}${p===me?' (you)':''}</span></div>`).join('')+`<button class="addp" id="addp">+</button>`;
   r.querySelectorAll('.pavatar').forEach(a=>a.onclick=e=>{if(e.target.dataset.del!==undefined)return;setMe(a.dataset.p);renderPredict();renderRail();});
   r.querySelectorAll('.del').forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.dataset.del;
     if(SB_ENABLED&&!confirm('Remove "'+p+'" and delete ALL their picks & wagers for everyone? This cannot be undone.'))return;
@@ -2414,8 +2416,8 @@ if(SB_ENABLED){
   sbLoadAll().then(()=>{if(!me)showJoin();else showRecap();});
 }else if(state.players&&state.players.length){setSaveTag('Saved picks restored ('+state.players.length+' player'+(state.players.length===1?'':'s')+')');}
 setInterval(renderNext,60000);
-// PRIVATE-VIEW badge: unmistakable banner so the admin always knows this is the only-you view (and friends, who never get adminMode, never see it).
-if(adminMode){try{const ab=document.createElement('div');ab.id='adminBanner';ab.textContent="🔒 PRIVATE VIEW — Claude Sharp is visible to YOU only. Your friends' app does not show it.";ab.style.cssText='background:#6d28d9;color:#fff;font:600 12.5px system-ui,-apple-system,Arial;text-align:center;padding:8px 12px;letter-spacing:.2px';document.body.insertBefore(ab,document.body.firstChild);}catch(e){}}
+// PRIVATE-VIEW badge: shown only to the shadow player's owner (Nobby), so he knows Claude Sharp is his private experiment and nobody else can see it.
+if(me===HIDDEN_OWNER){try{const ab=document.createElement('div');ab.id='adminBanner';ab.textContent="🔒 PRIVATE — Claude Sharp is your secret player. Only this account sees it.";ab.style.cssText='background:#6d28d9;color:#fff;font:600 12.5px system-ui,-apple-system,Arial;text-align:center;padding:8px 12px;letter-spacing:.2px';document.body.insertBefore(ab,document.body.firstChild);}catch(e){}}
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
 setInterval(checkUpdate,180000);
 
