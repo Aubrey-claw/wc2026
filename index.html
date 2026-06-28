@@ -1069,7 +1069,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-28-bo';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-28-bp';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1409,6 +1409,11 @@ const QUIZ=[
 ];
 function finalWinner(){const f=knockout.find(k=>k.round==='FINAL');if(!f||!isFT(f))return null;return f.s1>f.s2?f.t1:f.s2>f.s1?f.t2:null;}
 function quizWon(p){const qa=state.quiz[p]||{};let t=0;QUIZ.forEach(q=>{if(qa[q.id]===q.a)t+=q.reward;});return t;}
+// MD3 missed-games compensation (flat, identical for everyone): 4 group-stage games shipped missing from fixtures so nobody could bet on them — equal-opportunity remedy: $160 + 8 pts each.
+const MD3_COMP={'Nobby':160,'Lilyana':160,'Claude':160,'Claude Sharp':160};
+const MD3_COMP_PTS={'Nobby':8,'Lilyana':8,'Claude':8,'Claude Sharp':8};
+const compWon=p=>MD3_COMP[p]||0;
+const compPts=p=>MD3_COMP_PTS[p]||0;
 function roundsDone(){              // completed tournament rounds = quiz milestones
   const gT=matches.length,gFT=matches.filter(isFT).length,per=gT/3||1;
   let r=Math.min(3,Math.floor(gFT/per));
@@ -1577,8 +1582,8 @@ function bankOf(p){
   // fold chronologically; floor on the running balance
   ev.sort((a,b)=>a.dt-b.dt);let bal=START_BAL,won=0,lost=0;
   ev.forEach(e=>{const before=bal;bal=Math.max(FLOOR,bal+e.net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p);
-  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv;bal+=bonus;won+=bonus;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p),md3=compWon(p);
+  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv+md3;bal+=bonus;won+=bonus;
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -1901,6 +1906,7 @@ document.getElementById('newPlayer').addEventListener('keydown',e=>{if(e.key==='
 function totals(){return state.players.map(p=>{let pts=0,exact=0,correct=0,played=0;
   ALL.forEach(m=>{const v=points((state.preds[p]||{})[m.id],m);if(v!=null){played++;pts+=v*(isJoker(p,m)?2:1);if(v===5)exact++;if(v>=2)correct++;}});
   const scp=scorerPoints(p);pts+=scp;  // correct anytime-scorer predictions add league points too
+  pts+=compPts(p);  // MD3 missed-games points compensation (4 fixtures were missing from the app so nobody could bet)
   const b=bankOf(p);return{p,pts,scorerPts:scp,exact,correct,played,bal:b.bal,inPlay:b.inPlay,won:b.won,lost:b.lost};})
   .sort((a,b)=>b.bal-a.bal||b.pts-a.pts);}
 function renderPitch(){
@@ -2079,7 +2085,9 @@ function historyOf(p){
 }
 function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({amt,label});};
   add(champWon(p),'Champion pick');add(topscorerWon(p),'Golden Boot pick');add(gloveWon(p),'Golden Glove pick');
-  add(qualWon(p),'Group qualifiers');add(quizWon(p),'Side quizzes');add(survWon(p),'Survivor');add(ouWon(p),'O/U & BTTS bonus');add(scorerWon(p),'Scorer bonus');return b;}
+  add(qualWon(p),'Group qualifiers');add(quizWon(p),'Side quizzes');add(survWon(p),'Survivor');add(ouWon(p),'O/U & BTTS bonus');add(scorerWon(p),'Scorer bonus');
+  add(compWon(p),'MD3 missed-games comp');  // 4 fixtures shipped missing — flat $160 + 8pts comp to every player
+  return b;}
 // hit-rate accuracy: of the picks you've made on FINISHED games, what fraction landed
 function accuracyOf(p){
   const preds=state.preds[p]||{};const sd=state.sidepicks[p]||{};let sp=0,ex=0,res=0,ouB=0,ouH=0,scB=0,scH=0;
