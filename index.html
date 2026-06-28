@@ -1069,7 +1069,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-28-bq';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-28-br';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2432,7 +2432,8 @@ setInterval(renderNext,60000);
 if(me===HIDDEN_OWNER){try{const ab=document.createElement('div');ab.id='adminBanner';ab.textContent="🔒 PRIVATE — Claude Sharp is your secret player. Only this account sees it.";ab.style.cssText='background:#6d28d9;color:#fff;font:600 12.5px system-ui,-apple-system,Arial;text-align:center;padding:8px 12px;letter-spacing:.2px';document.body.insertBefore(ab,document.body.firstChild);}catch(e){}}
 // FIXTURE-AUDIT guardrail: catches the bug we just hit (missing fixtures shipping silently). Runs at boot, warns the owner/admin only if anything's off so Nobby sees it within seconds of opening the app — not when a match is on TV.
 function fixtureAudit(){const issues=[];const groups={},teamApps={},koCounts={};
-  ALL.forEach(m=>{if(m.group){groups[m.group]=(groups[m.group]||0)+1;teamApps[m.t1]=(teamApps[m.t1]||0)+1;teamApps[m.t2]=(teamApps[m.t2]||0)+1;}
+  // group-stage rows have m.ko===false and m.group set to a letter A-L; KO rows have m.ko===true and m.group set to the match number
+  ALL.forEach(m=>{if(!m.ko&&m.group&&/^[A-L]$/.test(m.group)){groups[m.group]=(groups[m.group]||0)+1;teamApps[m.t1]=(teamApps[m.t1]||0)+1;teamApps[m.t2]=(teamApps[m.t2]||0)+1;}
     if(m.ko&&m.round){koCounts[m.round]=(koCounts[m.round]||0)+1;}});
   for(const g of 'ABCDEFGHIJKL'){const n=groups[g]||0;if(n!==6)issues.push(`Group ${g} has ${n} fixtures (should be 6)`);}
   Object.entries(teamApps).forEach(([t,n])=>{if(n!==3)issues.push(`${t} plays ${n} group games (should be 3)`);});
