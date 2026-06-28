@@ -322,4 +322,49 @@ function parseSquads(html) {
     }
     console.log(`claude sharp markets: added=${mk4}`);
   } catch (e) { console.log('  pass4b markets error (non-fatal):', e.message); }
+
+  // ====== PASS 5: PENALTY-WINNER auto-record — for any FT knockout match that ended in a draw at 90/ET (so it was decided on pens), look up which team advanced and write a PEN_RESULT|<id> sidepicks row so the in-app bonus settles.
+  try {
+    console.log('--- pass5 penalty-winner backfill ---');
+    const havePen = new Set((await sb("sidepicks?name=eq._pen&match_id=like.PEN_RESULT|*&select=match_id").then(r => r.json()).catch(() => [])).map(r => r.match_id.slice(11)));
+    const koIds = new Set(fixtures.filter(m => m.ko).map(m => m.id));
+    const ftAll5 = await sb('results?status=eq.FT&select=match_id,s1,s2').then(r => r.json()).catch(() => []);
+    const drawKO = (ftAll5 || []).filter(r => koIds.has(r.match_id) && r.s1 === r.s2 && !havePen.has(r.match_id));
+    console.log(`pen: ${drawKO.length} KO draws need a pen-winner recorded`);
+    let p5 = 0;
+    for (const r of drawKO) {
+      const parts = r.match_id.split('|'); if (parts.length < 3) continue;
+      const t1 = parts[1], t2 = parts[2];
+      const dts = parts[0].slice(0, 10).replace(/-/g, '');
+      try {
+        const j = await fetch(`${ESPN}/scoreboard?dates=${dts}`).then(x => x.json()).catch(() => null);
+        let evt = null;
+        for (const e of (j && j.events || [])) {
+          const cs = ((e.competitions || [])[0] || {}).competitors || []; if (cs.length < 2) continue;
+          const home = eOur(((cs.find(c => c.homeAway === 'home') || cs[0]).team || {}).displayName || '');
+          const away = eOur(((cs.find(c => c.homeAway === 'away') || cs[1]).team || {}).displayName || '');
+          if ((eNorm(home) === eNorm(t1) && eNorm(away) === eNorm(t2)) || (eNorm(home) === eNorm(t2) && eNorm(away) === eNorm(t1))) { evt = e; break; }
+        }
+        if (!evt) { console.log('  pen: no ESPN evt for', t1, 'v', t2); continue; }
+        const cs = ((evt.competitions || [])[0] || {}).competitors || [];
+        const homeC = cs.find(c => c.homeAway === 'home') || cs[0];
+        const awayC = cs.find(c => c.homeAway === 'away') || cs[1];
+        const homeWon = homeC && (homeC.winner === true || homeC.winner === 'true');
+        const awayWon = awayC && (awayC.winner === true || awayC.winner === 'true');
+        if (!homeWon && !awayWon) { console.log('  pen: no winner flag yet for', t1, 'v', t2); continue; }
+        const winnerEspnTeam = homeWon ? eOur(((homeC.team || {}).displayName) || '') : eOur(((awayC.team || {}).displayName) || '');
+        const w = eNorm(winnerEspnTeam) === eNorm(t1) ? 'H' : eNorm(winnerEspnTeam) === eNorm(t2) ? 'A' : null;
+        if (!w) { console.log('  pen: winner name mismatch for', t1, 'v', t2, '→', winnerEspnTeam); continue; }
+        const u = await sb('sidepicks?on_conflict=name,match_id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{ name: '_pen', match_id: 'PEN_RESULT|' + r.match_id, scbets: [{ w }], updated_at: new Date().toISOString() }])
+        });
+        if (u.ok) { p5++; console.log(`  + pen ${t1} v ${t2} → ${w === 'H' ? t1 : t2} wins`); }
+        else console.log('  pen upsert err', t1, 'v', t2, u.status);
+      } catch (e) { console.log('  pen err', t1, 'v', t2, e.message); }
+      await sleep(200);
+    }
+    console.log(`pen: wrote=${p5}`);
+  } catch (e) { console.log('  pass5 pen error (non-fatal):', e.message); }
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
