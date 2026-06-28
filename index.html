@@ -1069,7 +1069,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-28-br';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-28-bs';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1361,9 +1361,23 @@ function slotTeam(slot){let mm;
   if(mm=slot.match(/^Winner (M\d+)/)){const k=knockout.find(x=>x.mno===mm[1]);return (k&&isFT(k))?(k.s1>k.s2?k.t1:k.s2>k.s1?k.t2:slot):slot;}
   if(mm=slot.match(/^Loser (M\d+)/)){const k=knockout.find(x=>x.mno===mm[1]);return (k&&isFT(k))?(k.s1<k.s2?k.t1:k.s2<k.s1?k.t2:slot):slot;}
   return slot;}
-function resolveBracket(){const thirds=bestThirds();let ti=0;
+// FIFA's actual R32 third-place slot assignments (from ESPN's official scoreboard for WC2026). Heuristic ranking respects the group constraint but doesn't always match FIFA's lookup table, so override the 4 mismatches.
+const KO_OVERRIDES={'M74':{t2:'Paraguay'},'M77':{t2:'Sweden'},'M82':{t2:'Senegal'},'M85':{t2:'Algeria'}};
+function resolveBracket(){const thirds=bestThirds();
+  // Map each top-8 third's group, so we can respect the slot's group constraint (e.g. "3rd A/B/C/D/F" must pick a third from one of those groups, not just any third).
+  const groupOf={};if(thirds){Object.keys(standings).forEach(g=>{const t3=standings[g].map(t=>({nm:t[0],pts:t[7],gd:t[5]-t[6],gf:t[5]})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf)[2];if(t3&&thirds.includes(t3.nm))groupOf[t3.nm]=g;});}
+  const usedThirds=new Set();
   knockout.forEach(k=>{[['o1','t1'],['o2','t2']].forEach(([o,t])=>{const slot=k[o];
-    if(/^3rd/.test(slot))k[t]=thirds?(thirds[ti++]||slot):slot; else k[t]=slotTeam(slot);});});}
+    if(/^3rd /.test(slot)){
+      if(!thirds){k[t]=slot;return;}
+      const allowed=slot.replace(/^3rd /,'').split('/');
+      let picked=null;for(const tn of thirds){if(usedThirds.has(tn))continue;if(allowed.includes(groupOf[tn])){picked=tn;break;}}
+      if(picked){k[t]=picked;usedThirds.add(picked);}else k[t]=slot;
+    } else k[t]=slotTeam(slot);
+  });
+  // apply FIFA-draw override for the R32 slot assignments where the heuristic disagrees with the official bracket
+  const ov=KO_OVERRIDES[k.mno];if(ov){if(ov.t1)k.t1=ov.t1;if(ov.t2)k.t2=ov.t2;}
+  });}
 const ouResult=m=>(m.s1+m.s2)>=3?'O':'U';      // Over/Under 2.5 goals from the final score
 const bttsResult=m=>(m.s1>0&&m.s2>0)?'Y':'N';  // both teams to score
 function ouWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s){if(s.ou&&!(s.ouStake>0)&&s.ou===ouResult(m))t+=OU_BONUS;if(s.btts&&!(s.bttsStake>0)&&s.btts===bttsResult(m))t+=BTTS_BONUS;}});return t;}
