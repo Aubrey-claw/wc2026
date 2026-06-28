@@ -927,6 +927,10 @@ const matches=[
   M('G','2026-06-27T04:00:00+01:00','Egypt','Iran',null,null,'Seattle'),
   M('L','2026-06-27T22:00:00+01:00','Panama','England',null,null,'New Jersey'),
   M('L','2026-06-27T22:00:00+01:00','Croatia','Ghana',null,null,'Philadelphia'),
+  M('J','2026-06-27T19:00:00+01:00','Argentina','Jordan',null,null,'Miami'),
+  M('J','2026-06-27T19:00:00+01:00','Austria','Algeria',null,null,'Kansas City'),
+  M('K','2026-06-28T03:00:00+01:00','Portugal','Colombia',null,null,'Atlanta'),
+  M('K','2026-06-28T03:00:00+01:00','DR Congo','Uzbekistan',null,null,'Dallas'),
 ];
 const K=(round,mno,dt,t1,t2,venue,s1=null,s2=null,status='sched')=>({group:mno,round,mno,dt,t1,t2,venue,s1,s2,status,ko:true});
 const knockout=[
@@ -1065,7 +1069,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-26-bn';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-28-bo';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
