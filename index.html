@@ -816,6 +816,7 @@
 <section id="sidebets">
   <h2>Side bets <span class="sub" style="font-weight:400">— go big or claw your way back</span></h2>
   <div class="card" id="champWrap" style="margin-bottom:16px"></div>
+  <div class="card" id="brkR32Wrap" style="margin-bottom:16px"></div>
   <div class="card" id="qualWrap" style="margin-bottom:16px"></div>
   <div class="card" id="accaWrap" style="margin-bottom:16px"></div>
   <div class="card" id="duelWrap" style="margin-bottom:16px"></div>
@@ -1069,7 +1070,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-28-bt';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-29-bu';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1129,7 +1130,9 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.matchStats={};state.penPicks={};state.penResults={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.matchStats={};state.penPicks={};state.penResults={};state.bracketPicks={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+      // BRK|<matchId> = R32 bracket pick (which team advances). One row per match per player.
+      if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='BRK|'){const w=(scb[0]||{}).w;if(w)(state.bracketPicks[r.name]=state.bracketPicks[r.name]||{})[r.match_id.slice(4)]=w;return;}
       // PEN_RESULT|<id> = actual penalty winner (written by cron or admin once a KO match ends in pens). Must be checked BEFORE the PEN| name route because the PEN_RESULT row's name is '_pen'.
       if(typeof r.match_id==='string'&&r.match_id.slice(0,11)==='PEN_RESULT|'){const w=(scb[0]||{}).w;if(w)state.penResults[r.match_id.slice(11)]=w;return;}
       // PEN|<id> = the player's pens-winner pick (paired with a draw score prediction on a KO match)
@@ -1432,6 +1435,16 @@ const MD3_COMP={'Nobby':160,'Lilyana':160,'Claude':160,'Claude Sharp':160};
 const MD3_COMP_PTS={'Nobby':8,'Lilyana':8,'Claude':8,'Claude Sharp':8};
 const compWon=p=>MD3_COMP[p]||0;
 const compPts=p=>MD3_COMP_PTS[p]||0;
+// R32 BRACKET picker — pick the winner of each R32 match (advancing team). Same pattern as Group qualifiers but for KO. Per-match bonus + a bigger bonus for a perfect bracket.
+const R32_PICK_BONUS=80, R32_PERFECT_BONUS=400;
+const r32PickOf=(p,id)=>(state.bracketPicks&&state.bracketPicks[p]||{})[id]||null;
+function r32Matches(){return ALL.filter(m=>m.ko && m.round==='Round of 32').sort((a,b)=>new Date(a.dt)-new Date(b.dt));}
+function r32WinnerOf(m){if(!isFT(m))return null;return m.s1>m.s2?'H':m.s2>m.s1?'A':r32PenResultOf(m);}
+function r32PenResultOf(m){if(m.s1===m.s2){const pw=penResultOf(m.id);return pw||null;}return null;}
+function bracketWon(p){const picks=(state.bracketPicks&&state.bracketPicks[p])||{};let bn=0,hits=0,settled=0;const ms=r32Matches();
+  for(const m of ms){const pk=picks[m.id];if(!pk)continue;const actual=r32WinnerOf(m);if(!actual)continue;settled++;if(pk===actual){hits++;bn+=R32_PICK_BONUS;}}
+  if(settled===16&&hits===16)bn+=R32_PERFECT_BONUS;return bn;}
+async function sbSetBracket(mid,w){state.bracketPicks=state.bracketPicks||{};state.bracketPicks[me]=state.bracketPicks[me]||{};state.bracketPicks[me][mid]=w;if(!SB_ENABLED)return;try{await sb.from('sidepicks').upsert({name:me,match_id:'BRK|'+mid,scbets:[{w}],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save R32 pick');}}
 // PENALTY-WINNER pick — KO games only. When a player predicts a draw on a KO match, they additionally pick which team wins on pens. Bonus pays only if both the draw AND the pens winner land.
 const PEN_BONUS=50, PEN_PTS=2;
 const isDrawPred=pr=>pr&&pr[0]!=null&&pr[1]!=null&&pr[0]===pr[1];
@@ -1608,8 +1621,8 @@ function bankOf(p){
   // fold chronologically; floor on the running balance
   ev.sort((a,b)=>a.dt-b.dt);let bal=START_BAL,won=0,lost=0;
   ev.forEach(e=>{const before=bal;bal=Math.max(FLOOR,bal+e.net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p),md3=compWon(p),pw=penWon(p);
-  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv+md3+pw;bal+=bonus;won+=bonus;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p),md3=compWon(p),pw=penWon(p),brk=bracketWon(p);
+  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv+md3+pw+brk;bal+=bonus;won+=bonus;
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -2125,6 +2138,7 @@ function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({a
   add(qualWon(p),'Group qualifiers');add(quizWon(p),'Side quizzes');add(survWon(p),'Survivor');add(ouWon(p),'O/U & BTTS bonus');add(scorerWon(p),'Scorer bonus');
   add(compWon(p),'MD3 missed-games comp');  // 4 fixtures shipped missing — flat $160 + 8pts comp to every player
   add(penWon(p),'Penalty-winner bonus');     // bonus paid only when a draw prediction lands AND the pens winner pick is right
+  add(bracketWon(p),'R32 bracket picks');    // pick R32 winners — $80 per correct + $400 perfect-bracket bonus
   return b;}
 // hit-rate accuracy: of the picks you've made on FINISHED games, what fraction landed
 function accuracyOf(p){
@@ -2303,9 +2317,33 @@ function renderSidebets(){
   cw.innerHTML=html;
   const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{const t=sel.value;const odds=t?champOdds(t):null;state.champion[me]=t;state.champOdds[me]=odds;if(SB_ENABLED)sbSetChampion(me,t,odds);flash(t?'Locked '+t+' at '+odds+'x':'Champion pick cleared');renderSidebets();renderLeaderboard();updateLeagueBar();};
   const gsel=document.getElementById('gbSel');if(gsel)gsel.onchange=()=>{state.topscorer[me]=gsel.value;if(SB_ENABLED)sbSetTopScorer(me,gsel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
-  // Group qualifiers — call the top 2 of each group
+  // R32 BRACKET picker — pick the winner of each Round-of-32 match. Same UI pattern as group quals but for the KO. Pays $80 per correct + $400 if all 16 right. Locks per-match at kickoff.
+  const brkw=document.getElementById('brkR32Wrap');
+  if(brkw){const myB=me?(state.bracketPicks[me]||{}):{};const r32=r32Matches();const picked=r32.filter(m=>myB[m.id]).length;
+    let bh=`<h3 style="margin-bottom:6px">🏆 Round of 32 — bracket picks</h3><p class="sub" style="margin-bottom:12px">Pick which team advances from each R32 match. <b>${fmtMoney(R32_PICK_BONUS)}</b> per correct, <b>+${fmtMoney(R32_PERFECT_BONUS)}</b> bonus for all 16 right. Locks per-match at kickoff. <span class="sub">${picked}/${r32.length} picked</span></p><div class="qualgrid">`;
+    r32.forEach(m=>{const koff=kickedOff(m),ft=isFT(m),pick=myB[m.id],actual=r32WinnerOf(m);
+      const dt=new Date(m.dt).toLocaleString('en-AU',{timeZone:'Australia/Adelaide',weekday:'short',hour:'2-digit',minute:'2-digit'});
+      bh+=`<div class="qualgrp"><div class="qghd">${m.mno} · ${dt}${ft?(actual==='H'?' · '+m.t1+' won':actual==='A'?' · '+m.t2+' won':' · drew'):koff?' · LIVE':''}</div><div class="qgteams">`;
+      [['H',m.t1],['A',m.t2]].forEach(([w,t])=>{const isPick=pick===w,isWin=ft&&actual===w,isLoss=ft&&pick===w&&actual!==w;
+        const cls=(isPick?'on ':'')+(isWin?'adv ':'')+(isLoss?'miss ':'');
+        bh+=`<button class="qbtn ${cls}" ${koff||!me?'disabled':''} data-brk="${m.id}" data-w="${w}">${badge(t)} ${t}${isWin?' ★':''}</button>`;});
+      bh+=`</div>`;
+      if(ft&&me&&pick){const won=pick===actual;bh+=`<div class="qgres ${won?'win':'loss'}">${won?'✓ +'+fmtMoney(R32_PICK_BONUS):'✗ no bonus'}</div>`;}
+      bh+=`</div>`;});
+    bh+=`</div>`;
+    // total/summary
+    if(me){const tot=bracketWon(me);if(tot>0)bh+=`<div class="oddsnote" style="margin-top:12px">💰 Earned so far: <b>${fmtMoney(tot)}</b></div>`;}
+    brkw.innerHTML=bh;
+    brkw.querySelectorAll('.qbtn[data-brk]').forEach(b=>b.onclick=()=>{const id=b.dataset.brk,w=b.dataset.w;
+      const cur=(state.bracketPicks[me]||{})[id];
+      if(cur===w){if(state.bracketPicks[me])delete state.bracketPicks[me][id];if(SB_ENABLED)sb.from('sidepicks').delete().eq('name',me).eq('match_id','BRK|'+id);}
+      else sbSetBracket(id,w);
+      renderSidebets();renderLeaderboard();updateLeagueBar();});}
+  // Group qualifiers — call the top 2 of each group. HIDE once every group is decided (all bonuses already paid, lives on in History → Bonuses).
+  const allDecided=Object.keys(standings).length>0 && Object.keys(standings).every(groupDecided);
   const qgw=document.getElementById('qualWrap');
-  if(qgw){const myQ=me?(state.groupquals[me]||{}):{};
+  if(qgw && allDecided){qgw.style.display='none';qgw.innerHTML='';}
+  else if(qgw){qgw.style.display='';const myQ=me?(state.groupquals[me]||{}):{};
     let qh=`<h3 style="margin-bottom:6px">🥇🥈 Group qualifiers</h3><p class="sub" style="margin-bottom:12px">Call the 2 teams to advance from each group. ${fmtMoney(QUAL_TEAM_BONUS)} per correct team, +${fmtMoney(QUAL_PERFECT_BONUS)} for both. Locks &amp; pays automatically when a group finishes.</p><div class="qualgrid">`;
     Object.keys(standings).forEach(g=>{const decided=groupDecided(g),top=decided?groupTop2(g):null;const teamsIn=standings[g].map(t=>t[0]);const mine=myQ[g]||[];
       qh+=`<div class="qualgrp"><div class="qghd">Group ${g}${decided?' · <span class="qgactual">'+top[0]+' &amp; '+top[1]+' ★</span>':(mine.length+'/2 picked')}</div><div class="qgteams">`;
