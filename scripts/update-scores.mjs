@@ -45,6 +45,42 @@ function parseSquads(html) {
   const existing = await sb('results?select=match_id,s1,s2,status,scorers').then(r => r.json());
   const have = {}; (existing || []).forEach(r => have[r.match_id] = { s1: r.s1, s2: r.s2, status: r.status, sc: r.scorers || '' });
 
+  // ====== KO MATCHUP RESOLUTION — replaces slot placeholders like "Winner C" with real team names so PASS 1 (score fetch) and PASS 3/4 (Claude picks) can process KO fixtures. R32 hardcoded from FIFA/ESPN; R16+ resolved dynamically from R32 results.
+  // R32 matchups by match number (mno), authoritative from ESPN.
+  const R32_RESOLVED = {
+    'M73': ['South Africa', 'Canada'], 'M74': ['Germany', 'Paraguay'], 'M75': ['Netherlands', 'Morocco'],
+    'M76': ['Brazil', 'Japan'], 'M77': ['France', 'Sweden'], 'M78': ['Ivory Coast', 'Norway'],
+    'M79': ['Mexico', 'Ecuador'], 'M80': ['England', 'DR Congo'], 'M81': ['United States', 'Bosnia & Herzegovina'],
+    'M82': ['Belgium', 'Senegal'], 'M83': ['Portugal', 'Croatia'], 'M84': ['Spain', 'Austria'],
+    'M85': ['Switzerland', 'Algeria'], 'M86': ['Argentina', 'Cape Verde'], 'M87': ['Colombia', 'Ghana'], 'M88': ['Australia', 'Egypt']
+  };
+  // For R16+ ("Winner M73" etc.) — look up the K_MNO_RESULT from `have` (the FT score map). Match the placeholder K() row by mno and check FT result.
+  function resolveKoSlot(slot) {
+    const wm = slot.match(/^Winner (M\d+)/), lm = slot.match(/^Loser (M\d+)/);
+    if (!wm && !lm) return slot;
+    const refMno = (wm || lm)[1];
+    // find the referenced KO fixture and its FT result
+    const ref = fixtures.find(m => m.ko && m.mno === refMno);
+    if (!ref) return slot;
+    // resolve ref's own teams first if it's still placeholder
+    let refT1 = ref.t1, refT2 = ref.t2;
+    if (R32_RESOLVED[refMno]) { [refT1, refT2] = R32_RESOLVED[refMno]; }
+    else { refT1 = resolveKoSlot(refT1); refT2 = resolveKoSlot(refT2); }
+    if (!teamReal(refT1) || !teamReal(refT2)) return slot;
+    const h = have[ref.id]; if (!h || h.status !== 'FT' || h.s1 == null) return slot;
+    if (h.s1 === h.s2) return slot;  // draw → pens; can't resolve without pen result
+    return wm ? (h.s1 > h.s2 ? refT1 : refT2) : (h.s1 < h.s2 ? refT1 : refT2);
+  }
+  // Apply resolution to fixtures in-place (preserves m.id which is stable from the original placeholders).
+  for (const m of fixtures) {
+    if (!m.ko) continue;
+    if (R32_RESOLVED[m.mno]) { m.t1 = R32_RESOLVED[m.mno][0]; m.t2 = R32_RESOLVED[m.mno][1]; continue; }
+    const r1 = resolveKoSlot(m.t1), r2 = resolveKoSlot(m.t2);
+    if (teamReal(r1)) m.t1 = r1;
+    if (teamReal(r2)) m.t2 = r2;
+  }
+  console.log(`KO resolution: ${fixtures.filter(m => m.ko && teamReal(m.t1) && teamReal(m.t2)).length}/${fixtures.filter(m => m.ko).length} KO matches now have real teams`);
+
   const now = Date.now();
   const cand = fixtures.filter(m => teamReal(m.t1) && teamReal(m.t2) && new Date(m.dt).getTime() <= now);
   const scCount = s => (s || '').split(',').map(x => x.trim()).filter(Boolean).length;
@@ -277,10 +313,19 @@ function parseSquads(html) {
   console.log(`claude sharp: ${shHave.size} picks; next-4 window, ${shUpcoming.length} need score/side picks`);
   let shJoker = null, shJC = -1;
   const shPicks = shUpcoming.map(m => { const pk = sharpPick(m.t1, m.t2); if (pk.conf > shJC) { shJC = pk.conf; shJoker = m.id; } return { m, pk }; });
-  let shP = 0, shS = 0;
+  let shP = 0, shS = 0, shPen = 0;
+  // existing pen picks for Claude Sharp — skip if already set
+  const shHavePen = new Set((await sb('sidepicks?name=eq.' + encodeURIComponent(SH) + '&match_id=like.PEN|*&select=match_id').then(r => r.json()).catch(() => [])).map(r => r.match_id.slice(4)));
   for (const { m, pk } of shPicks) {
     const r = await sb('predictions?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: m.id, home: pk.home, away: pk.away, stake: pk.stake, joker: m.id === shJoker, updated_at: new Date().toISOString() }]) });
     if (r.ok) shP++; else console.log('  sharp pred err', m.t1, 'v', m.t2, r.status);
+    // KO draw → auto-pick pen winner using tier strength (stronger team wins pens).
+    if (m.ko && pk.home === pk.away && !shHavePen.has(m.id)) {
+      const tierN = t => STRONG.has(t) ? 3 : MID.has(t) ? 2 : 1;
+      const w = tierN(m.t1) >= tierN(m.t2) ? 'H' : 'A';
+      const pr = await sb('sidepicks?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: 'PEN|' + m.id, scbets: [{ w }], updated_at: new Date().toISOString() }]) });
+      if (pr.ok) shPen++; else console.log('  sharp pen err', m.t1, 'v', m.t2, pr.status);
+    }
     if (!shHaveSide.has(m.id)) {
       const scb = pk.scorer ? [{ p: pk.scorer, st: 25 }] : [];
       const rr = await sb('sidepicks?on_conflict=name,match_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ name: SH, match_id: m.id, ou: pk.ou, ou_stake: 25, btts: pk.btts, btts_stake: 20, scorer: null, scbets: scb, updated_at: new Date().toISOString() }]) });
@@ -288,7 +333,7 @@ function parseSquads(html) {
     }
     await sleep(100);
   }
-  console.log(`claude sharp: preds+=${shP} sides+=${shS} joker=${shJoker || 'none'}`);
+  console.log(`claude sharp: preds+=${shP} sides+=${shS} pens+=${shPen} joker=${shJoker || 'none'}`);
 
   // ====== PASS 4B: SMART CLAUDE markets ("more bets") for the next-4 window — score-derived, priced with the app's exact odds model. Idempotent.
   try {
