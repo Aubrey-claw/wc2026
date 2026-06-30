@@ -1070,7 +1070,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-06-29-bu';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-06-30-bv';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -2517,6 +2517,17 @@ function fixtureAudit(){const issues=[];const groups={},teamApps={},koCounts={};
   for(const [r,n] of Object.entries(expR)){if((koCounts[r]||0)!==n)issues.push(`${r}: ${koCounts[r]||0} games (should be ${n})`);}
   return issues;}
 if(me===HIDDEN_OWNER||adminMode){try{const a=fixtureAudit();if(a.length){console.error('Fixture audit failed:',a);const ab=document.createElement('div');ab.id='auditBanner';ab.style.cssText='background:#b91c1c;color:#fff;font:600 12.5px system-ui,-apple-system,Arial;text-align:center;padding:8px 12px;letter-spacing:.2px';ab.textContent=`⚠️ Fixture audit: ${a.length} issue${a.length===1?'':'s'} — ${a.slice(0,2).join(' · ')}${a.length>2?` (+${a.length-2} more, see console)`:''}`;document.body.insertBefore(ab,document.body.firstChild);}}catch(e){console.error('audit err',e);}}
+// CRON HEALTH MONITOR — catches the recurring class of bug where ESPN has a finished game but the cron failed to write it to the DB. Asks ESPN for the last 3 days of WC events, cross-checks each FT/After-pen game against the local results table, and shows a red banner to the admin if anything's missing.
+async function cronHealthCheck(){const ESPN='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';const eNorm=s=>(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/gi,'').toLowerCase();const ALIAS={'Bosnia-Herzegovina':'Bosnia & Herzegovina','Congo DR':'DR Congo','Czechia':'Czech Republic','Türkiye':'Turkey'};const eOur=n=>ALIAS[n]||n;
+  const now=new Date();const dates=[];for(let d=-2;d<=0;d++){const x=new Date(now.getTime()+d*864e5);dates.push(x.toISOString().slice(0,10).replace(/-/g,''));}
+  const missing=[];
+  for(const ds of dates){try{const j=await fetch(`${ESPN}/scoreboard?dates=${ds}`).then(r=>r.json());for(const e of (j.events||[])){const status=(((e.status||{}).type||{}).description||'');if(!/Full Time|After Penal|After Extra/.test(status))continue;const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;const h=eOur(((cs.find(c=>c.homeAway==='home')||cs[0]).team||{}).displayName||'');const a=eOur(((cs.find(c=>c.homeAway==='away')||cs[1]).team||{}).displayName||'');
+    // try to find a matching fixture by team-name (order independent)
+    const fx=ALL.find(m=>(eNorm(m.t1)===eNorm(h)&&eNorm(m.t2)===eNorm(a))||(eNorm(m.t1)===eNorm(a)&&eNorm(m.t2)===eNorm(h)));
+    if(!fx){missing.push(`${h} v ${a}: no app fixture for this game`);continue;}
+    if(!isFT(fx))missing.push(`${h} ${cs[0].score}-${cs[1].score} ${a}: finished on ESPN, NOT recorded in app`);}}catch(e){}}
+  return missing;}
+if(me===HIDDEN_OWNER||adminMode){cronHealthCheck().then(miss=>{if(miss.length){console.error('Cron health failed:',miss);const cb=document.createElement('div');cb.id='cronBanner';cb.style.cssText='background:#d97706;color:#fff;font:600 12.5px system-ui,-apple-system,Arial;text-align:center;padding:8px 12px;letter-spacing:.2px';cb.textContent=`⚠️ ${miss.length} game${miss.length===1?'':'s'} finished but not in app — ${miss.slice(0,2).join(' · ')}${miss.length>2?` (+${miss.length-2} more)`:''}`;document.body.insertBefore(cb,document.body.firstChild);}}).catch(e=>console.error('cron-check err',e));}
 async function checkUpdate(){try{const r=await fetch(location.pathname+'?_u='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]&&m[1]!==BUILD){flash('New version — updating…');setTimeout(()=>location.reload(),1500);}}catch(e){}}
 setInterval(checkUpdate,180000);
 
