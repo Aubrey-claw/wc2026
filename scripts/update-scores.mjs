@@ -91,14 +91,76 @@ function parseSquads(html) {
     return scCount(h.sc) < (h.s1 + h.s2);
   });
 
+  // ESPN aliases & normalization for fallback lookup (same as PASS 2)
+  const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+  const ESPN_ALIAS = { 'Bosnia-Herzegovina': 'Bosnia & Herzegovina', 'Congo DR': 'DR Congo', 'Czechia': 'Czech Republic', 'Türkiye': 'Turkey' };
+  const eNorm0 = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/gi, '').toLowerCase();
+  const eOur0 = n => ESPN_ALIAS[n] || n;
+  // ESPN fallback: KO games (and any group game TheSportsDB doesn't have) — find an event by team-name match within ±1 day.
+  async function tryEspn(m) {
+    const dStrs = [];
+    const d0 = m.dt.slice(0, 10).replace(/-/g, '');
+    const d = new Date(m.dt); const dPlus = new Date(d.getTime() + 864e5); const dMinus = new Date(d.getTime() - 864e5);
+    [d0, dPlus.toISOString().slice(0, 10).replace(/-/g, ''), dMinus.toISOString().slice(0, 10).replace(/-/g, '')].forEach(x => dStrs.push(x));
+    for (const ds of dStrs) {
+      try {
+        const j = await fetch(`${ESPN_BASE}/scoreboard?dates=${ds}`).then(r => r.json()).catch(() => null);
+        for (const e of (j && j.events || [])) {
+          const cs = ((e.competitions || [])[0] || {}).competitors || []; if (cs.length < 2) continue;
+          const h = eOur0(((cs.find(c => c.homeAway === 'home') || cs[0]).team || {}).displayName || '');
+          const a = eOur0(((cs.find(c => c.homeAway === 'away') || cs[1]).team || {}).displayName || '');
+          if ((eNorm0(h) === eNorm0(m.t1) && eNorm0(a) === eNorm0(m.t2)) || (eNorm0(h) === eNorm0(m.t2) && eNorm0(a) === eNorm0(m.t1))) {
+            const status = (((e.status || {}).type || {}).description || '');
+            if (!/Full Time|After Penal|After Extra/.test(status)) return { found: true, ft: false };
+            // Get summary for scorers (skip pen shootout goals)
+            let scorers = '';
+            try {
+              const sum = await fetch(`${ESPN_BASE}/summary?event=${e.id}`).then(x => x.json());
+              const goalEvs = (sum.keyEvents || []).filter(ev => /^Goal!/.test(ev.text || '') && !/penalty shootout/i.test(ev.text || ''));
+              scorers = goalEvs.map(ev => { const m1 = (ev.text || '').match(/Goal!.*?\.\s*([^(]+?)(?:\s*\(|\.|$)/); return m1 ? m1[1].trim() : null; }).filter(Boolean).join(', ');
+            } catch (_) {}
+            const homeC = cs.find(c => c.homeAway === 'home') || cs[0];
+            const awayC = cs.find(c => c.homeAway === 'away') || cs[1];
+            return { found: true, ft: true, s1: parseInt(homeC.score, 10), s2: parseInt(awayC.score, 10), scorers, espnId: e.id };
+          }
+        }
+      } catch (_) {}
+      await sleep(150);
+    }
+    return { found: false };
+  }
+
   const wrote = [], skipped = [];
   for (const m of need) {
     try {
       const q = encodeURIComponent(`${tsdb(m.t1)}_vs_${tsdb(m.t2)}`);
       const j = await fetch(`${TSDB}/searchevents.php?e=${q}&s=2026`).then(r => r.json()).catch(() => null);
-      const ev = (j && j.event || []).find(e => /world cup/i.test(e.strLeague || '')) || (j && j.event || [])[0];
-      if (!ev || ev.strStatus !== 'FT' || ev.intHomeScore == null || ev.intAwayScore == null) {
-        skipped.push(`${m.t1} v ${m.t2}: ${ev ? ev.strStatus : 'not found'}`); await sleep(450); continue;
+      let ev = (j && j.event || []).find(e => /world cup/i.test(e.strLeague || '')) || (j && j.event || [])[0];
+      // ESPN FALLBACK: if TheSportsDB has nothing (especially common for KO matches), try ESPN.
+      if (!ev || ev.strStatus !== 'FT' || ev.intHomeScore == null) {
+        const espn = await tryEspn(m);
+        if (espn.found && espn.ft) {
+          const h = have[m.id];
+          if (h && h.status === 'FT' && (h.s1 !== espn.s1 || h.s2 !== espn.s2)) {
+            skipped.push(`${m.t1} v ${m.t2}: DB ${h.s1}-${h.s2} vs ESPN ${espn.s1}-${espn.s2} — NOT overwriting`);
+            await sleep(300); continue;
+          }
+          if (h && h.status === 'FT' && (espn.scorers || '').split(',').filter(x => x.trim()).length <= scCount(h.sc)) {
+            skipped.push(`${m.t1} v ${m.t2}: ESPN scorers (${(espn.scorers || '').split(',').filter(x => x.trim()).length}/${espn.s1 + espn.s2}) ≤ DB`);
+            await sleep(300); continue;
+          }
+          const rr = await sb('results?on_conflict=match_id', {
+            method: 'POST',
+            headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify([{ match_id: m.id, s1: espn.s1, s2: espn.s2, status: 'FT', scorers: espn.scorers }])
+          });
+          if (rr.ok) { wrote.push(`${m.t1} ${espn.s1}-${espn.s2} ${m.t2} (ESPN) [${(espn.scorers || '').split(',').filter(x => x.trim()).length}g]`); await sleep(300); continue; }
+        }
+        skipped.push(`${m.t1} v ${m.t2}: ${ev ? ev.strStatus : 'not found'} (ESPN: ${espn.found ? 'scheduled' : 'no match'})`);
+        await sleep(450); continue;
+      }
+      if (ev.intAwayScore == null) {
+        skipped.push(`${m.t1} v ${m.t2}: TSDB no score yet`); await sleep(450); continue;
       }
       const s1 = parseInt(ev.intHomeScore, 10), s2 = parseInt(ev.intAwayScore, 10);
       const h = have[m.id];
@@ -168,8 +230,10 @@ function parseSquads(html) {
   // 3) Fetch summary + upsert per match
   let sOk = 0, sErr = 0;
   for (const r of ftNeedStats) {
-    const parts = r.match_id.split('|'); if (parts.length < 3) { sErr++; continue; }
-    const t1 = parts[1], t2 = parts[2];
+    // Use RESOLVED team names from fixtures (match_id may still have KO placeholders like "Winner C")
+    const fx = fixtures.find(x => x.id === r.match_id);
+    const t1 = fx ? fx.t1 : r.match_id.split('|')[1];
+    const t2 = fx ? fx.t2 : r.match_id.split('|')[2];
     const evt = pair2evt[eNorm(t1) + '|' + eNorm(t2)];
     if (!evt) { console.log('  ESPN miss:', t1, 'v', t2); sErr++; continue; }
     try {
@@ -379,7 +443,10 @@ function parseSquads(html) {
     let p5 = 0;
     for (const r of drawKO) {
       const parts = r.match_id.split('|'); if (parts.length < 3) continue;
-      const t1 = parts[1], t2 = parts[2];
+      // Use resolved team names from fixtures (match_id may have placeholders)
+      const fx5 = fixtures.find(x => x.id === r.match_id);
+      const t1 = fx5 ? fx5.t1 : parts[1];
+      const t2 = fx5 ? fx5.t2 : parts[2];
       const dts = parts[0].slice(0, 10).replace(/-/g, '');
       try {
         const j = await fetch(`${ESPN}/scoreboard?dates=${dts}`).then(x => x.json()).catch(() => null);
