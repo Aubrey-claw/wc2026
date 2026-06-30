@@ -91,11 +91,11 @@ function parseSquads(html) {
     return scCount(h.sc) < (h.s1 + h.s2);
   });
 
-  // ESPN aliases & normalization for fallback lookup (same as PASS 2)
+  // ESPN aliases & normalization for fallback lookup (PASS 2 also declares these in its own scope)
   const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
-  const ESPN_ALIAS = { 'Bosnia-Herzegovina': 'Bosnia & Herzegovina', 'Congo DR': 'DR Congo', 'Czechia': 'Czech Republic', 'Türkiye': 'Turkey' };
+  const ESPN_ALIAS_P1 = { 'Bosnia-Herzegovina': 'Bosnia & Herzegovina', 'Congo DR': 'DR Congo', 'Czechia': 'Czech Republic', 'Türkiye': 'Turkey' };
   const eNorm0 = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/gi, '').toLowerCase();
-  const eOur0 = n => ESPN_ALIAS[n] || n;
+  const eOur0 = n => ESPN_ALIAS_P1[n] || n;
   // ESPN fallback: KO games (and any group game TheSportsDB doesn't have) — find an event by team-name match within ±1 day.
   async function tryEspn(m) {
     const dStrs = [];
