@@ -54,6 +54,10 @@ function parseSquads(html) {
     'M82': ['Belgium', 'Senegal'], 'M83': ['Portugal', 'Croatia'], 'M84': ['Spain', 'Austria'],
     'M85': ['Switzerland', 'Algeria'], 'M86': ['Argentina', 'Cape Verde'], 'M87': ['Colombia', 'Ghana'], 'M88': ['Australia', 'Egypt']
   };
+  // Pre-load PEN_RESULT rows so KO slot resolution knows the pens winner when a game was drawn at FT.
+  const penResRows = await sb('sidepicks?name=eq._pen&match_id=like.PEN_RESULT|*&select=match_id,scbets').then(r => r.json()).catch(() => []);
+  const penWinnerOfId = {};
+  for (const row of (penResRows || [])) { const w = (row.scbets && row.scbets[0] && row.scbets[0].w) || null; if (w) penWinnerOfId[row.match_id.slice(11)] = w; }
   // For R16+ ("Winner M73" etc.) — look up the K_MNO_RESULT from `have` (the FT score map). Match the placeholder K() row by mno and check FT result.
   function resolveKoSlot(slot) {
     const wm = slot.match(/^Winner (M\d+)/), lm = slot.match(/^Loser (M\d+)/);
@@ -68,7 +72,12 @@ function parseSquads(html) {
     else { refT1 = resolveKoSlot(refT1); refT2 = resolveKoSlot(refT2); }
     if (!teamReal(refT1) || !teamReal(refT2)) return slot;
     const h = have[ref.id]; if (!h || h.status !== 'FT' || h.s1 == null) return slot;
-    if (h.s1 === h.s2) return slot;  // draw → pens; can't resolve without pen result
+    if (h.s1 === h.s2) {
+      // Draw at FT → decided on pens. Consult PEN_RESULT rows for the advancing team.
+      const pw = penWinnerOfId[ref.id];
+      if (!pw) return slot;
+      return wm ? (pw === 'H' ? refT1 : refT2) : (pw === 'H' ? refT2 : refT1);
+    }
     return wm ? (h.s1 > h.s2 ? refT1 : refT2) : (h.s1 < h.s2 ? refT1 : refT2);
   }
   // Apply resolution to fixtures in-place (preserves m.id which is stable from the original placeholders).
