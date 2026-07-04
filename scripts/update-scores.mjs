@@ -488,4 +488,51 @@ function parseSquads(html) {
     }
     console.log(`pen: wrote=${p5}`);
   } catch (e) { console.log('  pass5 pen error (non-fatal):', e.message); }
+
+  // ====== PASS 6: DAILY DIGEST — post a chat message from Claude once per day, around 8am Adelaide (22:30 UTC). Only fires in the 22:30-22:44 UTC window and only if Claude hasn't posted a digest today. Everyone gets the summary in the app's Chat tab, even if Nobby's laptop is off.
+  try {
+    const nowUTC = new Date();
+    const utcH = nowUTC.getUTCHours(), utcM = nowUTC.getUTCMinutes();
+    const inDigestWindow = utcH === 22 && utcM >= 30 && utcM <= 44;  // 8:00-8:14 AM Adelaide (ACST, UTC+9:30)
+    if (inDigestWindow) {
+      console.log('--- pass6 daily digest ---');
+      // Only post one digest per day. Check if Claude already posted today (Adelaide day).
+      const adDay = new Date(nowUTC.getTime() + 9.5 * 3600 * 1000).toISOString().slice(0, 10);  // approx ACST-shifted date
+      const recentChat = await sb(`chat?name=eq.Claude&order=ts.desc&limit=5`).then(r => r.json()).catch(() => []);
+      const alreadyPosted = (recentChat || []).some(m => {
+        if (!/📅 Daily digest/.test(m.txt || '')) return false;
+        const msgDay = new Date(new Date(m.ts).getTime() + 9.5 * 3600 * 1000).toISOString().slice(0, 10);
+        return msgDay === adDay;
+      });
+      if (alreadyPosted) { console.log('  digest already posted today, skipping'); }
+      else {
+        // Build the digest — games in the last 24h + upcoming next 24h
+        const nowMs = nowUTC.getTime();
+        const day = 24 * 3600 * 1000;
+        const ftAllD = await sb('results?status=eq.FT&select=match_id,s1,s2,scorers').then(r => r.json()).catch(() => []);
+        const recentGames = (ftAllD || []).filter(r => { const t = new Date(r.match_id.split('|')[0]).getTime(); return t >= nowMs - day && t < nowMs; });
+        // Upcoming from fixtures
+        const upcoming = fixtures.filter(m => { const t = new Date(m.dt).getTime(); return teamReal(m.t1) && teamReal(m.t2) && t > nowMs && t < nowMs + day; }).sort((a, b) => new Date(a.dt) - new Date(b.dt));
+        // Bank leaderboard
+        const players = await sb('players?select=name').then(r => r.json()).catch(() => []);
+        // Format the digest (basic — no bank calc since bankOf is app-only)
+        let txt = `📅 Daily digest — ${adDay}\n`;
+        if (recentGames.length) {
+          txt += `\n📊 Last 24h (${recentGames.length} game${recentGames.length === 1 ? '' : 's'}):\n`;
+          for (const r of recentGames) { const p = r.match_id.split('|'); txt += `  • ${p[1]} ${r.s1}-${r.s2} ${p[2]}\n`; }
+        }
+        if (upcoming.length) {
+          txt += `\n🔮 Next 24h (${upcoming.length}):\n`;
+          for (const m of upcoming) {
+            const adT = new Date(new Date(m.dt).getTime()).toLocaleString('en-AU', { timeZone: 'Australia/Adelaide', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+            txt += `  • ${adT} ACST — ${m.t1} v ${m.t2}\n`;
+          }
+        }
+        if (!recentGames.length && !upcoming.length) txt += `\n(Quiet day — no games in the window.)\n`;
+        txt += `\nMay the best predictor win 🏆`;
+        const post = await sb('chat', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ name: 'Claude', txt }]) });
+        console.log(`  digest posted: HTTP ${post.status}`);
+      }
+    }
+  } catch (e) { console.log('  pass6 digest error (non-fatal):', e.message); }
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
