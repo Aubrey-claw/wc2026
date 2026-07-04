@@ -816,6 +816,7 @@
 <section id="sidebets">
   <h2>Side bets <span class="sub" style="font-weight:400">— go big or claw your way back</span></h2>
   <div class="card" id="champWrap" style="margin-bottom:16px"></div>
+  <div class="card" id="brkR16Wrap" style="margin-bottom:16px"></div>
   <div class="card" id="brkR32Wrap" style="margin-bottom:16px"></div>
   <div class="card" id="qualWrap" style="margin-bottom:16px"></div>
   <div class="card" id="accaWrap" style="margin-bottom:16px"></div>
@@ -1070,7 +1071,7 @@ function moStaggerSection(tab){const map={predict:'predList',board:'boardList',n
 function moFlashIfChanged(el,key,cur,cls){cls=cls||'mo-flash';const prev=moPrev[key];moPrev[key]=cur;if(!el||prev===undefined||prev===cur||MO_REDUCED)return false;moOnce(el,cls,1100);return true;}
 
 // ================= SUPABASE LIVE SYNC (one shared league, realtime) =================
-const BUILD='2026-07-04-bw';  // bumped each deploy; clients auto-reload when it changes
+const BUILD='2026-07-04-bx';  // bumped each deploy; clients auto-reload when it changes
 const SB_URL='https://bgmlunqrsoeozpqumfif.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbWx1bnFyc29lb3pwcXVtZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTQ1MDYsImV4cCI6MjA5NzQzMDUwNn0.FxNkK0K1077v-ZxOEbk0-iKWf7JzLjeTYJT_1CMaQKM';
 const ADMIN_SECRET='wc25gqa8';
@@ -1087,7 +1088,7 @@ const HIDDEN_PLAYERS=new Set(['Claude Sharp']);
 const HIDDEN_OWNER='Nobby';
 function stripHidden(){ if(me===HIDDEN_OWNER)return;   // owner sees their shadow player; everyone else gets it scrubbed from state
   HIDDEN_PLAYERS.forEach(nm=>{ if(Array.isArray(state.players))state.players=state.players.filter(n=>n!==nm);
-    ['preds','champion','topscorer','champOdds','sidepicks','htbets','mktbets','glovePick','survivor','cashouts','quiz','accas','groupquals'].forEach(k=>{if(state[k])delete state[k][nm];});
+    ['preds','champion','topscorer','champOdds','sidepicks','htbets','mktbets','glovePick','survivor','cashouts','quiz','accas','groupquals','penPicks','bracketPicks','r16Picks'].forEach(k=>{if(state[k])delete state[k][nm];});
     if(Array.isArray(state.duels))state.duels=state.duels.filter(d=>d.challenger!==nm&&d.opponent!==nm); }); }
 const predTimers={};let loadT=null;
 const pendingMine={};const pendingT={};  // protects MY in-flight edits from being clobbered by a live reload
@@ -1130,7 +1131,9 @@ async function sbLoadAll(){if(!sb)return;
     state.players=(pl.data||[]).map(r=>r.name);
     state.champion={};state.topscorer={};state.champOdds={};(pl.data||[]).forEach(r=>{if(r.champion)state.champion[r.name]=r.champion;if(r.topscorer)state.topscorer[r.name]=r.topscorer;if(r.champ_odds!=null)state.champOdds[r.name]=+r.champ_odds;});
     state.quiz={};if(!qz.error)(qz.data||[]).forEach(r=>{(state.quiz[r.name]=state.quiz[r.name]||{})[r.qid]=r.choice;});
-    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.matchStats={};state.penPicks={};state.penResults={};state.bracketPicks={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+    state.sidepicks={};state.htbets={};state.mktbets={};state.glovePick={};state.survivor={};state.cashouts={};state.matchStats={};state.penPicks={};state.penResults={};state.bracketPicks={};state.r16Picks={};if(!sp.error)(sp.data||[]).forEach(r=>{const scb=Array.isArray(r.scbets)?r.scbets:[];
+      // BRK16|<matchId> = R16 bracket pick — checked BEFORE BRK| because 'BRK16|' starts with 'BRK|' as a substring... actually 'BRK|' is prefix 4 chars, 'BRK16|' is prefix 6 chars — separate branches.
+      if(typeof r.match_id==='string'&&r.match_id.slice(0,6)==='BRK16|'){const w=(scb[0]||{}).w;if(w){(state.r16Picks=state.r16Picks||{})[r.name]=state.r16Picks[r.name]||{};state.r16Picks[r.name][r.match_id.slice(6)]=w;}return;}
       // BRK|<matchId> = R32 bracket pick (which team advances). One row per match per player.
       if(typeof r.match_id==='string'&&r.match_id.slice(0,4)==='BRK|'){const w=(scb[0]||{}).w;if(w)(state.bracketPicks[r.name]=state.bracketPicks[r.name]||{})[r.match_id.slice(4)]=w;return;}
       // PEN_RESULT|<id> = actual penalty winner (written by cron or admin once a KO match ends in pens). Must be checked BEFORE the PEN| name route because the PEN_RESULT row's name is '_pen'.
@@ -1446,6 +1449,15 @@ function bracketWon(p){const picks=(state.bracketPicks&&state.bracketPicks[p])||
   for(const m of ms){const pk=picks[m.id];if(!pk)continue;const actual=r32WinnerOf(m);if(!actual)continue;settled++;if(pk===actual){hits++;bn+=R32_PICK_BONUS;}}
   if(settled===16&&hits===16)bn+=R32_PERFECT_BONUS;return bn;}
 async function sbSetBracket(mid,w){state.bracketPicks=state.bracketPicks||{};state.bracketPicks[me]=state.bracketPicks[me]||{};state.bracketPicks[me][mid]=w;if(!SB_ENABLED)return;try{await sb.from('sidepicks').upsert({name:me,match_id:'BRK|'+mid,scbets:[{w}],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save R32 pick');}}
+// R16 BRACKET picker — pick the winner of each R16 match (advancing team). $100/correct + $600 perfect bracket bonus (higher stakes than R32).
+const R16_PICK_BONUS=100, R16_PERFECT_BONUS=600;
+const r16PickOf=(p,id)=>(state.r16Picks&&state.r16Picks[p]||{})[id]||null;
+function r16Matches(){return ALL.filter(m=>m.ko && m.round==='Round of 16').sort((a,b)=>new Date(a.dt)-new Date(b.dt));}
+function r16WinnerOf(m){if(!isFT(m))return null;if(m.s1===m.s2){const pw=penResultOf(m.id);return pw||null;}return m.s1>m.s2?'H':'A';}
+function r16BracketWon(p){const picks=(state.r16Picks&&state.r16Picks[p])||{};let bn=0,hits=0,settled=0;const ms=r16Matches();
+  for(const m of ms){const pk=picks[m.id];if(!pk)continue;const actual=r16WinnerOf(m);if(!actual)continue;settled++;if(pk===actual){hits++;bn+=R16_PICK_BONUS;}}
+  if(settled===8&&hits===8)bn+=R16_PERFECT_BONUS;return bn;}
+async function sbSetR16(mid,w){state.r16Picks=state.r16Picks||{};state.r16Picks[me]=state.r16Picks[me]||{};state.r16Picks[me][mid]=w;if(!SB_ENABLED)return;try{await sb.from('sidepicks').upsert({name:me,match_id:'BRK16|'+mid,scbets:[{w}],updated_at:new Date().toISOString()},{onConflict:'name,match_id'});}catch(e){flash('Could not save R16 pick');}}
 // PENALTY-WINNER pick — KO games only. When a player predicts a draw on a KO match, they additionally pick which team wins on pens. Bonus pays only if both the draw AND the pens winner land.
 const PEN_BONUS=50, PEN_PTS=2;
 const isDrawPred=pr=>pr&&pr[0]!=null&&pr[1]!=null&&pr[0]===pr[1];
@@ -1622,8 +1634,8 @@ function bankOf(p){
   // fold chronologically; floor on the running balance
   ev.sort((a,b)=>a.dt-b.dt);let bal=START_BAL,won=0,lost=0;
   ev.forEach(e=>{const before=bal;bal=Math.max(FLOOR,bal+e.net);const r=bal-before;if(r>=0)won+=r;else lost+=-r;});
-  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p),md3=compWon(p),pw=penWon(p),brk=bracketWon(p);
-  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv+md3+pw+brk;bal+=bonus;won+=bonus;
+  const qw=quizWon(p),cw=champWon(p),ow=ouWon(p),tw=topscorerWon(p),sw=scorerWon(p),gqw=qualWon(p),ggw=gloveWon(p),sv=survWon(p),md3=compWon(p),pw=penWon(p),brk=bracketWon(p),brk16=r16BracketWon(p);
+  const bonus=qw+cw+ow+tw+sw+gqw+ggw+sv+md3+pw+brk+brk16;bal+=bonus;won+=bonus;
   return {bal,inPlay,free:Math.max(0,bal-inPlay),settledN,won,lost,quizWon:qw,champWon:cw,qualWon:gqw};
 }
 function maxStakeFor(p,id){const b=bankOf(p);const cur=((state.preds[p]||{})[id]||[])[2]||0;return Math.max(MIN_WAGER,b.free+cur);}
@@ -2140,6 +2152,7 @@ function historyBonuses(p){const b=[];const add=(amt,label)=>{if(amt>0)b.push({a
   add(compWon(p),'MD3 missed-games comp');  // 4 fixtures shipped missing — flat $160 + 8pts comp to every player
   add(penWon(p),'Penalty-winner bonus');     // bonus paid only when a draw prediction lands AND the pens winner pick is right
   add(bracketWon(p),'R32 bracket picks');    // pick R32 winners — $80 per correct + $400 perfect-bracket bonus
+  add(r16BracketWon(p),'R16 bracket picks'); // pick R16 winners — $100 per correct + $600 perfect-bracket bonus
   return b;}
 // hit-rate accuracy: of the picks you've made on FINISHED games, what fraction landed
 function accuracyOf(p){
@@ -2318,9 +2331,34 @@ function renderSidebets(){
   cw.innerHTML=html;
   const sel=document.getElementById('champSel');if(sel)sel.onchange=()=>{const t=sel.value;const odds=t?champOdds(t):null;state.champion[me]=t;state.champOdds[me]=odds;if(SB_ENABLED)sbSetChampion(me,t,odds);flash(t?'Locked '+t+' at '+odds+'x':'Champion pick cleared');renderSidebets();renderLeaderboard();updateLeagueBar();};
   const gsel=document.getElementById('gbSel');if(gsel)gsel.onchange=()=>{state.topscorer[me]=gsel.value;if(SB_ENABLED)sbSetTopScorer(me,gsel.value);renderSidebets();renderLeaderboard();updateLeagueBar();};
-  // R32 BRACKET picker — pick the winner of each Round-of-32 match. Same UI pattern as group quals but for the KO. Pays $80 per correct + $400 if all 16 right. Locks per-match at kickoff.
+  // R16 BRACKET picker — pick winners of Round-of-16 matches. $100 per correct + $600 perfect (higher stakes than R32).
+  const brk16w=document.getElementById('brkR16Wrap');
+  if(brk16w){const my16=me?((state.r16Picks||{})[me]||{}):{};const r16=r16Matches();const picked16=r16.filter(m=>my16[m.id]).length;
+    let bh16=`<h3 style="margin-bottom:6px">🏆 Round of 16 — bracket picks</h3><p class="sub" style="margin-bottom:12px">Pick which team advances from each R16 match. <b>${fmtMoney(R16_PICK_BONUS)}</b> per correct, <b>+${fmtMoney(R16_PERFECT_BONUS)}</b> bonus for all 8 right. Locks per-match at kickoff. <span class="sub">${picked16}/${r16.length} picked</span></p><div class="qualgrid">`;
+    r16.forEach(m=>{const koff=kickedOff(m),ft=isFT(m),pick=my16[m.id],actual=r16WinnerOf(m);
+      const dt=new Date(m.dt).toLocaleString('en-AU',{timeZone:'Australia/Adelaide',weekday:'short',hour:'2-digit',minute:'2-digit'});
+      bh16+=`<div class="qualgrp"><div class="qghd">${m.mno} · ${dt}${ft?(actual==='H'?' · '+m.t1+' won':actual==='A'?' · '+m.t2+' won':' · drew'):koff?' · LIVE':''}</div><div class="qgteams">`;
+      [['H',m.t1],['A',m.t2]].forEach(([w,t])=>{const isPick=pick===w,isWin=ft&&actual===w,isLoss=ft&&pick===w&&actual!==w;
+        const cls=(isPick?'on ':'')+(isWin?'adv ':'')+(isLoss?'miss ':'');
+        bh16+=`<button class="qbtn ${cls}" ${koff||!me?'disabled':''} data-brk16="${m.id}" data-w="${w}">${badge(t)} ${t}${isWin?' ★':''}</button>`;});
+      bh16+=`</div>`;
+      if(ft&&me&&pick){const won=pick===actual;bh16+=`<div class="qgres ${won?'win':'loss'}">${won?'✓ +'+fmtMoney(R16_PICK_BONUS):'✗ no bonus'}</div>`;}
+      bh16+=`</div>`;});
+    bh16+=`</div>`;
+    if(me){const tot16=r16BracketWon(me);if(tot16>0)bh16+=`<div class="oddsnote" style="margin-top:12px">💰 Earned so far: <b>${fmtMoney(tot16)}</b></div>`;}
+    brk16w.innerHTML=bh16;
+    brk16w.querySelectorAll('.qbtn[data-brk16]').forEach(b=>b.onclick=()=>{const id=b.dataset.brk16,w=b.dataset.w;
+      const cur=((state.r16Picks||{})[me]||{})[id];
+      if(cur===w){if(state.r16Picks&&state.r16Picks[me])delete state.r16Picks[me][id];if(SB_ENABLED)sb.from('sidepicks').delete().eq('name',me).eq('match_id','BRK16|'+id);}
+      else sbSetR16(id,w);
+      renderSidebets();renderLeaderboard();updateLeagueBar();});}
+  // R32 BRACKET picker — HIDE once all R32 games are finished (the bracket bonus lives on in History → Bonuses). Show as collapsed summary if the player still wants to check their picks.
+  const r32Done = r32Matches().every(m=>isFT(m));
   const brkw=document.getElementById('brkR32Wrap');
-  if(brkw){const myB=me?(state.bracketPicks[me]||{}):{};const r32=r32Matches();const picked=r32.filter(m=>myB[m.id]).length;
+  if(brkw && r32Done && me){const tot=bracketWon(me);const my=(state.bracketPicks[me]||{});const r32=r32Matches();
+    let hits=0;r32.forEach(m=>{const p=my[m.id],a=r32WinnerOf(m);if(p&&p===a)hits++;});
+    brkw.innerHTML=`<h3 style="margin-bottom:6px">🏆 Round of 32 — bracket complete</h3><p class="sub">You got <b>${hits}/16</b> right · earned <b>${fmtMoney(tot)}</b>. Details in History → Bonuses.</p>`;}
+  else if(brkw){const myB=me?(state.bracketPicks[me]||{}):{};const r32=r32Matches();const picked=r32.filter(m=>myB[m.id]).length;
     let bh=`<h3 style="margin-bottom:6px">🏆 Round of 32 — bracket picks</h3><p class="sub" style="margin-bottom:12px">Pick which team advances from each R32 match. <b>${fmtMoney(R32_PICK_BONUS)}</b> per correct, <b>+${fmtMoney(R32_PERFECT_BONUS)}</b> bonus for all 16 right. Locks per-match at kickoff. <span class="sub">${picked}/${r32.length} picked</span></p><div class="qualgrid">`;
     r32.forEach(m=>{const koff=kickedOff(m),ft=isFT(m),pick=myB[m.id],actual=r32WinnerOf(m);
       const dt=new Date(m.dt).toLocaleString('en-AU',{timeZone:'Australia/Adelaide',weekday:'short',hour:'2-digit',minute:'2-digit'});
