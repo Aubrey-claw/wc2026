@@ -1328,7 +1328,7 @@ const OU_ODDS={O:2.1,U:1.75}, BTTS_ODDS={Y:2.1,N:1.75};
 // Fixed odds (Poisson λ≈1.25 goals/half, modest house edge): oh=2nd-half O/U 1.5, ag=any 2nd-half goal, t2=a team scores 2+ in 2nd half.
 const HT_ODDS={oh:{O:2.6,U:1.5}, ag:{Y:1.35,N:3.3}, t2:{Y:3.5,N:1.25}};
 const HT_MKT=[{k:'oh',lbl:'2nd-half goals',o:['O','U'],ot:['Over 1.5','Under 1.5']},{k:'ag',lbl:'A goal in the 2nd half',o:['Y','N'],ot:['Yes','No']},{k:'t2',lbl:'A team scores 2+ in 2nd half',o:['Y','N'],ot:['Yes','No']}];
-const htCap=p=>Math.max(MIN_WAGER,Math.min(40,sideCap(p)));   // half-time props are higher-variance live bets → smaller cap than full side bets
+const htCap=p=>Math.max(MIN_WAGER,bankOf(p).bal);   // uncapped — bet your whole bank if you want
 function htDesc(mk,pk){const m=HT_MKT.find(x=>x.k===mk);if(!m)return '';const i=m.o.indexOf(pk);return m.lbl+' · '+(m.ot[i]||pk);}
 // settle one half-time bet from the HT snapshot stored in the bet vs the final score. returns 'won'|'lost'|'void'|'open'
 function htSettle(b,m){if(!m||!isFT(m))return 'open';if(b.ht1==null||b.ht2==null)return 'void';const a=m.s1-b.ht1,c=m.s2-b.ht2,tot=a+c;if(a<0||c<0)return 'void';
@@ -1341,7 +1341,7 @@ function scGoals(m,p){return (m.scorers||[]).filter(x=>!isOwnGoal(x)&&scEq(x,p))
 function scBetOdds(b){const o=scorerOdds(b.p);return (b&&b.g>=2)?Math.round(o*30)/10:o;}
 function scBetSettle(m,b){if(!isFT(m))return 'open';if(scGoals(m,b.p)>=((b&&b.g)||1))return 'won';const rec=(m.scorers||[]).length;return rec>=(m.s1+m.s2)?'lost':'void';}  // completeness counts ALL recorded goal events incl. own goals (an OG is still a goal) so OG games can settle; scGoals still excludes OGs from a player's tally
 function scBetName(b){return b.p+((b&&b.g>=2)?' 2+':'');}
-function sideCap(p){return Math.max(MIN_WAGER,Math.min(100,Math.round(bankOf(p).bal*0.25)));}  // single side-bet cap = min($100, 25% of bank)
+function sideCap(p){return Math.max(MIN_WAGER,bankOf(p).bal);}  // uncapped — bet your whole bank on one bet if you want
 function scorerWon(p){const sp=state.sidepicks[p]||{};let t=0;ALL.forEach(m=>{const s=sp[m.id];if(isFT(m)&&s&&s.scorer&&!(s.scbets&&s.scbets.length)&&(m.scorers||[]).some(x=>!isOwnGoal(x)&&scEq(x,s.scorer)))t+=SCORER_BONUS;});return t;}
 // LEAGUE POINTS for correctly predicting a goalscorer (anytime scorer) — separate from the money market, counts toward the points standings
 function scorerHits(p,m){const s=(state.sidepicks[p]||{})[m.id];if(!s||!isFT(m))return 0;const hits=new Set();
